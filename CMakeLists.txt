@@ -1,10 +1,12 @@
 cmake_minimum_required(VERSION 3.28)
 project(fusionquest)
 
-set(CMAKE_CXX_STANDARD 17)
 
-add_executable(fusionquest src/main.cpp)
 
+
+
+# Set the output directories for binaries and libraries
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ../bin)
 
 # Boost
 set(BOOST_INCLUDE_LIBRARIES thread filesystem system program_options asio date_time)
@@ -35,6 +37,7 @@ include_directories(${ftxui_SOURCE_DIR}/include)
 # Add source files to the project
 set(SOURCES
         src/main.cpp
+        src/banner.txt
 )
 
 set(HEADERS
@@ -42,29 +45,28 @@ set(HEADERS
 )
 
 # Add executable
-add_executable(prologix_emulator ${SOURCES} ${HEADERS})
+add_executable(fusionquest ${SOURCES})
+#add_executable(fusionquest ${SOURCES} ${HEADERS})
 
 # Link FTXUI libraries
-target_link_libraries(prologix_emulator
+target_link_libraries(fusionquest
         PRIVATE ftxui::screen
         PRIVATE ftxui::dom
         PRIVATE ftxui::component
 )
 
 # Link Boost libraries
-target_link_libraries(prologix_emulator
+target_link_libraries(fusionquest
         PRIVATE Boost::asio
         PRIVATE Boost::filesystem
         PRIVATE Boost::thread
         PRIVATE Boost::program_options
         PRIVATE Boost::system
 )
-
 # Set C++ standard
 if (CMAKE_VERSION VERSION_GREATER 3.12)
-    set_property(TARGET prologix_emulator PROPERTY CXX_STANDARD 20)
+    set_property(TARGET fusionquest PROPERTY CXX_STANDARD 20)
 endif()
-
 # Ensure Boost is properly found
 if (NOT TARGET Boost::asio OR NOT TARGET Boost::filesystem OR NOT TARGET Boost::thread OR NOT TARGET Boost::program_options)
     message(FATAL_ERROR "Required Boost libraries not found!")
