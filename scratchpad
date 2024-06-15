@@ -1,85 +1,101 @@
-cmake_minimum_required(VERSION 3.26)
+// Copyright 2020 Arthur Sonzogni. All rights reserved.
+// Use of this source code is governed by the MIT license that can be found in
+// the LICENSE file.
+#include <cstddef>  // for size_t
+#include <memory>    // for shared_ptr, __shared_ptr_access, allocator
+#include <string>  // for string, basic_string, to_string, operator+, char_traits
+#include <vector>  // for vector
+#include <iostream>
+#include <sstream>
+#include "banner.h"
+#include "ftxui/component/captured_mouse.hpp"  // for ftxui
+#include "ftxui/component/component.hpp"  /
+#include "ftxui/component/component_base.hpp"      // for ComponentBase
+#include "ftxui/component/screen_interactive.hpp"  // for ScreenInteractive
+#include "ftxui/dom/elements.hpp"  /
+#include "ftxui/dom/flexbox_config.hpp"
+#include "ftxui/screen/color.hpp"        // for Color, Color::Black
 
-project(prologix_emulator LANGUAGES CXX VERSION 1.0.0)
+using namespace ftxui;
 
-# Boost
-set(BOOST_INCLUDE_LIBRARIES thread filesystem system program_options asio date_time)
-set(BOOST_ENABLE_CMAKE ON)
+Component Wrap(std::string name, Component component) {
+    return Renderer(component, [name, component] {
+        return hbox({
+            text(name) | size(WIDTH, EQUAL, 15),
+            separator() | color(Color::Default),
+            component->Render() | xflex,
+        });
+    });
+}
 
-include(FetchContent)
 
-FetchContent_Declare(
-  Boost
-  GIT_REPOSITORY https://github.com/boostorg/boost.git
-  GIT_PROGRESS TRUE
-  GIT_TAG boost-1.85.0 # Update to the required Boost version
-)
-FetchContent_MakeAvailable(Boost)
+// Function to split the file content into lines and store in a vector
+std::vector<std::string> splitLines(const std::string &str) {
+    std::vector<std::string> lines;
+    std::istringstream stream(str);
+    std::string line;
 
-# FTXUI
-FetchContent_Declare(
-  ftxui
-  GIT_REPOSITORY https://github.com/ArthurSonzogni/ftxui
-  GIT_TAG main # Important: Specify a version or a commit hash here.
-)
-FetchContent_MakeAvailable(ftxui)
+    while (std::getline(stream, line)) {
+        lines.push_back(line);
+    }
 
-# Include Boost and FTXUI headers
-include_directories(${Boost_INCLUDE_DIRS})
-include_directories(${ftxui_SOURCE_DIR}/include)
+    return lines;
+}
 
-# Add source files to the project
-set(SOURCES
-  Commander.cpp
-  Functions.cpp
-  Parser.cpp
-  Responder.cpp
-  TCPServer.cpp
-  TCPSession.cpp
-  UDPServer.cpp
-  main.cpp
-)
+auto button_style = ButtonOption::Animated();
+// Definition of the main component. The details are not important.
+Component MainComponent(std::function<void()> show_modal,
+                        std::function<void()> exit,
+                        std::vector<std::string> lines) {
+    auto mainScreen = Renderer([&] {
+        Elements children = {
+            paragraph(lines[1]),
+        };
+        for (size_t i = std::max(0, (int) lines.size() - 60); i < lines.size(); ++i) {
+            children.push_back(text(lines[i]));
+        }
+        return flexbox(children) | center | color(Color::Yellow) | borderDouble | flex;
+    });
+    return mainScreen;
+}
 
-set(HEADERS
-  Commander.hpp
-  Functions.hpp
-  Parser.hpp
-  Responder.hpp
-  TCPServer.hpp
-  TCPSession.hpp
-  UDPServer.hpp
-)
+// Definition of the modal component. The details are not important.
+Component ModalComponent(std::function<void()> do_nothing,
+                         std::function<void()> hide_modal) {
+    auto component = Container::Vertical({
+        Button("Do nothing", do_nothing, button_style),
+        Button("Quit modal", hide_modal, button_style),
+    });
+    // Polish how the two buttons are rendered:
+    component |= Renderer([&](Element inner) {
+      return vbox({
+                 text("Modal component "),
+                 separator(),
+                 inner,
+             })                               //
+             | size(WIDTH, GREATER_THAN, 30)  //
+             | border;                        //
+    });
+    return component;
+}
 
-# Add executable
-add_executable(prologix_emulator ${SOURCES} ${HEADERS})
+int main() {
+    // State of the application:
+    bool modal_shown = false;
+    auto screen = ScreenInteractive::Fullscreen();
+    // Some actions modifying the state:
+    auto show_modal = [&] { modal_shown = true; };
+    auto hide_modal = [&] { modal_shown = false; };
+    auto exit = screen.ExitLoopClosure();
+    auto do_nothing = [&] {
+    };
 
-# Link FTXUI libraries
-target_link_libraries(prologix_emulator
-  PRIVATE ftxui::screen
-  PRIVATE ftxui::dom
-  PRIVATE ftxui::component
-)
 
-# Link Boost libraries
-target_link_libraries(prologix_emulator
-  PRIVATE Boost::asio
-  PRIVATE Boost::filesystem
-  PRIVATE Boost::thread
-  PRIVATE Boost::program_options
-  PRIVATE Boost::system
-)
+    std::vector<std::string> lines = splitLines(fileContent);
 
-# Set C++ standard
-if (CMAKE_VERSION VERSION_GREATER 3.12)
-  set_property(TARGET prologix_emulator PROPERTY CXX_STANDARD 20)
-endif()
+    auto main_component = MainComponent(show_modal, exit,lines);
+    auto modal_component = ModalComponent(do_nothing, hide_modal);
 
-# Ensure Boost is properly found
-if (NOT TARGET Boost::asio OR NOT TARGET Boost::filesystem OR NOT TARGET Boost::thread OR NOT TARGET Boost::program_options)
-  message(FATAL_ERROR "Required Boost libraries not found!")
-endif()
-
-# Ensure FTXUI is properly found
-if (NOT TARGET ftxui::screen OR NOT TARGET ftxui::dom)
-  message(FATAL_ERROR "FTXUI libraries not found!")
-endif()
+    main_component |= Modal(modal_component, &modal_shown);
+    screen.Loop(main_component);
+}

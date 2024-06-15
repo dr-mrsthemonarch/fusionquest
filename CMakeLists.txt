@@ -38,6 +38,7 @@ include_directories(${ftxui_SOURCE_DIR}/include)
 set(SOURCES
         src/main.cpp
         src/banner.txt
+        src/banner.h
 )
 
 set(HEADERS
