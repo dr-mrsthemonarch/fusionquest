@@ -37,17 +37,15 @@ include_directories(${ftxui_SOURCE_DIR}/include)
 # Add source files to the project
 set(SOURCES
         src/main.cpp
-        src/banner.txt
-        src/banner.h
 )
 
 set(HEADERS
-
+        src/banner.h
 )
 
 # Add executable
-add_executable(fusionquest ${SOURCES})
-#add_executable(fusionquest ${SOURCES} ${HEADERS})
+#add_executable(fusionquest ${SOURCES})
+add_executable(fusionquest ${SOURCES} ${HEADERS})
 
 # Link FTXUI libraries
 target_link_libraries(fusionquest
