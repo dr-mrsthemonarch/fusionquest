@@ -37,6 +37,8 @@ set(SOURCES
 
 set(HEADERS
         src/banner.h
+        src/second_page.h
+        src/functions.h
 )
 
 # Add executable
