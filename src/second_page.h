@@ -3,17 +3,27 @@
 
 #include <ftxui/dom/elements.hpp>
 #include <ftxui/component/component.hpp>
+#include <functional>
+#include <utility>
+
+#include "functions.h"
 
 using namespace ftxui;
 
-// Function to create the second page (poem page)
-Component SecondPage(std::function<void()> on_back, std::function<void()> open_modal) {
-    auto back_button = Button("Back", [on_back, open_modal] {
-        on_back(); // Switch back to the main page
-        open_modal(); // Reopen the modal (set depth = 1)
+// Function to create the second page (poem) components and renderer
+Component CreateSecondPage(std::function<void()> on_back) {
+    // Components for the second page (poem)
+    auto back_button = Button("Back",
+        std::move(on_back)
+    );
+
+    // Container for the second page
+    auto second_page = Container::Horizontal({
+        back_button,
     });
 
-    return Renderer(back_button, [back_button] {
+    // Renderer for the second page (poem)
+    return Renderer(second_page, [back_button] {
         return vbox({
             text("A Poem:"),
             text("Roses are red,"),

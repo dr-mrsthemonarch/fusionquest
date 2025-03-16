@@ -32,24 +32,27 @@ Component Wrap(std::string name, Component component) {
 auto button_style = ButtonOption::Animated();
 
 int main() {
-    // Initialize the log file
     InitializeLogFile();
-
-    Log("Application started.");
-
+    Log("Game Started");
     // State of the application:
     auto screen = ScreenInteractive::Fullscreen();
-    Log("Screen initialized.");
-
     // There are two layers. One at depth = 0 and the modal window at depth = 1;
     int depth = 0;
+
     // State to manage which page is active
     int active_page = 0; // 0 = first page, 1 = second page
-    Log("Initial state: active_page = " + std::to_string(active_page) + ", depth = " + std::to_string(depth));
+    auto startaction = [&] {
+        active_page = 1; // Switch to the second page
+        depth = 0; // Close the modal
+        Log("Start Button Pressed");
+    };
+    auto quitaction = [&] {
+        Log("Quit Button Pressed");
+        screen.ExitLoopClosure()();
+    };
 
     // Load the banner from the banner.h file
     std::vector<std::string> lines = splitLines(fileContent);
-    Log("Banner loaded.");
 
     // Main screen renderer
     auto mainScreen = Renderer([&] {
@@ -62,22 +65,16 @@ int main() {
 
     // At depth=1, the modal window with four buttons
     auto depth_1_container = Container::Vertical({
-        Button("Start a New Game", [&] {
-            Log("Starting a new game!");
-            depth = 0; // Close the modal after starting a new game
-            active_page = 1; // Move to the second page
-            Log("State updated: active_page = " + std::to_string(active_page) + ", depth = " + std::to_string(depth));
-        }, button_style),
+        Button("Start a New Game", startaction, button_style),
         Button("Continue a Game", [&] {
-            Log("Continuing a game!");
+            std::cout << "Continuing a game!" << std::endl;
             depth = 0; // Close the modal after continuing a game
         }, button_style),
         Button("Delete Game", [&] {
-            Log("Deleting a game!");
+            std::cout << "Deleting a game!" << std::endl;
             depth = 0; // Close the modal after deleting a game
         }, button_style),
         Button("Quit", [&] {
-            Log("Quitting application...");
             screen.Exit(); // Exit the application
         }, button_style),
     });
@@ -90,61 +87,40 @@ int main() {
         }) | border | center;
     });
 
-    // Create the second page using the SecondPage function from second_page.h
-    auto second_page = SecondPage(
-        [&] {
-            active_page = 0; // Switch back to the main page
-            Log("Back button clicked! active_page = " + std::to_string(active_page));
-        },
-        [&] {
-            depth = 1; // Reopen the modal
-            Log("Modal reopened! depth = " + std::to_string(depth));
-        }
-    );
+    // Create the second page using the function from second_page.h
+    auto second_page_renderer = CreateSecondPage([&] { active_page = 0; });
 
     // Main container to hold the main screen and modal
+    auto first_container = Container::Horizontal({
+        mainScreen | size(HEIGHT, EQUAL, 60) | size(WIDTH, EQUAL, 150),
+        depth_1_renderer,
+    }, &depth) | size(HEIGHT, EQUAL, 60) | size(WIDTH, EQUAL, 150);
+
+    // Main container to switch between pages
     auto main_container = Container::Tab({
-        mainScreen,
-        second_page,
-    }, &active_page);
+        first_container,
+        second_page_renderer,
+    }, &active_page); // Pass the active_page index
 
     // Main renderer for the application
     auto main_renderer = Renderer(main_container, [&] {
-        Element document;
-
-        // Render the active page
         if (active_page == 0) {
-            document = mainScreen->Render();
+            // Render the first page (main screen and modal)
+            Element document = mainScreen->Render();
+            if (depth == 1) {
+                document = dbox({
+                    document,
+                    depth_1_renderer->Render() | clear_under | center,
+                });
+            }
+            return document;
         } else {
-            document = second_page->Render();
+            // Render the second page
+            return second_page_renderer->Render();
         }
-
-        // Render the modal on top if depth == 1
-        if (depth == 1) {
-            document = dbox({
-                document,
-                depth_1_renderer->Render() | clear_under | center,
-            });
-        }
-
-        return document;
     });
 
-    // Add a global event handler to capture any key press
-    auto global_event_handler = CatchEvent(main_renderer, [&](Event event) {
-        if (event.is_character() || event.is_mouse()) {
-            depth = 1; // Set depth to 1 (open the modal) on any key press
-            Log("Key pressed! depth = " + std::to_string(depth));
-            return true; // Event handled
-        }
-        return false; // Event not handled
-    });
-
-    Log("Starting main loop...");
-    screen.Loop(global_event_handler); // Use the global event handler
-    Log("Main loop exited.");
-
-    Log("Application terminated.");
-
+    // Run the application
+    screen.Loop(main_renderer);
     return 0;
 }
