@@ -13,9 +13,10 @@ using namespace ftxui;
 // Function to create the second page (poem) components and renderer
 Component CreateSecondPage(std::function<void()> on_back) {
     // Components for the second page (poem)
-    auto back_button = Button("Back",
-        std::move(on_back)
-    );
+    auto back_button = Button("Back",[&]{
+        std::move(on_back)();
+        Log("Back Button Pressed");
+});
 
     // Container for the second page
     auto second_page = Container::Horizontal({
