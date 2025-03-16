@@ -71,10 +71,10 @@ int main() {
     std::vector<std::string> lines = splitLines(fileContent);
     auto mainScreen = Renderer([&] {
         Elements children = {};
-        for (size_t i = std::max(0, (int) lines.size() - 60); i < lines.size(); ++i) {
+        for (size_t i = std::max(0, (int) lines.size() - 55); i < lines.size(); ++i) {
             children.push_back(text(lines[i]));
         }
-        return flexbox(children) | size(HEIGHT,GREATER_THAN,60)| center | color(Color::Yellow) | borderDouble | flex;
+        return flexbox(children) | size(HEIGHT,GREATER_THAN,55)| center | color(Color::Yellow) | borderDouble | flex;
     });
 
     // At depth=1, The "modal" window.
