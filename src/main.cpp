@@ -1,124 +1,248 @@
-#include <cstddef>
-#include <memory>
-#include <string>
-#include <vector>
+#include <ftxui/dom/elements.hpp>
+#include <ftxui/screen/screen.hpp>
+#include <ftxui/component/component.hpp>
+#include <ftxui/component/screen_interactive.hpp>
+#include <ftxui/component/loop.hpp>
 #include <iostream>
+#include <thread>
+#include <chrono>
+#include <iomanip>
 #include <sstream>
-#include "banner.h"
-#include "ftxui/component/component.hpp"
-#include "ftxui/component/component_base.hpp"
-#include "ftxui/component/screen_interactive.hpp"
-#include "ftxui/dom/elements.hpp"
-#include "ftxui/screen/color.hpp"
+#include <fstream>
 
 using namespace ftxui;
 
-Component Wrap(std::string name, Component component) {
-    return Renderer(component, [name, component] {
-        return hbox({
-            text(name) | size(WIDTH, EQUAL, 15),
-            separator() | color(Color::Default),
-            component->Render() | xflex,
-        });
-    });
+// File to store the timer value
+const std::string timer_file = "timer_value.txt";
+
+// Function to load the timer value from a file
+int load_timer() {
+    std::ifstream file(timer_file);
+    int seconds = 0;
+    if (file.is_open()) {
+        file >> seconds;
+        file.close();
+    }
+    return seconds;
 }
 
+// Function to save the timer value to a file
+void save_timer(int seconds) {
+    std::ofstream file(timer_file);
+    if (file.is_open()) {
+        file << seconds;
+        file.close();
+    }
+}
 
-//Function to split the file content into lines and store in a vector
-std::vector<std::string> splitLines(const std::string &str) {
-    std::vector<std::string> lines;
-    std::istringstream stream(str);
-    std::string line;
+// Function to calculate the remaining time in years, months, days, hours, minutes, and seconds
+std::string format_time(int elapsed_seconds) {
+    // Total duration of 20 years in seconds
+    const int twenty_years_in_seconds = 20 * 365 * 24 * 3600; // Approximation (ignoring leap years)
 
-    while (std::getline(stream, line)) {
-        lines.push_back(line);
+    // Calculate remaining time
+    int remaining_seconds = twenty_years_in_seconds - elapsed_seconds;
+
+    // Ensure remaining time doesn't go negative
+    if (remaining_seconds < 0) {
+        remaining_seconds = 0;
     }
 
-    return lines;
-}
-auto button_style = ButtonOption::Animated();
-// Definition of the main component. The details are not important.
-Component MainComponent(std::function<void()> show_modal,
-                        std::function<void()> exit) {
-    auto component = Container::Vertical({
-        Button("Show modal", show_modal, button_style),
-        Button("Quit", exit, button_style),
-    });
-    // Polish how the two buttons are rendered:
-    component |= Renderer([&](Element inner) {
-        return vbox({
-                   text("Main component"),
-                   separator(),
-                   inner,
-               }) //
-               | size(WIDTH, GREATER_THAN, 15) //
-               | size(HEIGHT, GREATER_THAN, 15) //
-               | border //
-               | center; //
-    });
-    return component;
+    // Convert remaining seconds to years, months, days, hours, minutes, and seconds
+    int years = remaining_seconds / (365 * 24 * 3600);
+    remaining_seconds %= 365 * 24 * 3600;
+    int months = remaining_seconds / (30 * 24 * 3600); // Approximation
+    remaining_seconds %= 30 * 24 * 3600;
+    int days = remaining_seconds / (24 * 3600);
+    remaining_seconds %= 24 * 3600;
+    int hours = remaining_seconds / 3600;
+    remaining_seconds %= 3600;
+    int minutes = remaining_seconds / 60;
+    int secs = remaining_seconds % 60;
+
+    // Format the current date
+    std::time_t now = std::time(nullptr);
+    char current_date[100];
+    std::strftime(current_date, sizeof(current_date), "%A, %d %B %Y", std::localtime(&now));
+
+    // Format the remaining time
+    std::ostringstream oss;
+    oss << current_date << " - Time Left: "
+        << years << " years, "
+        << months << " months, "
+        << days << " days, "
+        << hours << " hours, "
+        << minutes << " minutes, "
+        << secs << " seconds";
+    return oss.str();
 }
 
 int main() {
-    // State of the application:
-    auto screen = ScreenInteractive::TerminalOutput();
-    // There are two layers. One at depth = 0 and the modal window at depth = 1;
-    int depth = 0;
-    std::string rating = "3/5 stars";
+    // Create a screen interactive for rendering
+    auto screen = ScreenInteractive::Fullscreen();
 
+    // Load the timer value from the file
+    int seconds = load_timer();
+    bool running = true;
 
-    const std::string filename = "banner.txt"; // Replace with your file name
-    std::vector<std::string> lines = splitLines(fileContent);
-    auto mainScreen = Renderer([&] {
-        Elements children = {};
-        for (size_t i = std::max(0, (int) lines.size() - 55); i < lines.size(); ++i) {
-            children.push_back(text(lines[i]));
+    // Define components for each window
+    auto stats_window = Renderer([] {
+        return window(text("Character Stats"),
+            vbox({
+                text("Level: 10"),
+                text("Runway: 100/100"),
+                text("HE: 50/50"),
+                text("Technical Debt: 15"),
+                text("Patience: 12"),
+                text("Intelligence: 18"),
+                text("Series Survival: 12"),
+                text("Charisma: 999")
+            })
+        );
+    });
+
+    auto inventory_window = Renderer([] {
+        return window(text("Inventory"),
+            vbox({
+                text("Sword of Fire"),
+                text("Shield of Light"),
+                text("Potion x5"),
+                text("Funding: 1000")
+            })
+        );
+    });
+
+    auto quest_window = Renderer([] {
+        return window(text("Quests"),
+            vbox({
+                text("1. Defeat the Goblin King"),
+                text("2. Retrieve the Lost Artifact"),
+                text("3. Rescue the Princess")
+            })
+        );
+    });
+
+    auto log_window = Renderer([] {
+        return window(text("Game Log"),
+            vbox({
+                text("You defeated a Goblin!"),
+                text("You found a Potion."),
+                text("You leveled up!"),
+                text("You entered the Dark Forest.")
+            })
+        );
+    });
+
+    auto map_window = Renderer([] {
+        return window(text("World Map"),
+            vbox({
+                text("Forest"),
+                text("Mountains"),
+                text("Village"),
+                text("Dungeon")
+            })
+        );
+    });
+
+    auto progress_window = Renderer([] {
+        return window(text("Progress"),
+            vbox({
+                text("Quest Progress: 50%"),
+                text("Exploration: 30%"),
+                text("Achievements: 5/10")
+            })
+        );
+    });
+
+    // Progress bar state
+    float progress = 0.5f; // 50% progress
+
+    // Progress bar component in its own window
+    auto progress_bar_window = Renderer([&] {
+        return window(text("Progress Bar"),
+            vbox({
+                gauge(progress)
+            })
+        );
+    });
+
+    // Combine all windows into a single layout
+    auto main_layout = Container::Vertical({
+        Container::Horizontal({
+            stats_window,
+            inventory_window,
+            quest_window,
+            log_window,
+            map_window,
+            progress_window
+        }),
+        progress_bar_window
+    });
+
+    // // Function to format the remaining time as HH:MM:SS, counting down from 20 years
+    // auto format_time = [](int seconds) {
+    //     const int twenty_years_in_seconds = 20 * 365 * 24 * 3600; // Approximation (ignoring leap years)
+    //     int remaining_seconds = twenty_years_in_seconds - seconds;
+    //     if (remaining_seconds < 0) {
+    //         remaining_seconds = 0;
+    //     }
+    //     int hours = remaining_seconds / 3600;
+    //     int minutes = (remaining_seconds % 3600) / 60;
+    //     int secs = remaining_seconds % 60;
+    //     std::ostringstream oss;
+    //     oss << std::setw(2) << std::setfill('0') << hours << ":"
+    //         << std::setw(2) << std::setfill('0') << minutes << ":"
+    //         << std::setw(2) << std::setfill('0') << secs;
+    //     return oss.str();
+    // };
+
+    // Wrap all windows inside a larger window titled "Fusion Quest" with a timer
+    auto fusion_quest_window = Renderer(main_layout, [&] {
+        std::string title = "Fusion Quest - Time Remaining: " + format_time(seconds);
+        return window(text(title),
+            vbox({
+                hbox({
+                    stats_window->Render(),
+                    inventory_window->Render(),
+                    quest_window->Render(),
+                    log_window->Render(),
+                    map_window->Render(),
+                    progress_window->Render()
+                }),
+                progress_bar_window->Render()
+            })
+        );
+    });
+
+    // Render the layout
+    auto renderer = Renderer(fusion_quest_window, [&] {
+        return fusion_quest_window->Render();
+    });
+
+    // Timer thread to update the seconds counter
+    std::thread timer_thread([&] {
+        while (running) {
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+            seconds++;
+            screen.PostEvent(Event::Custom); // Trigger a re-render
         }
-        return flexbox(children) | size(HEIGHT,GREATER_THAN,55)| center | color(Color::Yellow) | borderDouble | flex;
     });
 
-    // At depth=1, The "modal" window.
-    std::vector<std::string> rating_labels = {
-        "1/5 stars", "2/5 stars", "3/5 stars", "4/5 stars", "5/5 stars",
-    };
-    auto on_rating = [&](std::string new_rating) {
-        rating = new_rating;
-        depth = 1;
-    };
-    auto depth_1_container = Container::Horizontal({
-        Button(&rating_labels[0], [&] { on_rating(rating_labels[0]); }),
-        Button(&rating_labels[1], [&] { on_rating(rating_labels[1]); }),
-        Button(&rating_labels[2], [&] { on_rating(rating_labels[2]); }),
-        Button(&rating_labels[3], [&] { on_rating(rating_labels[3]); }),
-        Button(&rating_labels[4], [&] { on_rating(rating_labels[4]); }),
-    });
+    // Run the loop
+    Loop loop(&screen, renderer);
+    while (!loop.HasQuitted()) {
+        loop.RunOnce();
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
 
-    auto depth_1_renderer = Renderer(depth_1_container, [&] {
-      return vbox({
-                 text("Do you like Fusion?"),
-                 separator(),
-                 hbox(depth_1_container->Render()),
-             }) | border;
-    });
-    auto main_container = Container::Horizontal(
-          {
-              mainScreen| size(HEIGHT, EQUAL,60) | size(WIDTH,EQUAL,150),
-              depth_1_renderer,
-          },
-          &depth) | size(HEIGHT, EQUAL,60) | size(WIDTH,EQUAL,150);
+    // Stop the timer thread
+    running = false;
+    if (timer_thread.joinable()) {
+        timer_thread.join();
+    }
 
-    auto main_renderer = Renderer(main_container, [&] {
-      Element document = mainScreen->Render();
+    // Save the timer value to the file before exiting
+    save_timer(seconds);
 
-      if (depth == 0) {
-        document = dbox({
-            document,
-            depth_1_renderer->Render() | clear_under | center,
-        });
-      }
-      return document;
-    });
-
-    screen.Loop(main_renderer);
     return 0;
 }

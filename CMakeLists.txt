@@ -1,10 +1,6 @@
 cmake_minimum_required(VERSION 3.28)
 project(fusionquest)
 
-
-
-
-
 # Set the output directories for binaries and libraries
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ../bin)
 
