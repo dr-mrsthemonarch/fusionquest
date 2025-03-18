@@ -39,6 +39,8 @@ set(HEADERS
         src/banner.h
         src/second_page.h
         src/functions.h
+        src/page_template.h
+        src/third_page.h
 )
 
 # Add executable

@@ -9,8 +9,11 @@
 #include <iomanip>
 #include <filesystem> // For file existence check
 #include "banner.h"
-#include "second_page.h" // Include the second page header
+#include "second_page.h"    // Include the second page
 #include "functions.h"
+#include "third_page.h"
+#include "ftxui/dom/elements.hpp"
+#include "ftxui/screen/color.hpp"
 #include "ftxui/component/component.hpp"
 #include "ftxui/component/component_base.hpp"
 #include "ftxui/component/screen_interactive.hpp"
@@ -34,17 +37,30 @@ auto button_style = ButtonOption::Animated();
 int main() {
     InitializeLogFile();
     Log("Game Started");
+
     // State of the application:
     auto screen = ScreenInteractive::Fullscreen();
+
     // There are two layers. One at depth = 0 and the modal window at depth = 1;
     int depth = 0;
 
     // State to manage which page is active
-    int active_page = 0; // 0 = first page, 1 = second page
+    int active_page = 0; // 0 = first page, 1 = second page, 2 = character page
+
+    // Callback for the "Start" button
     auto startaction = [&] {
-        active_page = 1; // Switch to the second page
-        depth = 0; // Close the modal
+        active_page = 1; // Switch to the character page
+        depth = 0;       // Close the modal
         Log("Start Button Pressed");
+    };
+    auto characteraction = [&] {
+        active_page = 2; // Switch to the character page
+        depth = 0;       // Close the modal after continuing a game
+        Log("Continue Button Pressed");
+    };
+    auto deleteaction = [&] {
+        std::cout << "Deleting a game!" << std::endl;
+        depth = 0; // Close the modal after deleting a game
     };
     auto quitaction = [&] {
         Log("Quit Button Pressed");
@@ -57,7 +73,7 @@ int main() {
     // Main screen renderer
     auto mainScreen = Renderer([&] {
         Elements children = {};
-        for (size_t i = std::max(0, (int) lines.size() - 55); i < lines.size(); ++i) {
+        for (size_t i = std::max(0, (int)lines.size() - 55); i < lines.size(); ++i) {
             children.push_back(text(lines[i]));
         }
         return flexbox(children) | size(HEIGHT, GREATER_THAN, 55) | center | color(Color::Yellow) | borderDouble | flex;
@@ -66,17 +82,9 @@ int main() {
     // At depth=1, the modal window with four buttons
     auto depth_1_container = Container::Vertical({
         Button("Start a New Game", startaction, button_style),
-        Button("Continue a Game", [&] {
-            std::cout << "Continuing a game!" << std::endl;
-            depth = 0; // Close the modal after continuing a game
-        }, button_style),
-        Button("Delete Game", [&] {
-            std::cout << "Deleting a game!" << std::endl;
-            depth = 0; // Close the modal after deleting a game
-        }, button_style),
-        Button("Quit", [&] {
-            screen.Exit(); // Exit the application
-        }, button_style),
+        Button("Character Select", characteraction, button_style),
+        Button("Delete Game", deleteaction, button_style),
+        Button("Quit", quitaction, button_style),
     });
 
     auto depth_1_renderer = Renderer(depth_1_container, [&] {
@@ -89,6 +97,7 @@ int main() {
 
     // Create the second page using the function from second_page.h
     auto second_page_renderer = CreateSecondPage([&] { active_page = 0; });
+    auto third_page_renderer = CreateFusionQuestPage();
 
     // Main container to hold the main screen and modal
     auto first_container = Container::Horizontal({
@@ -98,8 +107,9 @@ int main() {
 
     // Main container to switch between pages
     auto main_container = Container::Tab({
-        first_container,
-        second_page_renderer,
+        first_container,           // Page 0: Main menu
+        second_page_renderer,      // Page 1: Second page
+        third_page_renderer,       // Page 2: Fusion Quest page
     }, &active_page); // Pass the active_page index
 
     // Main renderer for the application
@@ -114,10 +124,14 @@ int main() {
                 });
             }
             return document;
-        } else {
+        } else if (active_page == 1) {
             // Render the second page
             return second_page_renderer->Render();
+        } else if (active_page == 2) {
+            // Render the third page (Fusion Quest)
+            return third_page_renderer->Render();
         }
+        return text("Unknown page"); // Fallback
     });
 
     // Run the application
