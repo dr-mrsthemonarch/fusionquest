@@ -17,7 +17,7 @@ int main() {
   auto ui = CreateUI(&current_page, &character);
 
   // Run screen
-  auto screen = ftxui::ScreenInteractive::TerminalOutput();
+  auto screen = ftxui::ScreenInteractive::Fullscreen();
   screen.Loop(ui);
 
   return 0;
