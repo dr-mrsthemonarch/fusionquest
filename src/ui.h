@@ -3,6 +3,8 @@
 
 #include "character.h"
 #include <ftxui/component/component.hpp>
+#include <ftxui/component/screen_interactive.hpp>
+
 
 enum Pages {
     MAIN_MENU,
