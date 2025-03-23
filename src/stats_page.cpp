@@ -10,6 +10,7 @@ Component CreateStatsPage(int *selected_page, Character *character) {
     // Create progress bars for experience and progress
     auto experience_bar = std::make_shared<ProgressBar>(0.01f, 0.01f, true); // Looping experience bar
     auto progress_bar = std::make_shared<ProgressBar>(0.02f, 0.005f, false); // Non-looping progress bar
+    // auto assbar = std::make_shared<ProgressBar>(0.02,0.005,)
 
     // Start the progress bars
     experience_bar->Start();
@@ -134,6 +135,7 @@ Component CreateStatsPage(int *selected_page, Character *character) {
         Element progress_gauge = window(
             text("Progress") | bold | center,
             vbox({
+                text("Axing the Monkey") | center,
                 gauge(progress_bar->GetProgress()) | color(Color::Magenta),
                 text(std::to_string(int(progress_bar->GetProgress() * 100)) + "%") | center,
             }));

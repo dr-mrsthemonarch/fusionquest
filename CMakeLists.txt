@@ -47,6 +47,7 @@ set(HEADERS
         src/character_creation.cpp
         src/stats_page.cpp
         src/progress_bar.h
+        src/logger.h
 )
 
 # Add executable
