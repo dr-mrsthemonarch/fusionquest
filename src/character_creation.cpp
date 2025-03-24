@@ -7,7 +7,7 @@
 using namespace ftxui;
 
 // Static lists for character creation
-const std::vector<std::string> RACES = {"Human", "Elf", "Dwarf", "Orc"};
+const std::vector<std::string> RACES = {"Human", "Elf", "Dwarf", "Orc", "Human", "Elf", "Dwarf", "Human", "Elf", "Dwarf", "Human", "Elf", "Dwarf"};
 const std::vector<std::string> CLASSES = {"Warrior", "Mage", "Rogue", "Priest"};
 
 // Implementation of the stat roller function
@@ -17,8 +17,10 @@ int RollStat() {
 
 Component CreateCharacterCreationPage(int* selected_page, Character* character) {
     auto name_input = Input(&character->name, "Enter character name");
-    auto race_selector = Radiobox(&RACES, &character->race_index);
-    auto class_selector = Radiobox(&CLASSES, &character->class_index);
+
+    // Use `Menu` instead of `Radiobox` for scrolling support
+    auto race_selector = Menu(&RACES, &character->race_index);
+    auto class_selector = Menu(&CLASSES, &character->class_index);
 
     auto roll_button = Button("Roll!", [character] {
         character->strength = RollStat();
@@ -27,27 +29,35 @@ Component CreateCharacterCreationPage(int* selected_page, Character* character) 
         character->constitution = RollStat();
     });
 
-    auto lets_do_it_button = Button("Let's Do It", [] {
-        // Placeholder for character confirmation logic
+    auto lets_do_it_button = Button("Let's Do It", [selected_page] {
+        *selected_page = STATS_PAGE;
     });
 
     auto back_button = Button("Back to Main", [selected_page] { *selected_page = MAIN_MENU; });
 
+    // Wrap race selection in a scrollable container
+    auto race_container = Container::Vertical({race_selector});
+
+    // Ensure race selection is scrollable
+    auto race_renderer = Renderer(race_container, [race_selector] {
+        return vbox({
+            text("Race") | bold | center,
+            separator(),
+            race_selector->Render() | vscroll_indicator | frame  // Enable scrolling
+        }) | border;
+    });
+
     auto container = Container::Vertical({
         name_input,
-        race_selector,
+        race_container,  // Make sure race selection is inside the main container
         class_selector,
         roll_button,
         lets_do_it_button,
         back_button,
     });
 
-    auto renderer = Renderer(container, [container, name_input, race_selector, class_selector, roll_button, lets_do_it_button, back_button, character] {
-        Element race_column = vbox({
-            text("Race") | bold | center,
-            separator(),
-            race_selector->Render(),
-        }) | border;
+    auto renderer = Renderer(container, [container, name_input, race_renderer, class_selector, roll_button, lets_do_it_button, back_button, character] {
+        Element race_column = race_renderer->Render();  // Use scrollable race selector
 
         Element class_column = vbox({
             text("Class") | bold | center,
@@ -72,7 +82,7 @@ Component CreateCharacterCreationPage(int* selected_page, Character* character) 
         return window(text("Fusion Quest") | bold | center, vbox({
             hbox({ text("Name: ") | bold, name_input->Render() }),
             separator(),
-            hbox({ race_column | flex, class_column | flex, stats_column | flex }),
+            hbox({ race_column | flex, class_column | flex, stats_column | flex }),  // Use updated race column
             separator(),
             back_button->Render(),
         }));

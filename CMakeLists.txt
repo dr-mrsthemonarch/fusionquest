@@ -22,7 +22,7 @@ include(FetchContent)
 FetchContent_Declare(
         ftxui
         GIT_REPOSITORY https://github.com/ArthurSonzogni/ftxui
-        GIT_TAG v5.1.0  # Important: Specify a version or a commit hash here.
+        GIT_TAG v6.0.0  # Important: Specify a version or a commit hash here.
 )
 FetchContent_MakeAvailable(ftxui)
 

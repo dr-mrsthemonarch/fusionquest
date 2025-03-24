@@ -1,3 +1,4 @@
+// progress_bar.h
 #ifndef PROGRESS_BAR_H
 #define PROGRESS_BAR_H
 
@@ -6,7 +7,7 @@
 #include <thread>
 #include <chrono>
 #include <atomic>
-#include <mutex>
+#include <memory>
 
 using namespace ftxui;
 
@@ -30,7 +31,6 @@ public:
 
     ProgressBar& operator=(ProgressBar&& other) noexcept {
         if (this != &other) {
-            Stop(); // Stop the current thread
             update_frequency_ = other.update_frequency_;
             increment_ = other.increment_;
             loop_ = other.loop_;
@@ -43,7 +43,6 @@ public:
 
     // Start the progress bar
     void Start() {
-        std::lock_guard<std::mutex> lock(mutex_); // Protect critical section
         if (running_) return; // Avoid starting multiple threads
         running_ = true;
         progress_.store(0.0f); // Reset progress to 0
@@ -52,32 +51,26 @@ public:
 
     // Stop the progress bar
     void Stop() {
-        std::lock_guard<std::mutex> lock(mutex_); // Protect critical section
-        if (running_) {
-            running_ = false;
-            if (update_thread_.joinable()) {
-                update_thread_.join();
-            }
+        running_ = false;
+        if (update_thread_.joinable()) {
+            update_thread_.join();
         }
     }
 
     // Restart the progress bar with new parameters
     void Restart(float update_frequency, float increment, bool loop) {
-        Stop(); // Stop the current progress bar (mutex is released after Stop)
-        {
-            std::lock_guard<std::mutex> lock(mutex_); // Protect critical section
-            update_frequency_ = update_frequency;
-            increment_ = increment;
-            loop_ = loop;
-        }
-        Start(); // Start again (mutex is acquired inside Start)
+        Stop(); // Stop the current progress bar
+        update_frequency_ = update_frequency;
+        increment_ = increment;
+        loop_ = loop;
+        Start(); // Start with new parameters
     }
 
     // Restart the progress bar from zero
     void RestartFromZero() {
-        Stop(); // Stop the current progress bar (mutex is released after Stop)
+        Stop(); // Stop the current progress bar
         progress_.store(0.0f); // Reset progress to 0
-        Start(); // Start again (mutex is acquired inside Start)
+        Start(); // Start again
     }
 
     // Get the current progress value
@@ -125,7 +118,6 @@ private:
     std::atomic<float> progress_; // Current progress value (atomic for thread safety)
     std::atomic<bool> running_;  // Flag to control the update loop
     std::thread update_thread_;  // Thread for updating progress
-    std::mutex mutex_;           // Mutex for thread safety
 };
 
 #endif // PROGRESS_BAR_H
