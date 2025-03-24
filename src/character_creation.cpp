@@ -7,8 +7,58 @@
 using namespace ftxui;
 
 // Static lists for character creation
-const std::vector<std::string> RACES = {"Human", "Elf", "Dwarf", "Orc", "Human", "Elf", "Dwarf", "Human", "Elf", "Dwarf", "Human", "Elf", "Dwarf"};
-const std::vector<std::string> CLASSES = {"Warrior", "Mage", "Rogue", "Priest"};
+const std::vector<std::string> RACES = {
+    "The Hoodie Hustler",
+    "The Pivot Prodigy",
+    "The Foosball Philosopher",
+    "The Snack Sommelier",
+    "The Stand-up Desk Warrior",
+    "The Blockchain Bro",
+    "The Remote Work Ninja",
+    "The Growth Hacking Guru",
+    "The Venture Capital Whisperer",
+    "The Burnout Badge of Honor Wearer",
+    "The Kombucha Connoisseur",
+    "The Design Deity",
+    "The Tech Bro Translator",
+    "The Networking Ninja",
+    "The OKR Overlord",
+    "The Wellness Warrior",
+    "The Intern Innovator",
+    "The Legacy Engineer",
+    "The Culture Czar",
+    "The Founder's Bestie"
+};
+
+const std::vector<std::string> CLASSES = {
+    // Scientist Roles (with Fusion Focus)
+    "Fusion Energy Quantum Mechanics Maverick",
+    "Plasma Containment and Cosmic Fusion Whisperer",
+    "Tokamak Reactor Optimization Guru",
+    "Nuclear Fusion Breakthrough Architect",
+    "Stellarator System Dynamics Wizard",
+
+    // Engineering Roles
+    "Extreme Thermal Management Ninja",
+    "Superconducting Magnet Design Maestro",
+    "Plasma-Material Interaction Alchemist",
+    "Advanced Neutronics and Shielding Engineer",
+    "Fusion Control Systems Virtuoso",
+
+    // C-Level Roles
+    "Chief Impossible Dreams Officer (CIDO)",
+    "Visionary Disruption Czar",
+    "Quantum Potential Maximization Executive",
+    "Exponential Innovation Overlord",
+    "Chief Radical Transformation Architect",
+
+    // Random Roles
+    "Professional Serendipity Orchestrator",
+    "Chaos Theory Implementation Specialist",
+    "Interdimensional Problem Solver",
+    "Narrative Engineering Provocateur",
+    "Unexpected Connections Choreographer"
+};
 
 // Implementation of the stat roller function
 int RollStat() {
@@ -19,8 +69,8 @@ Component CreateCharacterCreationPage(int* selected_page, Character* character) 
     auto name_input = Input(&character->name, "Enter character name");
 
     // Use `Menu` instead of `Radiobox` for scrolling support
-    auto race_selector = Menu(&RACES, &character->race_index);
-    auto class_selector = Menu(&CLASSES, &character->class_index);
+    auto race_selector = Radiobox(&RACES, &character->race_index);
+    auto class_selector = Radiobox(&CLASSES, &character->class_index);
 
     auto roll_button = Button("Roll!", [character] {
         character->strength = RollStat();

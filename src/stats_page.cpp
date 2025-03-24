@@ -3,6 +3,12 @@
 #include "progress_bar.h" // Include the ProgressBar class
 #include <ftxui/component/component.hpp>
 #include <ftxui/dom/elements.hpp>
+#include <iostream>
+#include <thread>
+#include <chrono>
+#include <iomanip>
+#include <sstream>
+#include <fstream>
 
 using namespace ftxui;
 const std::vector<std::string> equipment_list = {
@@ -28,7 +34,78 @@ const std::vector<std::string> equipment_list = {
     "Startup Equity Options Paperweight"
 };
 
+const std::string timer_file = "timer_value.txt";
+
+// Function to load the timer value from a file
+int load_timer() {
+    std::ifstream file(timer_file);
+    int seconds = 0;
+    if (file.is_open()) {
+        file >> seconds;
+        file.close();
+    }
+    return seconds;
+}
+
+// Function to save the timer value to a file
+void save_timer(int seconds) {
+    std::ofstream file(timer_file);
+    if (file.is_open()) {
+        file << seconds;
+        file.close();
+    }
+}
+
+// Function to calculate the remaining time in years, months, days, hours, minutes, and seconds
+std::string format_time(int elapsed_seconds) {
+    // Total duration of 20 years in seconds
+    const int twenty_years_in_seconds = 20 * 365 * 24 * 3600; // Approximation (ignoring leap years)
+
+    // Calculate remaining time
+    int remaining_seconds = twenty_years_in_seconds - elapsed_seconds;
+
+    // Ensure remaining time doesn't go negative
+    if (remaining_seconds < 0) {
+        remaining_seconds = 0;
+    }
+
+    // Convert remaining seconds to years, months, days, hours, minutes, and seconds
+    int years = remaining_seconds / (365 * 24 * 3600);
+    remaining_seconds %= 365 * 24 * 3600;
+    int months = remaining_seconds / (30 * 24 * 3600); // Approximation
+    remaining_seconds %= 30 * 24 * 3600;
+    int days = remaining_seconds / (24 * 3600);
+    remaining_seconds %= 24 * 3600;
+    int hours = remaining_seconds / 3600;
+    remaining_seconds %= 3600;
+    int minutes = remaining_seconds / 60;
+    int secs = remaining_seconds % 60;
+
+    // Format the current date
+    std::time_t now = std::time(nullptr);
+    char current_date[100];
+    std::strftime(current_date, sizeof(current_date), "%A, %d %B %Y", std::localtime(&now));
+
+    // Format the remaining time
+    std::ostringstream oss;
+    oss << current_date << " - Time Left: "
+        << years << " years, "
+        << months << " months, "
+        << days << " days, "
+        << hours << " hours, "
+        << minutes << " minutes, "
+        << secs << " seconds";
+    return oss.str();
+}
+// Load the timer value from the file
+int seconds = load_timer();
+bool running = true;
+
 int selected_equipment_index = 0;
+
+// Shared state to track if the timer value has been updated
+std::atomic<bool> timer_updated(false);
+
 Component CreateStatsPage(int *selected_page, Character *character) {
     // Create progress bars for experience and progress
     auto experience_bar = std::make_shared<ProgressBar>(0.01f, 0.01f, true); // Looping experience bar
@@ -53,6 +130,7 @@ Component CreateStatsPage(int *selected_page, Character *character) {
     });
 
     auto renderer = Renderer(container, [back_button, save_button, character, experience_bar, progress_bar,equipment_items] {
+        std::string title = "Fusion Quest - Time Remaining: " + format_time(seconds);
         // Column 1: Character Stats
         Element character_stats = vbox({
             text("Character") | bold | center,
@@ -180,7 +258,7 @@ Component CreateStatsPage(int *selected_page, Character *character) {
                 text(std::to_string(int(progress_bar->GetProgress() * 100)) + "%") | center,
             }));
 
-        return window(text("Fusion Quest") | bold | center,
+        return window(text(title) | bold | center,
             vbox({
                 // Row 1
                 hbox({
@@ -207,6 +285,31 @@ Component CreateStatsPage(int *selected_page, Character *character) {
                 }) | center,
             }));
     });
+
+// Timer thread to update the seconds counter
+std::thread timer_thread([&] {
+    while (running) {
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+        seconds++;
+        timer_updated.store(true);  // Mark the timer as updated
+    }
+});
+
+// Main loop: Update the UI if the timer has been updated
+if (timer_updated.load()) {
+    // Re-render the UI to show the updated time
+    timer_updated.store(false); // Reset the update flag
+}
+
+// Stop the timer thread when done
+running = false;
+if (timer_thread.joinable()) {
+    timer_thread.join();
+}
+
+// Save the timer value to the file before exiting
+save_timer(seconds);
+
 
     return renderer;
 }
