@@ -5,7 +5,30 @@
 #include <ftxui/dom/elements.hpp>
 
 using namespace ftxui;
+const std::vector<std::string> equipment_list = {
+    "Vintage Macbook Pro",
+    "Emergency Coffee IV Drip",
+    "Noise-Cancelling Headphones",
+    "Ergonomic Standing Desk",
+    "Bitcoin Mining Rig",
+    "Quantum Computing Textbook",
+    "Raspberry Pi Cluster",
+    "VR Pitch Deck Simulator",
+    "Startup Hoodie (Silicon Valley Edition)",
+    "Mechanical Keyboard with RGB Backlighting",
+    "Whiteboard Marker of Inspiration",
+    "Debugging Energy Drink Stash",
+    "Backup Charger Power Bank",
+    "Laser Pointer for Epic Presentations",
+    "Startup Motivational Poster",
+    "Blockchain Certification",
+    "AI Neural Network Schematics",
+    "Emergency Pizza Delivery Card",
+    "Noise-Cancelling Earpods",
+    "Startup Equity Options Paperweight"
+};
 
+int selected_equipment_index = 0;
 Component CreateStatsPage(int *selected_page, Character *character) {
     // Create progress bars for experience and progress
     auto experience_bar = std::make_shared<ProgressBar>(0.01f, 0.01f, true); // Looping experience bar
@@ -19,12 +42,17 @@ Component CreateStatsPage(int *selected_page, Character *character) {
     auto back_button = Button("Back to Main", [selected_page] { *selected_page = MAIN_MENU; });
     auto save_button = Button("Save", [selected_page] { *selected_page = MAIN_MENU; });
 
+    // Create a container for equipment
+    auto equipment_items = Menu(&equipment_list, &selected_equipment_index);
+
+    // Create a container that includes the equipment menu
     auto container = Container::Vertical({
         back_button,
-        save_button
+        save_button,
+        equipment_items  // Add equipment menu directly to the container
     });
 
-    auto renderer = Renderer(container, [back_button, save_button, character, experience_bar, progress_bar] {
+    auto renderer = Renderer(container, [back_button, save_button, character, experience_bar, progress_bar,equipment_items] {
         // Column 1: Character Stats
         Element character_stats = vbox({
             text("Character") | bold | center,
@@ -118,18 +146,30 @@ Component CreateStatsPage(int *selected_page, Character *character) {
             text("Story Progress: Act 2 of 5") | bold | flex,
         }) | border;
 
-        // Column 3: Equipment
+
         Element equipment = vbox({
             text("Equipment") | bold | center,
             separator(),
-            text("Act Dickening") | color(Color::Green),
-            text("Spider Monkey") | color(Color::Green),
-            text("Monkey Bolt") | color(Color::Green),
-            text("To Catasshole") | color(Color::Yellow),
-            text("✓ Investigate the ruins") | color(Color::Green),
-            text("➤ Confront the cultists") | color(Color::Yellow),
-            text("□ Find the lost artifact") | color(Color::GrayDark),
-        }) | border | focus | vscroll_indicator;
+            equipment_items->Render() | vscroll_indicator | frame
+        }) | border;
+
+
+        // In your main renderer, use the scrollable equipment renderer
+        // Element equipment = equipment_renderer->Render();
+
+        // // Column 3: Equipment
+        // Element equipment = vbox({
+        //     text("Equipment") | bold | center,
+        //     separator(),
+        //     text("Act Dickening") | color(Color::Green),
+        //     text("Spider Monkey") | color(Color::Green),
+        //     text("Monkey Bolt") | color(Color::Green),
+        //     text("To Catasshole") | color(Color::Yellow),
+        //     text("✓ Investigate the ruins") | color(Color::Green),
+        //     text("➤ Confront the cultists") | color(Color::Yellow),
+        //     text("□ Find the lost artifact") | color(Color::GrayDark),
+        // }) | border | focus | vscroll_indicator;
+
 
         // Bottom progress bar
         Element progress_gauge = window(
