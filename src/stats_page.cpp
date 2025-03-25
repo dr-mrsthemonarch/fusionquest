@@ -1,16 +1,60 @@
 #include "ui.h"
 #include "character.h"
-#include "progress_bar.h" // Include the ProgressBar class
+#include "progress_bar.h"
 #include <ftxui/component/component.hpp>
 #include <ftxui/dom/elements.hpp>
-#include <iostream>
-#include <thread>
 #include <chrono>
-#include <iomanip>
-#include <sstream>
-#include <fstream>
 
 using namespace ftxui;
+
+using namespace ftxui;
+
+class CountdownComponent : public ComponentBase {
+public:
+    CountdownComponent() {
+        start_time_ = std::chrono::system_clock::now();
+        target_time_ = start_time_ + std::chrono::hours(24*365*20); // 20 years
+    }
+
+    std::string GetCountdownString() const {
+        auto now = std::chrono::system_clock::now();
+        auto remaining = std::chrono::duration_cast<std::chrono::seconds>(target_time_ - now);
+
+        if (remaining.count() <= 0) {
+            return "Fusion Quest - LAUNCH TIME!";
+        }
+
+        auto seconds = remaining.count();
+        auto minutes = seconds / 60; seconds %= 60;
+        auto hours = minutes / 60; minutes %= 60;
+        auto days = hours / 24; hours %= 24;
+        auto months = days / 30; days %= 30; // Approximation
+        auto years = months / 12; months %= 12;
+
+        return "Fusion Quest - Time to Launch: " +
+               std::to_string(years) + "y " +
+               std::to_string(months) + "m " +
+               std::to_string(days) + "d " +
+               std::to_string(hours) + "h " +
+               std::to_string(minutes) + "m " +
+               std::to_string(seconds) + "s";
+    }
+
+    Element Render() {
+        // Force an animation frame update every second
+        if (animation_frame_++ % 60 == 0) {  // Assuming ~60fps, update every second
+            // The screen will refresh automatically
+        }
+        return text(GetCountdownString()) | bold | center;
+    }
+
+private:
+    std::chrono::system_clock::time_point start_time_;
+    std::chrono::system_clock::time_point target_time_;
+    int animation_frame_ = 0;
+};
+
+
 const std::vector<std::string> equipment_list = {
     "Vintage Macbook Pro",
     "Emergency Coffee IV Drip",
@@ -34,83 +78,14 @@ const std::vector<std::string> equipment_list = {
     "Startup Equity Options Paperweight"
 };
 
-const std::string timer_file = "timer_value.txt";
-
-// Function to load the timer value from a file
-int load_timer() {
-    std::ifstream file(timer_file);
-    int seconds = 0;
-    if (file.is_open()) {
-        file >> seconds;
-        file.close();
-    }
-    return seconds;
-}
-
-// Function to save the timer value to a file
-void save_timer(int seconds) {
-    std::ofstream file(timer_file);
-    if (file.is_open()) {
-        file << seconds;
-        file.close();
-    }
-}
-
-// Function to calculate the remaining time in years, months, days, hours, minutes, and seconds
-std::string format_time(int elapsed_seconds) {
-    // Total duration of 20 years in seconds
-    const int twenty_years_in_seconds = 20 * 365 * 24 * 3600; // Approximation (ignoring leap years)
-
-    // Calculate remaining time
-    int remaining_seconds = twenty_years_in_seconds - elapsed_seconds;
-
-    // Ensure remaining time doesn't go negative
-    if (remaining_seconds < 0) {
-        remaining_seconds = 0;
-    }
-
-    // Convert remaining seconds to years, months, days, hours, minutes, and seconds
-    int years = remaining_seconds / (365 * 24 * 3600);
-    remaining_seconds %= 365 * 24 * 3600;
-    int months = remaining_seconds / (30 * 24 * 3600); // Approximation
-    remaining_seconds %= 30 * 24 * 3600;
-    int days = remaining_seconds / (24 * 3600);
-    remaining_seconds %= 24 * 3600;
-    int hours = remaining_seconds / 3600;
-    remaining_seconds %= 3600;
-    int minutes = remaining_seconds / 60;
-    int secs = remaining_seconds % 60;
-
-    // Format the current date
-    std::time_t now = std::time(nullptr);
-    char current_date[100];
-    std::strftime(current_date, sizeof(current_date), "%A, %d %B %Y", std::localtime(&now));
-
-    // Format the remaining time
-    std::ostringstream oss;
-    oss << current_date << " - Time Left: "
-        << years << " years, "
-        << months << " months, "
-        << days << " days, "
-        << hours << " hours, "
-        << minutes << " minutes, "
-        << secs << " seconds";
-    return oss.str();
-}
-// Load the timer value from the file
-int seconds = load_timer();
-bool running = true;
-
 int selected_equipment_index = 0;
-
-// Shared state to track if the timer value has been updated
-std::atomic<bool> timer_updated(false);
-
-Component CreateStatsPage(int *selected_page, Character *character) {
+Component CreateStatsPage(int *selected_page, Character *character,Closure exit_closure) {
     // Create progress bars for experience and progress
-    auto experience_bar = std::make_shared<ProgressBar>(0.01f, 0.01f, true); // Looping experience bar
-    auto progress_bar = std::make_shared<ProgressBar>(0.02f, 0.005f, false); // Non-looping progress bar
-    // auto assbar = std::make_shared<ProgressBar>(0.02,0.005,)
+    auto experience_bar = std::make_shared<ProgressBar>(0.01f, 0.01f, true);
+    auto progress_bar = std::make_shared<ProgressBar>(0.02f, 0.005f, false);
+
+    // Create countdown timer
+    auto countdown_timer = Make<CountdownComponent>();
 
     // Start the progress bars
     experience_bar->Start();
@@ -118,19 +93,21 @@ Component CreateStatsPage(int *selected_page, Character *character) {
 
     auto back_button = Button("Back to Main", [selected_page] { *selected_page = MAIN_MENU; });
     auto save_button = Button("Save", [selected_page] { *selected_page = MAIN_MENU; });
+    auto quit_button = Button("Quit", exit_closure);
 
     // Create a container for equipment
     auto equipment_items = Menu(&equipment_list, &selected_equipment_index);
 
-    // Create a container that includes the equipment menu
+    // Create a container that includes all components
     auto container = Container::Vertical({
         back_button,
         save_button,
-        equipment_items  // Add equipment menu directly to the container
+        quit_button,
+        equipment_items
     });
 
-    auto renderer = Renderer(container, [back_button, save_button, character, experience_bar, progress_bar,equipment_items] {
-        std::string title = "Fusion Quest - Time Remaining: " + format_time(seconds);
+    auto renderer = Renderer(container, [back_button, save_button,quit_button, character,
+                             experience_bar, progress_bar, equipment_items, countdown_timer] {
         // Column 1: Character Stats
         Element character_stats = vbox({
             text("Character") | bold | center,
@@ -224,30 +201,11 @@ Component CreateStatsPage(int *selected_page, Character *character) {
             text("Story Progress: Act 2 of 5") | bold | flex,
         }) | border;
 
-
         Element equipment = vbox({
             text("Equipment") | bold | center,
             separator(),
             equipment_items->Render() | vscroll_indicator | frame
         }) | border;
-
-
-        // In your main renderer, use the scrollable equipment renderer
-        // Element equipment = equipment_renderer->Render();
-
-        // // Column 3: Equipment
-        // Element equipment = vbox({
-        //     text("Equipment") | bold | center,
-        //     separator(),
-        //     text("Act Dickening") | color(Color::Green),
-        //     text("Spider Monkey") | color(Color::Green),
-        //     text("Monkey Bolt") | color(Color::Green),
-        //     text("To Catasshole") | color(Color::Yellow),
-        //     text("✓ Investigate the ruins") | color(Color::Green),
-        //     text("➤ Confront the cultists") | color(Color::Yellow),
-        //     text("□ Find the lost artifact") | color(Color::GrayDark),
-        // }) | border | focus | vscroll_indicator;
-
 
         // Bottom progress bar
         Element progress_gauge = window(
@@ -258,7 +216,7 @@ Component CreateStatsPage(int *selected_page, Character *character) {
                 text(std::to_string(int(progress_bar->GetProgress() * 100)) + "%") | center,
             }));
 
-        return window(text(title) | bold | center,
+        return window(countdown_timer->Render(),
             vbox({
                 // Row 1
                 hbox({
@@ -281,35 +239,11 @@ Component CreateStatsPage(int *selected_page, Character *character) {
                 separator(),
                 hbox({
                     back_button->Render(),
-                    save_button->Render()
+                    save_button->Render(),
+                    quit_button->Render()
                 }) | center,
             }));
     });
-
-// Timer thread to update the seconds counter
-std::thread timer_thread([&] {
-    while (running) {
-        std::this_thread::sleep_for(std::chrono::seconds(1));
-        seconds++;
-        timer_updated.store(true);  // Mark the timer as updated
-    }
-});
-
-// Main loop: Update the UI if the timer has been updated
-if (timer_updated.load()) {
-    // Re-render the UI to show the updated time
-    timer_updated.store(false); // Reset the update flag
-}
-
-// Stop the timer thread when done
-running = false;
-if (timer_thread.joinable()) {
-    timer_thread.join();
-}
-
-// Save the timer value to the file before exiting
-save_timer(seconds);
-
 
     return renderer;
 }

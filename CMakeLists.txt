@@ -48,6 +48,7 @@ set(HEADERS
         src/stats_page.cpp
         src/progress_bar.h
         src/logger.h
+        src/globals.h
 )
 
 # Add executable

@@ -14,12 +14,14 @@ int main() {
     Character character;
     int current_page = MAIN_MENU;
 
-    // Create UI
-    auto ui = CreateUI(&current_page, &character);
+
 
     // Run screen
     auto screen = ftxui::ScreenInteractive::Fullscreen();
+    auto exit_closure = screen.ExitLoopClosure();
 
+    // Create UI
+    auto ui = CreateUI(&current_page, &character,exit_closure);
     // Start a refresh thread to post events periodically
     std::thread refresh_thread([&screen] {
         while (true) {

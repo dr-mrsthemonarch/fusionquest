@@ -19,7 +19,7 @@ ftxui::Component CreateMainMenu(int* selected_page);
 ftxui::Component CreatePageOne(int* selected_page);
 ftxui::Component CreatePageTwo(int* selected_page);
 ftxui::Component CreateCharacterCreationPage(int* selected_page, Character* character);
-ftxui::Component CreateStatsPage(int* selected_page, Character* character);
+ftxui::Component CreateStatsPage(int* selected_page, Character* character,ftxui::Closure exit_closure);
 
 // Main UI creator function
-ftxui::Component CreateUI(int* selected_page, Character* character);
+ftxui::Component CreateUI(int* selected_page, Character* character,ftxui::Closure exit_closure);
