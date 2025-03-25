@@ -14,8 +14,6 @@ int main() {
     Character character;
     int current_page = MAIN_MENU;
 
-
-
     // Run screen
     auto screen = ftxui::ScreenInteractive::Fullscreen();
     auto exit_closure = screen.ExitLoopClosure();

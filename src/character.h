@@ -5,12 +5,12 @@
 class Character {
 public:
     // Basic info
-    std::string name = "";
+    std::string name = "Burt von Skinny";
     int race_index = 0;
     int class_index = 0;
 
     // Base stats
-    int strength = 1;
+    int strength = -12;
     int dexterity = 1;
     int intelligence = 1;
     int constitution = 1;

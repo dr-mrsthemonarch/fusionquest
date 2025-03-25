@@ -4,6 +4,7 @@
 #include <ftxui/component/component.hpp>
 #include <ftxui/dom/elements.hpp>
 #include <chrono>
+#include <utility>
 
 using namespace ftxui;
 
@@ -16,7 +17,7 @@ public:
         target_time_ = start_time_ + std::chrono::hours(24*365*20); // 20 years
     }
 
-    std::string GetCountdownString() const {
+    [[nodiscard]] std::string GetCountdownString() const {
         auto now = std::chrono::system_clock::now();
         auto remaining = std::chrono::duration_cast<std::chrono::seconds>(target_time_ - now);
 
@@ -31,7 +32,7 @@ public:
         auto months = days / 30; days %= 30; // Approximation
         auto years = months / 12; months %= 12;
 
-        return "Fusion Quest - Time to Launch: " +
+        return "Fusion Quest - Useful Energy in: " +
                std::to_string(years) + "y " +
                std::to_string(months) + "m " +
                std::to_string(days) + "d " +
@@ -81,7 +82,7 @@ const std::vector<std::string> equipment_list = {
 int selected_equipment_index = 0;
 Component CreateStatsPage(int *selected_page, Character *character,Closure exit_closure) {
     // Create progress bars for experience and progress
-    auto experience_bar = std::make_shared<ProgressBar>(0.01f, 0.01f, true);
+    auto experience_bar = std::make_shared<ProgressBar>(0.1f, 0.01f, true);
     auto progress_bar = std::make_shared<ProgressBar>(0.02f, 0.005f, false);
 
     // Create countdown timer
@@ -93,7 +94,7 @@ Component CreateStatsPage(int *selected_page, Character *character,Closure exit_
 
     auto back_button = Button("Back to Main", [selected_page] { *selected_page = MAIN_MENU; });
     auto save_button = Button("Save", [selected_page] { *selected_page = MAIN_MENU; });
-    auto quit_button = Button("Quit", exit_closure);
+    auto quit_button = Button("Quit", std::move(exit_closure));
 
     // Create a container for equipment
     auto equipment_items = Menu(&equipment_list, &selected_equipment_index);
@@ -131,13 +132,13 @@ Component CreateStatsPage(int *selected_page, Character *character,Closure exit_
             hbox({text("Technical Debt: ") | bold, text(std::to_string(character->strength))}),
             hbox({text("Patience: ") | bold, text(std::to_string(character->dexterity))}),
             hbox({text("Intelligence: ") | bold, text(std::to_string(character->intelligence))}),
-            hbox({text("Conartistry: ") | bold, text(std::to_string(character->constitution))}),
+            hbox({text("Con-artistry: ") | bold, text(std::to_string(character->constitution))}),
         }) | border;
 
         // Column 1: Experience bar
-        Element experience_gauge = window(text("Experience") | bold | center, vbox({
+        Element experience_gauge = window(text("Funding") | bold | center, vbox({
             gauge(experience_bar->GetProgress()) | color(Color::Yellow),
-            text("Level " + std::to_string(1 + int(experience_bar->GetProgress() * 10)) +
+            text("Series " + std::to_string(1 + int(experience_bar->GetProgress() * 10)) +
             " (" + std::to_string(int(experience_bar->GetProgress() * 100)) + "%)") | center,
         }));
 
