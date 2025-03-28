@@ -4,7 +4,7 @@
 #include <ctime>
 #include <cstdlib>
 #include <thread>
-#include <chrono>
+#include <chrono>\
 
 int main() {
     // Initialize random seed for stat rolling
@@ -23,7 +23,7 @@ int main() {
     // Start a refresh thread to post events periodically
     std::thread refresh_thread([&screen] {
         while (true) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(10)); // Refresh every 10ms
+            std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Refresh every 10ms
             screen.PostEvent(ftxui::Event::Custom); // Trigger a re-render
         }
     });

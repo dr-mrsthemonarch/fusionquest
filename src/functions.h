@@ -4,7 +4,13 @@
 
 #ifndef FUNCTIONS_H
 #define FUNCTIONS_H
-
+#include <random>
+#include <cmath>
+#include <chrono>
+#include <cstdlib>
+#include <iomanip>
+#include <iostream>
+#include <fstream>
 // Function to get the current timestamp as a string
 std::string GetTimestamp() {
     auto now = std::chrono::system_clock::now();
@@ -59,16 +65,6 @@ std::vector<std::string> splitLines(const std::string &str) {
     return lines;
 }
 
-// Function to generate random stats
-std::vector<std::string> GenerateRandomStats() {
-    std::vector<std::string> stats;
-    stats.push_back("Strength: " + std::to_string(rand() % 18 + 1));    // Random between 1 and 18
-    stats.push_back("Dexterity: " + std::to_string(rand() % 18 + 1));   // Random between 1 and 18
-    stats.push_back("Intelligence: " + std::to_string(rand() % 18 + 1)); // Random between 1 and 18
-    stats.push_back("Wisdom: " + std::to_string(rand() % 18 + 1));       // Random between 1 and 18
-    return stats;
-}
-
 // Function to calculate the total of stats
 int CalculateTotal(const std::vector<std::string>& stats) {
     int total = 0;
@@ -81,5 +77,31 @@ int CalculateTotal(const std::vector<std::string>& stats) {
     }
     return total;
 }
+
+// Implementation of stat roller function
+int RollStat(int range) {
+    for (unsigned x, r;;)
+        if (x = rand(), r = x % range, x - r <= -range)
+            return r;
+}
+float RollChance() {
+    // 344 billion = 344 * 10^9 ≈ 2^38.323
+    // We need at least 39 bits of randomness
+    static std::random_device rd;
+    static std::mt19937_64 gen(rd());
+    static std::uniform_int_distribution<uint64_t> dist(0, (1ULL << 39) - 1);
+
+    constexpr uint64_t threshold = (1ULL << 39) / 344'000'000'000ULL;
+
+    if (dist(gen) < threshold) {
+        static std::uniform_real_distribution<float> small_dist(
+            std::nextafter(0.00001f, 1.0f),  // smallest float > 0
+            1.0f);                       // largest float < 1
+        return small_dist(gen);
+    }
+
+    return 1.0f;
+}
+
 
 #endif //FUNCTIONS_H

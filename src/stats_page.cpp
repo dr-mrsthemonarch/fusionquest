@@ -1,12 +1,10 @@
 #include "ui.h"
 #include "character.h"
 #include "progress_bar.h"
+#include "globals.h"
 #include <ftxui/component/component.hpp>
 #include <ftxui/dom/elements.hpp>
 #include <chrono>
-#include <utility>
-
-using namespace ftxui;
 
 using namespace ftxui;
 
@@ -32,7 +30,7 @@ public:
         auto months = days / 30; days %= 30; // Approximation
         auto years = months / 12; months %= 12;
 
-        return "Fusion Quest - Useful Energy in: " +
+        return "Fusion Quest - Power Plant Comissioning: " +
                std::to_string(years) + "y " +
                std::to_string(months) + "m " +
                std::to_string(days) + "d " +
@@ -56,28 +54,7 @@ private:
 };
 
 
-const std::vector<std::string> equipment_list = {
-    "Vintage Macbook Pro",
-    "Emergency Coffee IV Drip",
-    "Noise-Cancelling Headphones",
-    "Ergonomic Standing Desk",
-    "Bitcoin Mining Rig",
-    "Quantum Computing Textbook",
-    "Raspberry Pi Cluster",
-    "VR Pitch Deck Simulator",
-    "Startup Hoodie (Silicon Valley Edition)",
-    "Mechanical Keyboard with RGB Backlighting",
-    "Whiteboard Marker of Inspiration",
-    "Debugging Energy Drink Stash",
-    "Backup Charger Power Bank",
-    "Laser Pointer for Epic Presentations",
-    "Startup Motivational Poster",
-    "Blockchain Certification",
-    "AI Neural Network Schematics",
-    "Emergency Pizza Delivery Card",
-    "Noise-Cancelling Earpods",
-    "Startup Equity Options Paperweight"
-};
+
 
 int selected_equipment_index = 0;
 Component CreateStatsPage(int *selected_page, Character *character,Closure exit_closure) {
@@ -92,9 +69,9 @@ Component CreateStatsPage(int *selected_page, Character *character,Closure exit_
     experience_bar->Start();
     progress_bar->Start();
 
-    auto back_button = Button("Back to Main", [selected_page] { *selected_page = MAIN_MENU; });
-    auto save_button = Button("Save", [selected_page] { *selected_page = MAIN_MENU; });
-    auto quit_button = Button("Quit", std::move(exit_closure));
+    auto back_button = Button("Back to Main", [selected_page] { *selected_page = MAIN_MENU; })| size(HEIGHT,EQUAL,4);
+    auto save_button = Button("Save", [selected_page] { *selected_page = MAIN_MENU; })| size(HEIGHT,EQUAL,4);
+    auto quit_button = Button("Quit", std::move(exit_closure))| size(HEIGHT,EQUAL,4);
 
     // Create a container for equipment
     auto equipment_items = Menu(&equipment_list, &selected_equipment_index);
@@ -110,6 +87,7 @@ Component CreateStatsPage(int *selected_page, Character *character,Closure exit_
     auto renderer = Renderer(container, [back_button, save_button,quit_button, character,
                              experience_bar, progress_bar, equipment_items, countdown_timer] {
         // Column 1: Character Stats
+
         Element character_stats = vbox({
             text("Character") | bold | center,
             separator(),
@@ -118,8 +96,8 @@ Component CreateStatsPage(int *selected_page, Character *character,Closure exit_
                 text(character->name.empty() ? "Unknown" : character->name)
             }),
             hbox({text("Employee nr: ") | bold, text("57")}),
-            hbox({text("Position: ") | bold, text("Rocket Biologist")}),
-            hbox({text("Startup Name: ") | bold, text("Marbel Fusion")}),
+            hbox({text("Position: ") | bold, text(RACES[character->race_index])}),
+            hbox({text("Startup Name: ") | bold, text(FUSION_STARTUPS[character->fusion_index])}),
             separator(),
             hbox({
                 text("Runway: ") | bold,
@@ -129,10 +107,12 @@ Component CreateStatsPage(int *selected_page, Character *character,Closure exit_
                 text("Hype Energy: ") | bold, text(std::to_string(int(character->mana * 100)) + "/100")
             }),
             separator(),
-            hbox({text("Technical Debt: ") | bold, text(std::to_string(character->strength))}),
-            hbox({text("Patience: ") | bold, text(std::to_string(character->dexterity))}),
-            hbox({text("Intelligence: ") | bold, text(std::to_string(character->intelligence))}),
-            hbox({text("Con-artistry: ") | bold, text(std::to_string(character->constitution))}),
+            hbox({text("Hustle: ") | bold, text(std::to_string(character->hustle))}),
+            hbox({text("Agile-ity: ") | bold, text(std::to_string(character->agility))}),
+            hbox({text("NDAs: ") | bold, text(std::to_string(character->ndas))}),
+            hbox({text("Patents: ") | bold, text(std::to_string(character->patents))}),
+            hbox({text("Technical Debt: ") | bold, text(std::to_string(character->techdebt))}),
+            hbox({text("Bus Factor: ") | bold, text(std::to_string(character->busfactor))}),
         }) | border;
 
         // Column 1: Experience bar
@@ -213,7 +193,7 @@ Component CreateStatsPage(int *selected_page, Character *character,Closure exit_
             text("Progress") | bold | center,
             vbox({
                 text("Axing the Monkey") | center,
-                gauge(progress_bar->GetProgress()) | color(Color::Magenta),
+                gauge(progress_bar->GetProgress()) | color(Color::Blue),
                 text(std::to_string(int(progress_bar->GetProgress() * 100)) + "%") | center,
             }));
 

@@ -7,8 +7,8 @@ using namespace ftxui;
 
 Component CreateMainMenu(int* selected_page) {
     auto main_menu = Container::Vertical({
-        Button("Page 1", [selected_page] { *selected_page = PAGE_ONE; }),
-        Button("Page 2", [selected_page] { *selected_page = PAGE_TWO; }),
+        Button("Start New Game", [selected_page] { *selected_page = CHARACTER_CREATION; }),
+        Button("Continue Game", [selected_page] { *selected_page = PAGE_TWO; }),
         Button("Character Creation", [selected_page] { *selected_page = CHARACTER_CREATION; }),
         Button("Stats Page", [selected_page] { *selected_page = STATS_PAGE; }),
     });

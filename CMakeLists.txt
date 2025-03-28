@@ -3,7 +3,7 @@ project(fusionquest)
 
 # Set the output directories for binaries and libraries
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ../bin)
-
+set(CMAKE_OSX_ARCHITECTURES "arm64")
 ## Boost
 #set(BOOST_INCLUDE_LIBRARIES thread filesystem system program_options asio date_time)
 #set(BOOST_ENABLE_CMAKE ON)
@@ -52,7 +52,6 @@ set(HEADERS
 )
 
 # Add executable
-#add_executable(fusionquest ${SOURCES})
 add_executable(fusionquest ${SOURCES} ${HEADERS})
 
 # Link FTXUI libraries
