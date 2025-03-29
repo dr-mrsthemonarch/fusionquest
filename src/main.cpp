@@ -4,7 +4,7 @@
 #include <ctime>
 #include <cstdlib>
 #include <thread>
-#include <chrono>\
+#include <chrono>
 
 int main() {
     // Initialize random seed for stat rolling

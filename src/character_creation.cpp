@@ -1,16 +1,17 @@
 // character_creation.cpp
 #include "ui.h"
+#include "functions.h"
 #include "character.h"
 #include "globals.h"
 #include <ftxui/component/component.hpp>
 #include <ftxui/dom/elements.hpp>
-#include "functions.h"
 #include <random>
 
 using namespace ftxui;
 
 
 
+// Modified CreateCharacterCreationPage function in character_creation.cpp
 Component CreateCharacterCreationPage(int* selected_page, Character* character) {
     auto name_input = Input(&character->name, "Enter character name");
 
@@ -29,11 +30,29 @@ Component CreateCharacterCreationPage(int* selected_page, Character* character) 
         character->patents = RollStat(1);
     });
 
-    auto lets_do_it_button = Button("Let's Do It", [selected_page] {
+    // Add save functionality to the "Let's Do It" button
+    auto lets_do_it_button = Button("Let's Do It", [selected_page, character] {
+        // Create a filename based on character name (sanitized)
+        std::string filename = character->name;
+        // Replace spaces and special characters with underscores
+        for (char& c : filename) {
+            if (!isalnum(c)) {
+                c = '_';
+            }
+        }
+        filename = "saves/" + filename + ".sav";
+
+        // Create saves directory if it doesn't exist
+        system("mkdir -p saves");
+
+        // Save character to file
+        bool save_success = SaveCharacterToFile(*character, filename);
+
+        // Proceed to stats page regardless of save result
         *selected_page = STATS_PAGE;
     });
 
-    auto back_button = Button("Back to Main", [selected_page] { *selected_page = MAIN_MENU; }) | size(HEIGHT,EQUAL,4);
+    auto back_button = Button("Back to Main", [selected_page] { *selected_page = MAIN_MENU; }) | size(HEIGHT, EQUAL, 4);
 
     // Wrap race selection in a scrollable container
     auto race_container = Container::Vertical({race_selector});
@@ -53,7 +72,7 @@ Component CreateCharacterCreationPage(int* selected_page, Character* character) 
         return vbox({
             text("Fusion Company") | bold | center,
             separator(),
-            fusion_selector->Render() |flex| vscroll_indicator | frame  // Enable scrolling
+            fusion_selector->Render() | flex | vscroll_indicator | frame  // Enable scrolling
         }) | border;
     });
 
@@ -70,14 +89,13 @@ Component CreateCharacterCreationPage(int* selected_page, Character* character) 
         Element race_column = race_renderer->Render();  // Use scrollable race selector
         Element fusion_column = fusion_renderer->Render();  // Use scrollable race selector
 
-
         Element stats_column = vbox({
             text("Stats") | bold | center,
             separator(),
             text("NDAs: " + std::to_string(character->ndas)) | bold,
             text("Luck: " + std::to_string(character->luck)) | bold,
-            text("Hustle: " + std::to_string(character->hustle)) | bold | selectionColor(Color::Green),
-            text("Patents: " + std::to_string(character->luck)) | bold,
+            text("Hustle: " + std::to_string(character->hustle)) | bold,
+            text("Patents: " + std::to_string(character->patents)) | bold,
             text("Agile-ity: " + std::to_string(character->agility)) | bold,
             text("Bus Factor: " + std::to_string(character->busfactor)) | bold,
             text("Technical Debt: " + std::to_string(character->techdebt)) | bold,

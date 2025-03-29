@@ -11,6 +11,7 @@ const std::vector<std::string> RACES = {
     "Pivot Prodigy",
     "Foosball Philosopher",
     "Snack Sommelier",
+    "Oddly Shaped Belgium",
     "Stand-up Desk Warrior",
     "Blockchain Bro",
     "Remote Work Ninja",
@@ -36,6 +37,9 @@ const std::vector<std::string> CLASSES = {
     "Tokamak Reactor Optimization Guru",
     "Nuclear Fusion Breakthrough Architect",
     "Stellarator System Dynamics Wizard",
+    "Senior Splatter Researcher",
+    "Fusioneer",
+
 
     // Engineering Roles
     "Extreme Thermal Management Ninja",
@@ -83,51 +87,60 @@ const std::vector<std::string> equipment_list = {
 };
 
 const std::vector<std::string> FUSION_STARTUPS = {
-    // --- REAL FUSION STARTUPS ---
-    // Magnetic Confinement
-    "Commonwealth Fusion Systems (MIT SPARC Tokamak)",
-    "Tokamak Energy (Spherical Tokamak)",
-    "Type One Energy (Stellarator)",
-    "Princeton Stellarators",
-
-    // Inertial Confinement
-    "First Light Fusion (Projectile Fusion)",
-    "Focused Energy (Laser Fusion)",
-    "Xcimer Energy",
-    "HB11 Energy (Proton-Boron Fusion)",
-
-    // Magnetized Target Fusion
-    "General Fusion (Piston-Driven)",
-    "Helion Energy (Pulsed FRCs)",
-    "TAE Technologies (Beam-Driven FRCs)",
-
-    // Z-Pinch & Alternatives
-    "Zap Energy (Shear-Flow Z-Pinch)",
-    "Avalanche Energy (Micro-Fusion)",
-    "Realta Fusion (Mirror Machines)",
-    "Marvel Fusion (Laser-Driven)",
-
-    // --- SATIRICAL FICTIONAL STARTUPS ---
-    "Sun-in-a-Box Ventures",
-    "Disruptive Tokamaks LLC",
-    "Fusion-as-a-Service (FaaS)",
-    "Uber for Fusion",
-    "OnlyFusions (Premium Plasma Content)",
-    "Theranos 2: Fusion Boogaloo",
+    "ELI-NP",
+    "ELI Beamlines",
+    "National Ignition Facility",
+    "LLE Rochster",
+    "Omega Machine",
+    "FusionDAO",
+    "Decentralized Stars",
     "FTX Fusion Partners",
-    "Blockchain-Enabled Stellarators",
-    "FusionDAO (Decentralized Stars)",
-    "Kardashev Scale Pioneers",
-    "Net Positive Fusion (Carbon-Negative Neutrons)",
-    "FusionFlakes (Breakfast Cereal Brand)",
-    "Tinder for Nuclei (Swipe Right to Fuse)",
-    "FusionHub (WeWork for Plasma)",
-    "Infinite Energy™ (YC S-2042)",
-    "Hotter Than Sun, Inc.",
-    "Zero to Fusion Accelerator",
+    "Zap Energy",
+    "Marble Fusion",
+    "Radiant Nuclear",
+    "Type One Energy",
     "PlasmaPunk Industries",
+    "Kyoto Fusioneering",
+    "Compact Fusion Systems",
+    "Infinite Energy™ (YC S-2042)",
+    "FusionHub",
+    "Tokamak Energy",
+    "Commonwealth Fusion Systems",
+    "New Fusion",
+    "Hotter Than Sun, Inc.",
+    "Helical Fusion",
+    "Theranos 2: Fusion Boogaloo",
+    "First Light Fusion",
+    "Princeton Fusion Systems",
+    "Disruptive Tokamaks LLC",
+    "Sun-in-a-Box Ventures",
+    "HB11 Energy",
+    "Zeno Power Systems",
+    "Tinder for Nuclei ",
+    "Carbon-Negative Neutrons",
+    "Net Positive Fusion ",
+    "Focused Energy",
+    "Novatron Fusion Group",
+    "OnlyFusions",
+    "Renaissance Fusion",
+    "Fusion-as-a-Service",
+    "General Fusion",
+    "Zero to Fusion Accelerator",
+    "Avalanche Energy",
+    "Nuclear Fusion Technologies",
+    "UK Atomic Energy Authority",
+    "Ultra Safe Nuclear Corporation",
+    "LPPFusion",
+    "X-Fusion",
+    "SHINE Technologies",
     "FusionCoin Mining Collective",
-    "Elon's Secret Fusion Lab (X-Fusion)"
+    "Blockchain-Enabled Stellarators",
+    "Key Fusion",
+    "Kardashev Scale Pioneers",
+    "EnsoFusion",
+    "Energy Singularity",
+    "ZETA Energy"
 };
+
 
 #endif //GLOBALS_H

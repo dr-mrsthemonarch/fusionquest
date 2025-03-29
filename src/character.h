@@ -5,10 +5,10 @@
 class Character {
 public:
     // Basic info
-    std::string name = "Burt von Skinny";
-    int race_index = 0;
+    std::string name = "John Bekx";
+    int race_index = 4;
     int class_index = 0;
-    int fusion_index = 0;
+    int fusion_index = 4;
 
     // Base stats
     int hustle = 1;
@@ -32,17 +32,7 @@ public:
     float progress = 0.65f;
 
     // Helper methods
-    int total_stats() const {
-        return hustle + agility + busfactor + techdebt;
-    }
-
-    void update_derived_stats() {
-        // Example of updating derived stats based on base stats
-        health = std::min(1.0f, techdebt * 0.04f);
-        attack = std::min(1.0f, hustle * 0.04f);
-        defense = std::min(1.0f, (hustle + techdebt) * 0.02f);
-        mana = std::min(1.0f, busfactor * 0.04f);
-        magic = std::min(1.0f, busfactor * 0.04f);
-        stamina = std::min(1.0f, agility * 0.04f);
+    float total_stats() const {
+        return (hustle + agility - busfactor + techdebt + ndas + luck + patents);
     }
 };

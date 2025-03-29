@@ -69,9 +69,9 @@ Component CreateStatsPage(int *selected_page, Character *character,Closure exit_
     experience_bar->Start();
     progress_bar->Start();
 
-    auto back_button = Button("Back to Main", [selected_page] { *selected_page = MAIN_MENU; })| size(HEIGHT,EQUAL,4);
-    auto save_button = Button("Save", [selected_page] { *selected_page = MAIN_MENU; })| size(HEIGHT,EQUAL,4);
-    auto quit_button = Button("Quit", std::move(exit_closure))| size(HEIGHT,EQUAL,4);
+    auto back_button = Button("Back to Main", [selected_page] { *selected_page = MAIN_MENU; })| size(HEIGHT,EQUAL,3);
+    auto save_button = Button("Save", [selected_page] { *selected_page = MAIN_MENU; })| size(HEIGHT,EQUAL,3);
+    auto quit_button = Button("Quit", std::move(exit_closure))| size(HEIGHT,EQUAL,3);
 
     // Create a container for equipment
     auto equipment_items = Menu(&equipment_list, &selected_equipment_index);
@@ -111,6 +111,7 @@ Component CreateStatsPage(int *selected_page, Character *character,Closure exit_
             hbox({text("Agile-ity: ") | bold, text(std::to_string(character->agility))}),
             hbox({text("NDAs: ") | bold, text(std::to_string(character->ndas))}),
             hbox({text("Patents: ") | bold, text(std::to_string(character->patents))}),
+            hbox({text("Luck: ") | bold, text(std::to_string(character->luck))}),
             hbox({text("Technical Debt: ") | bold, text(std::to_string(character->techdebt))}),
             hbox({text("Bus Factor: ") | bold, text(std::to_string(character->busfactor))}),
         }) | border;
@@ -164,6 +165,7 @@ Component CreateStatsPage(int *selected_page, Character *character,Closure exit_
             text("Cloak of Shadows") | color(Color::GrayDark),
             separator(),
             text("Items: 7/20") | bold,
+            text("Stocks: 1000") | bold
         }) | border;
 
         // Column 3: Plot Development
