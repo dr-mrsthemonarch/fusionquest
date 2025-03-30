@@ -41,6 +41,7 @@ set(SOURCES
         src/character_creation.cpp
         src/stats_page.cpp
         src/load_page.cpp
+        src/core/engine_core.cpp
 )
 
 set(HEADERS
@@ -51,6 +52,9 @@ set(HEADERS
         src/progress_bar.h
         src/logger.h
         src/globals.h
+        src/core/engine_core.h
+        src/core/engine_systems.h
+        src/core/engine_components.h
 )
 
 # Add executable

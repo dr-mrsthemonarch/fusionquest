@@ -95,7 +95,7 @@ Component CreateCharacterCreationPage(int* selected_page, Character* character) 
             text("NDAs: " + std::to_string(character->ndas)) | bold,
             text("Luck: " + std::to_string(character->luck)) | bold,
             text("Hustle: " + std::to_string(character->hustle)) | bold,
-            text("Patents: " + std::to_string(character->Synergy)) | bold,
+            text("Synergy: " + std::to_string(character->Synergy)) | bold,
             text("Agile-ity: " + std::to_string(character->agility)) | bold,
             text("Bus Factor: " + std::to_string(character->busfactor)) | bold,
             text("Technical Debt: " + std::to_string(character->techdebt)) | bold,

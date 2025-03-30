@@ -123,12 +123,12 @@ Component CreateStatsPage(int *selected_page, Character *character, Closure exit
                                                                separator(),
                                                                hbox({
                                                                    text("Runway: ") | bold,
-                                                                   text(std::to_string(int(character->health * 100)) +
+                                                                   text(std::to_string(int(character->runway * 100)) +
                                                                         "/100")
                                                                }),
                                                                hbox({
                                                                    text("Hype Energy: ") | bold,
-                                                                   text(std::to_string(int(character->mana * 100)) +
+                                                                   text(std::to_string(int(character->hype_energy * 100)) +
                                                                         "/100")
                                                                }),
                                                                separator(),

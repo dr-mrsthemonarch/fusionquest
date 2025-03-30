@@ -23,12 +23,8 @@ public:
     int Series = 1;
 
     // Derived stats (could be calculated from base stats)
-    float health = 0.8f;
-    float mana = 0.6f;
-    float stamina = 0.7f;
-    float attack = 0.5f;
-    float defense = 0.9f;
-    float magic = 0.4f;
+    float runway = 0.8f;
+    float hype_energy = 0.8f;
 
     // Progress stats
     float experience = 0.45f;
