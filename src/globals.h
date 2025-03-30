@@ -86,6 +86,33 @@ const std::vector<std::string> equipment_list = {
     "Startup Equity Options Paperweight"
 };
 
+const std::vector<std::string> inventory_list = {
+    "Quantum coffee beans",
+    "Blockchain office plants",
+    "Self-replicating Post-Its",
+    "AI motivational posters",
+    "VR meeting headsets",
+    "Judgmental robot barista",
+    "Smart whiteboard markers",
+    "Biodegradable snack drones",
+    "Spyware fidget spinners",
+    "USB-C adapters",
+    "Open-source pizza",
+    "AR distraction glasses",
+    "Crypto space heaters",
+    "Tesla coil",
+    "Dumb smart toaster",
+    "Holographic guilt intern",
+    "5G office chairs",
+    "Disruptive pickles",
+    "Autonomous stapler drones",
+    "NFT mousepads",
+    "Meme server cluster",
+    "Passive-aggressive Slackbot",
+    "3D-printed office pets",
+    "Dusty Metaverse headset",
+    "Dead unicorn plushies"
+};
 const std::vector<std::string> FUSION_STARTUPS = {
     "ELI-NP",
     "ELI Beamlines",
@@ -142,5 +169,58 @@ const std::vector<std::string> FUSION_STARTUPS = {
     "ZETA Energy"
 };
 
+const std::vector<std::string> patent_list= {
+    // Original absurdist spells
+    "Infinite Scroll Summoning",
+    "NFT Polymorph Spell",
+    "Cloud Divination Engine",
+    "Growth Hack Hex",
+    "AI Love Potion",
+    "Teleportation Tokenization",
+    "Unicorn Valuation Charm",
+    "Auto-Renewal Curse",
+    "Viral Hex Algorithm",
+    "Low-Code Necromancy",
+
+    // Physics-flavored additions
+    "Quantum Growth Hacking",
+    "Entanglement Marketing",
+    "Schrödinger’s MVP",
+    "Dark Matter Analytics",
+    "Tachyon SEO",
+    "Zero-Point Energy SaaS",
+    "Relativity Pivot",
+    "Superposition A/B Testing",
+    "Neutrino Data Mining",
+    "Singularity Exit Strategy",
+    "Wormhole UX",
+    "Photon Engagement Boost",
+    "Entropy Reversal Framework",
+    "Higgs Boson Branding",
+    "String Theory APIs",
+    "Thermodynamic Hype Cycle",
+    "Non-Newtonian KPIs",
+    "Chaos Monetization",
+    "Particle Accelerator Onboarding",
+    "Quantum Tunneling Cookies",
+    "Fusion Pitch Deck",
+    "Anti-Gravity Churn",
+    "Plasma Cloud Storage",
+    "Electron Mindshare",
+    "Bose-Einstein Viral Loop",
+    "Hawking Radiation Ads",
+    "Doppler Engagement",
+    "M-Theory Unification",
+    "Lepton Loyalty Program",
+    "Spacetime Compression",
+    "Quark-Gluon UX",
+    "Helium Voice AI",
+    "Pareto Principle Enchantment",
+    "Fractal Growth Spell",
+    "Eigenvalue Personalization",
+    "Neural Network Alchemy",
+    "Gravitational Wave Notifications",
+    "Exponential Decay Pricing"
+};
 
 #endif //GLOBALS_H

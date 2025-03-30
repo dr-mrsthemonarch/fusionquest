@@ -27,7 +27,7 @@ Component CreateCharacterCreationPage(int* selected_page, Character* character) 
         character->techdebt = RollStat(21)*-1;
         character->ndas = RollStat(21);
         character->luck = RollStat(21);
-        character->patents = RollStat(1);
+        character->Synergy = RollStat(1);
     });
 
     // Add save functionality to the "Let's Do It" button
@@ -64,7 +64,7 @@ Component CreateCharacterCreationPage(int* selected_page, Character* character) 
             text("Race") | bold | center,
             separator(),
             race_selector->Render() | vscroll_indicator | frame  // Enable scrolling
-        }) | border;
+        }) | border | size(HEIGHT,LESS_THAN,30);
     });
 
     // Ensure fusion selection is scrollable
@@ -73,7 +73,7 @@ Component CreateCharacterCreationPage(int* selected_page, Character* character) 
             text("Fusion Company") | bold | center,
             separator(),
             fusion_selector->Render() | flex | vscroll_indicator | frame  // Enable scrolling
-        }) | border;
+        }) | border| size(HEIGHT,LESS_THAN,30);
     });
 
     auto container = Container::Vertical({
@@ -95,7 +95,7 @@ Component CreateCharacterCreationPage(int* selected_page, Character* character) 
             text("NDAs: " + std::to_string(character->ndas)) | bold,
             text("Luck: " + std::to_string(character->luck)) | bold,
             text("Hustle: " + std::to_string(character->hustle)) | bold,
-            text("Patents: " + std::to_string(character->patents)) | bold,
+            text("Patents: " + std::to_string(character->Synergy)) | bold,
             text("Agile-ity: " + std::to_string(character->agility)) | bold,
             text("Bus Factor: " + std::to_string(character->busfactor)) | bold,
             text("Technical Debt: " + std::to_string(character->techdebt)) | bold,

@@ -17,7 +17,10 @@ public:
     int techdebt = 1;
     int ndas = 0;
     int luck = 100;
-    int patents = 0;
+    int Synergy = 0;
+
+    //Game Engine derived stats
+    int Series = 1;
 
     // Derived stats (could be calculated from base stats)
     float health = 0.8f;
@@ -33,6 +36,6 @@ public:
 
     // Helper methods
     float total_stats() const {
-        return (hustle + agility - busfactor + techdebt + ndas + luck + patents);
+        return (hustle + agility - busfactor + techdebt + ndas + luck + Synergy);
     }
 };

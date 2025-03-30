@@ -124,7 +124,7 @@ bool SaveCharacterToFile(const Character& character, const std::string& filename
     file.write(reinterpret_cast<const char*>(&character.techdebt), sizeof(int));
     file.write(reinterpret_cast<const char*>(&character.ndas), sizeof(int));
     file.write(reinterpret_cast<const char*>(&character.luck), sizeof(int));
-    file.write(reinterpret_cast<const char*>(&character.patents), sizeof(int));
+    file.write(reinterpret_cast<const char*>(&character.Synergy), sizeof(int));
 
     file.close();
     return true;
@@ -159,7 +159,7 @@ Character LoadCharacterFromFile(const std::string& filename) {
     file.read(reinterpret_cast<char*>(&character.techdebt), sizeof(int));
     file.read(reinterpret_cast<char*>(&character.ndas), sizeof(int));
     file.read(reinterpret_cast<char*>(&character.luck), sizeof(int));
-    file.read(reinterpret_cast<char*>(&character.patents), sizeof(int));
+    file.read(reinterpret_cast<char*>(&character.Synergy), sizeof(int));
 
     file.close();
     return character;
