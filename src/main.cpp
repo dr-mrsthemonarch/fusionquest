@@ -1,5 +1,5 @@
-#include "ui.h"
-#include "character.h"
+#include "ui/ui.h"
+#include "classes/character.h"
 #include <ftxui/component/screen_interactive.hpp>
 #include <ctime>
 #include <cstdlib>

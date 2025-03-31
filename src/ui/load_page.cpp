@@ -1,6 +1,6 @@
 // Add this to your appropriate file (perhaps main_menu.cpp)
 #include "ui.h"
-#include "functions.h"
+#include "../classes/functions.h"
 #include <ftxui/component/component.hpp>
 #include <ftxui/dom/elements.hpp>
 #include <filesystem>

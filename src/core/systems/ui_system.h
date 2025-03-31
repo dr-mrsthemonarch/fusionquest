@@ -2,7 +2,7 @@
 #define UI_SYSTEM_H
 
 #include "../engine_core.h"
-#include "../../character.h"
+#include "../../classes/character.h"
 #include "ui_system.h"
 
 namespace FusionQuest {

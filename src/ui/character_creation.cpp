@@ -1,8 +1,8 @@
 // character_creation.cpp
 #include "ui.h"
-#include "functions.h"
-#include "character.h"
-#include "globals.h"
+#include "../classes/functions.h"
+#include "../classes/character.h"
+#include "../classes/globals.h"
 #include <ftxui/component/component.hpp>
 #include <ftxui/dom/elements.hpp>
 #include <random>

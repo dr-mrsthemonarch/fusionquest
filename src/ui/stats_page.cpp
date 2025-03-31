@@ -1,7 +1,7 @@
 #include "ui.h"
-#include "character.h"
-#include "progress_bar.h"
-#include "globals.h"
+#include "../classes/character.h"
+#include "../classes/progress_bar.h"
+#include "../classes/globals.h"
 #include <ftxui/component/component.hpp>
 #include <ftxui/dom/elements.hpp>
 #include <chrono>

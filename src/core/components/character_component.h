@@ -2,7 +2,7 @@
 #define CHARACTER_COMPONENT_H
 
 #include "../engine_core.h"
-#include "../../character.h"
+#include "../../classes/character.h"
 
 namespace FusionQuest {
 

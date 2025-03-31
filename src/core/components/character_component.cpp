@@ -1,4 +1,4 @@
-#include "character_component.h"
+#include "../components/character_component.h"
 #include "stats_component.h"
 
 namespace FusionQuest {

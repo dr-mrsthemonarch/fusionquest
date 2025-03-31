@@ -33,14 +33,14 @@ include_directories(${ftxui_SOURCE_DIR}/include)
 # Add source files to the project
 set(SOURCES
         src/main.cpp
-        src/functions.cpp
-        src/ui.cpp
-        src/main_menu.cpp
-        src/page_one.cpp
-        src/page_two.cpp
-        src/character_creation.cpp
-        src/stats_page.cpp
-        src/load_page.cpp
+        src/classes/functions.cpp
+        src/ui/ui.cpp
+        src/ui/main_menu.cpp
+        src/ui/page_one.cpp
+        src/ui/page_two.cpp
+        src/ui/character_creation.cpp
+        src/ui/stats_page.cpp
+        src/ui/load_page.cpp
         src/core/engine_core.cpp
         src/core/components/stats_component.cpp
         src/core/components/inventory_component.cpp
@@ -54,13 +54,13 @@ set(SOURCES
 )
 
 set(HEADERS
-        src/banner.h
-        src/functions.h
-        src/character.h
-        src/ui.h
-        src/progress_bar.h
-        src/logger.h
-        src/globals.h
+        src/classes/banner.h
+        src/classes/functions.h
+        src/classes/character.h
+        src/ui/ui.h
+        src/classes/progress_bar.h
+        src/classes/logger.h
+        src/classes/globals.h
         src/core/engine_core.h
         src/core/old/engine_systems.h
         src/core/old/engine_components.h

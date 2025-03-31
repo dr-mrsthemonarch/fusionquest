@@ -1,7 +1,7 @@
 // ui.h
 
 
-#include "character.h"
+#include "../classes/character.h"
 #include <ftxui/component/component.hpp>
 #include <ftxui/component/screen_interactive.hpp>
 
