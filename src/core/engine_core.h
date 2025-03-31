@@ -56,10 +56,10 @@ class Component {
 public:
     Component(GameObject* owner) : owner(owner) {}
     virtual ~Component() = default;
-    
+
     virtual void initialize() {}
     virtual void update(float deltaTime) {}
-    
+
     GameObject* getOwner() const { return owner; }
 
 private:
@@ -72,21 +72,21 @@ public:
     GameObject(ObjectID id, const std::string& name = "")
         : id(id), name(name) {}
     ~GameObject() = default;
-    
+
     template<typename T, typename... Args>
     T* addComponent(Args&&... args) {
         static_assert(std::is_base_of<Component, T>::value, "T must derive from Component");
-        
+
         auto component = std::make_unique<T>(this, std::forward<Args>(args)...);
         T* componentPtr = component.get();
         components.push_back(std::move(component));
         return componentPtr;
     }
-    
+
     template<typename T>
     T* getComponent() const {
         static_assert(std::is_base_of<Component, T>::value, "T must derive from Component");
-        
+
         for (const auto& component : components) {
             if (T* derived = dynamic_cast<T*>(component.get())) {
                 return derived;
@@ -94,13 +94,13 @@ public:
         }
         return nullptr;
     }
-    
+
     void update(float deltaTime) {
         for (auto& component : components) {
             component->update(deltaTime);
         }
     }
-    
+
     ObjectID getID() const { return id; }
     const std::string& getName() const { return name; }
     void setName(const std::string& newName) { name = newName; }
@@ -115,7 +115,7 @@ private:
 class System {
 public:
     virtual ~System() = default;
-    
+
     virtual void initialize() {}
     virtual void update(float deltaTime) {}
 };
@@ -125,25 +125,25 @@ class Engine {
 public:
     Engine();
     ~Engine();
-    
+
     void initialize();
     void update(float deltaTime);
     void shutdown();
-    
+
     template<typename T, typename... Args>
     T* addSystem(Args&&... args) {
         static_assert(std::is_base_of<System, T>::value, "T must derive from System");
-        
+
         auto system = std::make_unique<T>(std::forward<Args>(args)...);
         T* systemPtr = system.get();
         systems.push_back(std::move(system));
         return systemPtr;
     }
-    
+
     GameObject* createGameObject(const std::string& name = "");
     void destroyGameObject(ObjectID id);
     GameObject* findGameObject(ObjectID id) const;
-    
+
     EventManager& getEventManager() { return eventManager; }
 
 private:

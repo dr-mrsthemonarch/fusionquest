@@ -42,6 +42,15 @@ set(SOURCES
         src/stats_page.cpp
         src/load_page.cpp
         src/core/engine_core.cpp
+        src/core/components/stats_component.cpp
+        src/core/components/inventory_component.cpp
+        src/core/components/equipment_component.cpp
+        src/core/components/quest_component.cpp
+        src/core/systems/progression_system.cpp
+        src/core/systems/quest_system.cpp
+        src/core/systems/save_system.cpp
+        src/core/systems/ui_system.cpp
+        src/core/components/character_component.cpp
 )
 
 set(HEADERS
@@ -53,8 +62,17 @@ set(HEADERS
         src/logger.h
         src/globals.h
         src/core/engine_core.h
-        src/core/engine_systems.h
-        src/core/engine_components.h
+        src/core/old/engine_systems.h
+        src/core/old/engine_components.h
+        src/core/components/stats_component.h
+        src/core/components/inventory_component.h
+        src/core/components/equipment_component.h
+        src/core/components/quest_component.h
+        src/core/components/character_component.h
+        src/core/systems/progression_system.h
+        src/core/systems/quest_system.h
+        src/core/systems/save_system.h
+        src/core/systems/ui_system.h
 )
 
 # Add executable

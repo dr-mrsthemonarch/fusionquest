@@ -36,12 +36,12 @@ void Engine::initialize() {
     if (running) {
         return;
     }
-    
+
     // Initialize all systems
     for (auto& system : systems) {
         system->initialize();
     }
-    
+
     running = true;
 }
 
@@ -49,12 +49,12 @@ void Engine::update(float deltaTime) {
     if (!running) {
         return;
     }
-    
+
     // Update all systems
     for (auto& system : systems) {
         system->update(deltaTime);
     }
-    
+
     // Update all game objects
     for (auto& pair : gameObjects) {
         pair.second->update(deltaTime);
@@ -65,13 +65,13 @@ void Engine::shutdown() {
     if (!running) {
         return;
     }
-    
+
     // Clear all game objects
     gameObjects.clear();
-    
+
     // Clear all systems
     systems.clear();
-    
+
     running = false;
 }
 
@@ -92,3 +92,4 @@ GameObject* Engine::findGameObject(ObjectID id) const {
 }
 
 } // namespace FusionQuest
+
