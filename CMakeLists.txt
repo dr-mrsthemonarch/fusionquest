@@ -62,8 +62,6 @@ set(HEADERS
         src/classes/logger.h
         src/classes/globals.h
         src/core/engine_core.h
-        src/core/old/engine_systems.h
-        src/core/old/engine_components.h
         src/core/components/stats_component.h
         src/core/components/inventory_component.h
         src/core/components/equipment_component.h
@@ -73,6 +71,8 @@ set(HEADERS
         src/core/systems/quest_system.h
         src/core/systems/save_system.h
         src/core/systems/ui_system.h
+        src/core/systems/GameEngineBridge.cpp
+        src/core/systems/GameEngineBridge.h
 )
 
 # Add executable

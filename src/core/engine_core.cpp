@@ -4,82 +4,107 @@
 
 namespace FusionQuest {
 
-// Event Manager implementation
-void EventManager::subscribe(Event::Type type, EventCallback callback) {
+// ----------------------------------------------------
+// GameEvent
+// ----------------------------------------------------
+GameEvent::GameEvent(Type type) : type(type) {}
+GameEvent::~GameEvent() = default;
+GameEvent::Type GameEvent::getType() const { return type; }
+
+// ----------------------------------------------------
+// EventManager
+// ----------------------------------------------------
+void EventManager::subscribe(GameEvent::Type type, EventCallback callback) {
     callbacks[type].push_back(std::move(callback));
 }
 
-void EventManager::unsubscribe(Event::Type type, size_t callbackId) {
-    auto it = callbacks.find(type);
-    if (it != callbacks.end() && callbackId < it->second.size()) {
-        it->second.erase(it->second.begin() + callbackId);
+void EventManager::unsubscribe(GameEvent::Type type, size_t callbackId) {
+    // Simple placeholder - actual unsubscribe logic can be implemented if needed
+    if (callbacks.find(type) != callbacks.end() && callbackId < callbacks[type].size()) {
+        callbacks[type].erase(callbacks[type].begin() + callbackId);
     }
 }
 
-void EventManager::emit(const Event& event) {
+void EventManager::emit(const GameEvent& event) {
     auto it = callbacks.find(event.getType());
     if (it != callbacks.end()) {
-        for (const auto& callback : it->second) {
-            callback(event);
+        for (auto& cb : it->second) {
+            cb(event);
         }
     }
 }
 
-// Engine implementation
-Engine::Engine() = default;
+// ----------------------------------------------------
+// Component
+// ----------------------------------------------------
+Component::Component(GameObject* owner) : owner(owner) {}
+Component::~Component() = default;
 
-Engine::~Engine() {
-    shutdown();
+void Component::initialize() {}
+void Component::update(float deltaTime) {}
+GameObject* Component::getOwner() const { return owner; }
+
+// ----------------------------------------------------
+// GameObject
+// ----------------------------------------------------
+GameObject::GameObject(ObjectID id, const std::string& name)
+    : id(id), name(name) {}
+
+GameObject::~GameObject() = default;
+
+void GameObject::update(float deltaTime) {
+    for (auto& component : components) {
+        component->update(deltaTime);
+    }
 }
 
-void Engine::initialize() {
-    if (running) {
-        return;
-    }
+ObjectID GameObject::getID() const { return id; }
+const std::string& GameObject::getName() const { return name; }
+void GameObject::setName(const std::string& newName) { name = newName; }
 
-    // Initialize all systems
+// ----------------------------------------------------
+// System
+// ----------------------------------------------------
+void System::initialize() {}
+void System::update(float deltaTime) {}
+
+// ----------------------------------------------------
+// Engine
+// ----------------------------------------------------
+Engine::Engine() = default;
+Engine::~Engine() = default;
+
+void Engine::initialize() {
+    running = true;
     for (auto& system : systems) {
         system->initialize();
     }
-
-    running = true;
 }
 
 void Engine::update(float deltaTime) {
-    if (!running) {
-        return;
-    }
+    if (!running) return;
 
-    // Update all systems
     for (auto& system : systems) {
         system->update(deltaTime);
     }
 
-    // Update all game objects
-    for (auto& pair : gameObjects) {
-        pair.second->update(deltaTime);
+    for (auto& [id, object] : gameObjects) {
+        object->update(deltaTime);
     }
 }
 
 void Engine::shutdown() {
-    if (!running) {
-        return;
-    }
-
-    // Clear all game objects
-    gameObjects.clear();
-
-    // Clear all systems
-    systems.clear();
-
     running = false;
+    gameObjects.clear();
+    systems.clear();
 }
 
 GameObject* Engine::createGameObject(const std::string& name) {
-    auto gameObject = std::make_unique<GameObject>(nextObjectID++, name);
-    GameObject* ptr = gameObject.get();
-    gameObjects[ptr->getID()] = std::move(gameObject);
-    return ptr;
+    ObjectID id = nextObjectID++;
+    auto gameObject = std::make_unique<GameObject>(id, name);
+    GameObject* objPtr = gameObject.get();
+    gameObjects[id] = std::move(gameObject);
+    return objPtr;
 }
 
 void Engine::destroyGameObject(ObjectID id) {
@@ -88,8 +113,10 @@ void Engine::destroyGameObject(ObjectID id) {
 
 GameObject* Engine::findGameObject(ObjectID id) const {
     auto it = gameObjects.find(id);
-    return (it != gameObjects.end()) ? it->second.get() : nullptr;
+    return it != gameObjects.end() ? it->second.get() : nullptr;
 }
+
+EventManager& Engine::getEventManager() { return eventManager; }
 
 } // namespace FusionQuest
 

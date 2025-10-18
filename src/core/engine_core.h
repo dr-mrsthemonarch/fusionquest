@@ -16,8 +16,10 @@ class EventManager;
 // Unique identifier for game objects
 using ObjectID = size_t;
 
-// Event system
-class Event {
+// ----------------------------------------------------
+// GameEvent
+// ----------------------------------------------------
+class GameEvent {
 public:
     enum class Type {
         None,
@@ -28,50 +30,55 @@ public:
         // Add more event types as needed
     };
 
-    Event(Type type) : type(type) {}
-    virtual ~Event() = default;
+    explicit GameEvent(Type type);
+    virtual ~GameEvent();
 
-    Type getType() const { return type; }
+    Type getType() const;
 
 private:
     Type type;
 };
 
 // Event callback function type
-using EventCallback = std::function<void(const Event&)>;
+using EventCallback = std::function<void(const GameEvent&)>;
 
-// Event manager to handle communications between systems
+// ----------------------------------------------------
+// EventManager
+// ----------------------------------------------------
 class EventManager {
 public:
-    void subscribe(Event::Type type, EventCallback callback);
-    void unsubscribe(Event::Type type, size_t callbackId);
-    void emit(const Event& event);
+    void subscribe(GameEvent::Type type, EventCallback callback);
+    void unsubscribe(GameEvent::Type type, size_t callbackId);
+    void emit(const GameEvent& event);
 
 private:
-    std::unordered_map<Event::Type, std::vector<EventCallback>> callbacks;
+    std::unordered_map<GameEvent::Type, std::vector<EventCallback>> callbacks;
 };
 
-// Base component class
+// ----------------------------------------------------
+// Component
+// ----------------------------------------------------
 class Component {
 public:
-    Component(GameObject* owner) : owner(owner) {}
-    virtual ~Component() = default;
+    explicit Component(GameObject* owner);
+    virtual ~Component();
 
-    virtual void initialize() {}
-    virtual void update(float deltaTime) {}
+    virtual void initialize();
+    virtual void update(float deltaTime);
 
-    GameObject* getOwner() const { return owner; }
+    GameObject* getOwner() const;
 
 private:
     GameObject* owner;
 };
 
-// Game object class that can have multiple components
+// ----------------------------------------------------
+// GameObject
+// ----------------------------------------------------
 class GameObject {
 public:
-    GameObject(ObjectID id, const std::string& name = "")
-        : id(id), name(name) {}
-    ~GameObject() = default;
+    GameObject(ObjectID id, const std::string& name = "");
+    ~GameObject();
 
     template<typename T, typename... Args>
     T* addComponent(Args&&... args) {
@@ -95,15 +102,10 @@ public:
         return nullptr;
     }
 
-    void update(float deltaTime) {
-        for (auto& component : components) {
-            component->update(deltaTime);
-        }
-    }
-
-    ObjectID getID() const { return id; }
-    const std::string& getName() const { return name; }
-    void setName(const std::string& newName) { name = newName; }
+    void update(float deltaTime);
+    ObjectID getID() const;
+    const std::string& getName() const;
+    void setName(const std::string& newName);
 
 private:
     ObjectID id;
@@ -111,16 +113,19 @@ private:
     std::vector<std::unique_ptr<Component>> components;
 };
 
-// Base system class
+// ----------------------------------------------------
+// System
+// ----------------------------------------------------
 class System {
 public:
     virtual ~System() = default;
-
-    virtual void initialize() {}
-    virtual void update(float deltaTime) {}
+    virtual void initialize();
+    virtual void update(float deltaTime);
 };
 
-// Game engine core
+// ----------------------------------------------------
+// Engine
+// ----------------------------------------------------
 class Engine {
 public:
     Engine();
@@ -144,7 +149,7 @@ public:
     void destroyGameObject(ObjectID id);
     GameObject* findGameObject(ObjectID id) const;
 
-    EventManager& getEventManager() { return eventManager; }
+    EventManager& getEventManager();
 
 private:
     std::vector<std::unique_ptr<System>> systems;
