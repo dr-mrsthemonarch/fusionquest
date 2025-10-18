@@ -5,9 +5,11 @@
 #include <cstdlib>
 #include <thread>
 #include <chrono>
+#include <iostream>
 
 int main() {
     // Initialize random seed for stat rolling
+    std::cout << "printing to terminal to test syncing to new branch";
     std::srand(std::time(nullptr));
 
     // Create character and page state
