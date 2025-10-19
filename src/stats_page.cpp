@@ -122,6 +122,19 @@ Component CreateStatsPage(int *selected_page, Character *character, Closure exit
                                                                }),
                                                                separator(),
                                                                hbox({
+                                                                   text("Weapon: ") | bold,
+                                                                   text("Vintage Macbook")
+                                                               }),
+                                                               hbox({
+                                                                   text("Dress: ") | bold,
+                                                                   text("Smelly Metal sweater")
+                                                               }),
+                                                               hbox({
+                                                                   text("Accessory: ") | bold,
+                                                                   text("Battery powered heated mug")
+                                                               }),
+                                                               separator(),
+                                                               hbox({
                                                                    text("Runway: ") | bold,
                                                                    text(std::to_string(int(character->health * 100)) +
                                                                         "/100")
@@ -198,7 +211,7 @@ Component CreateStatsPage(int *selected_page, Character *character, Closure exit
                                                       gauge(0.5f) | color(Color::BlueLight),
                                                       separator(),
                                                       text("Active Quests: 3/5") | bold,
-                                                  }) | border |size(HEIGHT,EQUAL,23);
+                                                  }) | border | size(HEIGHT, EQUAL, 23);
 
                                  Element inventory = vbox({
                                                          text("Inventory") | bold | center,
@@ -209,7 +222,7 @@ Component CreateStatsPage(int *selected_page, Character *character, Closure exit
                                                              text("Selloff (" + std::to_string(
                                                                       int(encumberance_bar->GetProgress() * 100)) +
                                                                   "%)")
-                                                         }) | border| size(HEIGHT, EQUAL, 8)
+                                                         }) | border | size(HEIGHT, EQUAL, 8)
                                                      }) | border | size(HEIGHT, EQUAL, 22);
 
 
