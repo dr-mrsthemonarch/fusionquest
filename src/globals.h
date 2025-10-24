@@ -4,6 +4,7 @@
 
 #ifndef GLOBALS_H
 #define GLOBALS_H
+#include <vector>
 
 // Static lists for character creation
 const std::vector<std::string> RACES = {
