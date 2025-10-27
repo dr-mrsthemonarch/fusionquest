@@ -113,11 +113,11 @@ Component CreateStatsPage(int *selected_page, Character *character,
                   text(RACES[character->race_index])}),
             hbox({text("Startup Name: ") | bold,
                   text(FUSION_STARTUPS[character->fusion_index])}),
-            separator(),
-            hbox({text("Weapon: ") | bold, text("Vintage Macbook")}),
-            hbox({text("Dress: ") | bold, text("Smelly Sweater")}),
-            hbox({text("Accessory: ") | bold,
-                  text("Battery powered heated mug")}),
+            // separator(),
+            // hbox({text("Weapon: ") | bold, text("Vintage Macbook")}),
+            // hbox({text("Dress: ") | bold, text("Smelly Sweater")}),
+            // hbox({text("Accessory: ") | bold,
+            //       text("Battery powered heated mug")}),
             separator(),
             hbox({text("Runway: ") | bold,
                   text(std::to_string(int(character->health * 100)) + "/100")}),
@@ -162,7 +162,7 @@ Component CreateStatsPage(int *selected_page, Character *character,
     Element patents =
         vbox({text("Patents") | bold | center, separator(),
               patent_items->Render() | vscroll_indicator | frame}) |
-        border | size(HEIGHT, LESS_THAN, 18);
+        border | size(HEIGHT, LESS_THAN, 14);
 
     // Column 2: Quests
     Element quests =
@@ -180,15 +180,15 @@ Component CreateStatsPage(int *selected_page, Character *character,
         border | size(HEIGHT, EQUAL, 16);
 
     Element inventory =
-        vbox({text("Inventory") | bold | center, separator(),
+        vbox({text("Bees Knees Central") | bold | center, separator(),
               inventory_items->Render() | vscroll_indicator | frame,
               vbox({gauge(encumberance_bar->GetProgress()) | color(Color::Red),
                     text("Selloff (" +
                          std::to_string(
                              int(encumberance_bar->GetProgress() * 100)) +
-                         "%)")}) |
-                  border | size(HEIGHT, EQUAL, 5)}) |
-        border | size(HEIGHT, EQUAL, 30);
+                         "%)")|center}) |
+                  border | size(HEIGHT, EQUAL, 11)}) |
+        border | size(HEIGHT, EQUAL, 18);
 
     // Column 3: Plot Development
     Element plot_dev =
@@ -204,7 +204,7 @@ Component CreateStatsPage(int *selected_page, Character *character,
             text("➤ Confront the cultists") | color(Color::Yellow),
             text("□ Find abandoned warehouse") | color(Color::GrayDark),
             separator(),
-            text("Story Progress: Act 2 of 5") | bold,
+            text("Project Progress: Sprint 2 of 5") | bold,
         }) |
         border | size(HEIGHT, EQUAL, 14);
 
@@ -217,18 +217,17 @@ Component CreateStatsPage(int *selected_page, Character *character,
         vbox({
             text("Equipment") | bold | center,
             separator(),
-            hbox({text("Weapon: ") | bold, text("Vorpal Macbook Pro")}),
-            hbox({text("Backpack: ") | bold, text("Alpine Rockjocky")}),
-            hbox({text("Phone: ") | bold, text("Yphone 18")}),
-            hbox({text("Headphones: ") | bold, text("airbuds")}),
-            hbox({text("Bicycle: ") | bold, text("Norco Rockfacer XL")}),
-            hbox({text("Biking Helmet: ") | bold, text("Specialized")}),
-            hbox({text("Jacket: ") | bold, text("Canadian Goose")}),
-            hbox({text("Gloves: ") | bold, text("Shitty leather gloves")}),
-            hbox({text("Pants: ") | bold, text("Shorts")}),
-            hbox({text("Shoes: ") | bold, text("Campers one size too small")}),
-        }) |
-        border;
+            hbox({text("Weapon: ") | bold | size(WIDTH, EQUAL, 15), text("Vorpal Macbook Pro")}),
+            hbox({text("Phone: ") | bold | size(WIDTH, EQUAL, 15), text("Yphone 18")}),
+            hbox({text("Backpack: ") | bold | size(WIDTH, EQUAL, 15), text("Alpine Rockjocky")}),
+            hbox({text("Biking Helmet: ") | bold | size(WIDTH, EQUAL, 15), text("Specialized")}),
+            hbox({text("Headphones: ") | bold | size(WIDTH, EQUAL, 15), text("airbuds")}),
+            hbox({text("Bicycle: ") | bold | size(WIDTH, EQUAL, 15), text("Norco Rockfacer XL")}),
+            hbox({text("Jacket: ") | bold | size(WIDTH, EQUAL, 15), text("Canadian Goose")}),
+            hbox({text("Gloves: ") | bold | size(WIDTH, EQUAL, 15), text("Shitty leather gloves")}),
+            hbox({text("Pants: ") | bold | size(WIDTH, EQUAL, 15), text("Shorts")}),
+            hbox({text("Shoes: ") | bold | size(WIDTH, EQUAL, 15), text("Campers one size too small")}),
+        }) | border | size(HEIGHT, EQUAL, 12);
 
     // Bottom progress bar
     Element progress_gauge =
@@ -247,13 +246,15 @@ Component CreateStatsPage(int *selected_page, Character *character,
                           vbox({
                               character_stats,
                               experience_gauge,
-                              patents,
-                          }) | flex,
-                          vbox({
                               equipment | flex,
-                              inventory | flex,
                           }) | flex,
-                          vbox({plot_dev, quests}) | flex,
+                          //Row 2
+                          vbox({
+                              inventory | flex,
+                              patents | flex
+                          }) | flex,
+                          //Row 3
+                          vbox({plot_dev, quests,}) | flex,
                       }),
                       // Progress bar at the bottom
                       progress_gauge,
