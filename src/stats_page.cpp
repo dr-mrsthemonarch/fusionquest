@@ -206,7 +206,7 @@ Component CreateStatsPage(int *selected_page, Character *character,
             separator(),
             text("Project Progress: Sprint 2 of 5") | bold,
         }) |
-        border | size(HEIGHT, EQUAL, 14);
+        border | size(HEIGHT, EQUAL, 20);
 
     // Element equipment =
     //     vbox({text("Equipment") | bold | center, separator(),
@@ -217,16 +217,16 @@ Component CreateStatsPage(int *selected_page, Character *character,
         vbox({
             text("Equipment") | bold | center,
             separator(),
-            hbox({text("Weapon: ") | bold | size(WIDTH, EQUAL, 15), text("Vorpal Macbook Pro")}),
-            hbox({text("Phone: ") | bold | size(WIDTH, EQUAL, 15), text("Yphone 18")}),
-            hbox({text("Backpack: ") | bold | size(WIDTH, EQUAL, 15), text("Alpine Rockjocky")}),
-            hbox({text("Biking Helmet: ") | bold | size(WIDTH, EQUAL, 15), text("Specialized")}),
-            hbox({text("Headphones: ") | bold | size(WIDTH, EQUAL, 15), text("airbuds")}),
-            hbox({text("Bicycle: ") | bold | size(WIDTH, EQUAL, 15), text("Norco Rockfacer XL")}),
-            hbox({text("Jacket: ") | bold | size(WIDTH, EQUAL, 15), text("Canadian Goose")}),
-            hbox({text("Gloves: ") | bold | size(WIDTH, EQUAL, 15), text("Shitty leather gloves")}),
-            hbox({text("Pants: ") | bold | size(WIDTH, EQUAL, 15), text("Shorts")}),
-            hbox({text("Shoes: ") | bold | size(WIDTH, EQUAL, 15), text("Campers one size too small")}),
+            hbox({text("Weapon: ") | bold | size(WIDTH, EQUAL, 16), text("+1 ") | size(WIDTH, EQUAL, 8),text("Vorpal Macbook Pro")}),
+            hbox({text("Phone: ") | bold | size(WIDTH, EQUAL, 16), text("+21 ") | size(WIDTH, EQUAL, 8), text("Yphone 18")}),
+            hbox({text("Backpack: ") | bold | size(WIDTH, EQUAL, 16), text("+2 ") | size(WIDTH, EQUAL, 8),text("Alpine Rockjocky")}),
+            hbox({text("Biking Helmet: ") | bold | size(WIDTH, EQUAL, 16), text("+1 ") | size(WIDTH, EQUAL, 8), text("Specialized")}),
+            hbox({text("Headphones: ") | bold | size(WIDTH, EQUAL, 16), text("+54 ") | size(WIDTH, EQUAL, 8), text("airbuds")}),
+            hbox({text("Bicycle: ") | bold | size(WIDTH, EQUAL, 16), text("+80 ") | size(WIDTH, EQUAL, 8), text("Norco Rockfacer XL")}),
+            hbox({text("Jacket: ") | bold | size(WIDTH, EQUAL, 16), text("+3 ") | size(WIDTH, EQUAL, 8), text("Canadian Goose")}),
+            hbox({text("Gloves: ") | bold | size(WIDTH, EQUAL, 16), text("-20 ") | size(WIDTH, EQUAL, 8), text("Shitty leather gloves")}),
+            hbox({text("Pants: ") | bold | size(WIDTH, EQUAL, 16), text("-8 ") | size(WIDTH, EQUAL, 8), text("Shorts")}),
+            hbox({text("Shoes: ") | bold | size(WIDTH, EQUAL, 16), text("-5 ") | size(WIDTH, EQUAL, 8), text("Campers one size too small")}),
         }) | border | size(HEIGHT, EQUAL, 12);
 
     // Bottom progress bar
