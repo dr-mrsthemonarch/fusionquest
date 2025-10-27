@@ -142,7 +142,7 @@ Component CreateStatsPage(int *selected_page, Character *character,
                   text(std::to_string(character->busfactor))}),
 
         }) |
-        border ;
+        border;
 
     // Column 1: Experience bar
     Element experience_gauge = window(
@@ -166,23 +166,18 @@ Component CreateStatsPage(int *selected_page, Character *character,
 
     // Column 2: Quests
     Element quests =
-        vbox({
-            text("Quests") | bold | center,
-            separator(),
-            text("Main Quest: Druming up the Beats") | color(Color::Yellow),
-            gauge(0.7f) | color(Color::Yellow),
-            separator(),
-            text("Side Hustle: Comsol Consultancy") | color(Color::GreenLight),
-            gauge(0.3f) | color(Color::GreenLight),
-            separator(),
-            text("Dev: Quantum Dots") | color(Color::BlueLight),
-            gauge(0.5f) | color(Color::BlueLight),
-            separator(),
-            text("Active Quests: 3/5") | bold | size(HEIGHT, EQUAL, 1),
-          separator(),
-          text("Completed Projects: 12") | bold | size(HEIGHT, EQUAL, 1)
-        }) |
-        border | size(HEIGHT, EQUAL, 16) ;
+        vbox(
+            {text("Quests") | bold | center, separator(),
+             text("Main Quest: Druming up the Beats") | color(Color::Yellow),
+             gauge(0.7f) | color(Color::Yellow), separator(),
+             text("Side Hustle: Comsol Consultancy") | color(Color::GreenLight),
+             gauge(0.3f) | color(Color::GreenLight), separator(),
+             text("Dev: Quantum Dots") | color(Color::BlueLight),
+             gauge(0.5f) | color(Color::BlueLight), separator(),
+             text("Active Quests: 3/5") | bold | size(HEIGHT, EQUAL, 1),
+             separator(),
+             text("Completed Projects: 12") | bold | size(HEIGHT, EQUAL, 1)}) |
+        border | size(HEIGHT, EQUAL, 16);
 
     Element inventory =
         vbox({text("Inventory") | bold | center, separator(),
@@ -193,7 +188,7 @@ Component CreateStatsPage(int *selected_page, Character *character,
                              int(encumberance_bar->GetProgress() * 100)) +
                          "%)")}) |
                   border | size(HEIGHT, EQUAL, 5)}) |
-        border | size(HEIGHT,EQUAL,30)  ;
+        border | size(HEIGHT, EQUAL, 30);
 
     // Column 3: Plot Development
     Element plot_dev =
@@ -209,13 +204,31 @@ Component CreateStatsPage(int *selected_page, Character *character,
             text("➤ Confront the cultists") | color(Color::Yellow),
             text("□ Find abandoned warehouse") | color(Color::GrayDark),
             separator(),
-            text("Story Progress: Act 2 of 5") | bold ,
-        })| border | size(HEIGHT, EQUAL, 14) ;
+            text("Story Progress: Act 2 of 5") | bold,
+        }) |
+        border | size(HEIGHT, EQUAL, 14);
+
+    // Element equipment =
+    //     vbox({text("Equipment") | bold | center, separator(),
+    //           equipment_items->Render() | vscroll_indicator | frame}) |
+    //     border | size(HEIGHT, GREATER_THAN, 28) |yflex;
 
     Element equipment =
-        vbox({text("Equipment") | bold | center, separator(),
-              equipment_items->Render() | vscroll_indicator | frame}) |
-        border | size(HEIGHT, GREATER_THAN, 28) |yflex;
+        vbox({
+            text("Equipment") | bold | center,
+            separator(),
+            hbox({text("Weapon: ") | bold, text("Vorpal Macbook Pro")}),
+            hbox({text("Backpack: ") | bold, text("Alpine Rockjocky")}),
+            hbox({text("Phone: ") | bold, text("Yphone 18")}),
+            hbox({text("Headphones: ") | bold, text("airbuds")}),
+            hbox({text("Bicycle: ") | bold, text("Norco Rockfacer XL")}),
+            hbox({text("Biking Helmet: ") | bold, text("Specialized")}),
+            hbox({text("Jacket: ") | bold, text("Canadian Goose")}),
+            hbox({text("Gloves: ") | bold, text("Shitty leather gloves")}),
+            hbox({text("Pants: ") | bold, text("Shorts")}),
+            hbox({text("Shoes: ") | bold, text("Campers one size too small")}),
+        }) |
+        border;
 
     // Bottom progress bar
     Element progress_gauge =
@@ -227,22 +240,28 @@ Component CreateStatsPage(int *selected_page, Character *character,
                   gauge(progress_bar->GetProgress()) | color(Color::Blue)})) |
         size(HEIGHT, EQUAL, 4);
 
-    return window(
-        countdown_timer->Render(),
-        vbox({
-            // Row 1
-            hbox({
-                vbox({character_stats,experience_gauge,patents,}) | flex,
-                vbox({quests | flex,inventory | flex,}) | flex,
-                vbox({plot_dev , equipment }) | flex,
-            }),
-            // Progress bar at the bottom
-            progress_gauge,
-            separator(),
-            hbox({back_button->Render(), save_button->Render(),
-                  quit_button->Render()}) |
-                center,
-        }));
+    return window(countdown_timer->Render(),
+                  vbox({
+                      // Row 1
+                      hbox({
+                          vbox({
+                              character_stats,
+                              experience_gauge,
+                              patents,
+                          }) | flex,
+                          vbox({
+                              equipment | flex,
+                              inventory | flex,
+                          }) | flex,
+                          vbox({plot_dev, quests}) | flex,
+                      }),
+                      // Progress bar at the bottom
+                      progress_gauge,
+                      separator(),
+                      hbox({back_button->Render(), save_button->Render(),
+                            quit_button->Render()}) |
+                          center,
+                  }));
   });
 
   return renderer;
