@@ -1,26 +1,32 @@
 // ui.cpp
-#include "ui.h"
+#include "../include/ui.h"
+#include "../include/GameEngine.h"
+#include "../include/GameClock.h"
 #include <ftxui/component/component.hpp>
 #include <ftxui/component/screen_interactive.hpp>
 
 using namespace ftxui;
 
-Component CreateUI(int* selected_page, Character* character,Closure exit_closure) {
-    // Create individual pages
+Component CreateUI(int* selected_page, GameEngine* engine,
+                    std::shared_ptr<CountdownComponent> countdown_timer,
+                    Closure exit_closure) {
     auto main_menu = CreateMainMenu(selected_page);
-    auto page_one = CreatePageOne(selected_page);
-    auto load_page = CreateLoadPage(selected_page, character);
-    auto character_creation = CreateCharacterCreationPage(selected_page, character);
-    auto stats_page = CreateStatsPage(selected_page, character,std::move(exit_closure));
+    auto load_page = CreateLoadPage(selected_page, engine, countdown_timer);
+    auto character_creation = CreateCharacterCreationPage(selected_page, engine);
+    auto stats_page = CreateStatsPage(selected_page, engine, countdown_timer, std::move(exit_closure));
+    auto battle_page = CreateBattlePage(selected_page, engine);
+    auto equipment_page = CreateEquipmentPage(selected_page, engine);
+    auto special_drops_page = CreateSpecialDropsPage(selected_page, engine);
 
-    // Create UI with navigation
     auto pages = Container::Tab(
         {
             main_menu,
-            page_one,
             load_page,
             character_creation,
-            stats_page
+            stats_page,
+            battle_page,
+            equipment_page,
+            special_drops_page,
         },
         selected_page
     );

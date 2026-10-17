@@ -1,269 +1,147 @@
-#include "character.h"
-#include "globals.h"
+#include "../include/GameEngine.h"
+#include "../include/GameClock.h"
+#include "../include/SaveGame.h"
+#include "../include/Patent.h"
+#include "../include/ui.h"
+#include "../include/globals.h"
 #include "progress_bar.h"
-#include "ui.h"
-#include <chrono>
 #include <ftxui/component/component.hpp>
 #include <ftxui/dom/elements.hpp>
 
 using namespace ftxui;
 
-class CountdownComponent : public ComponentBase {
-public:
-  CountdownComponent() {
-    start_time_ = std::chrono::system_clock::now();
-    target_time_ = start_time_ + std::chrono::hours(24 * 365 * 20); // 20 years
-  }
-
-  [[nodiscard]] std::string GetCountdownString() const {
-    auto now = std::chrono::system_clock::now();
-    auto remaining =
-        std::chrono::duration_cast<std::chrono::seconds>(target_time_ - now);
-
-    if (remaining.count() <= 0) {
-      return "Fusion Quest - LAUNCH TIME!";
-    }
-
-    auto seconds = remaining.count();
-    auto minutes = seconds / 60;
-    seconds %= 60;
-    auto hours = minutes / 60;
-    minutes %= 60;
-    auto days = hours / 24;
-    hours %= 24;
-    auto months = days / 30;
-    days %= 30; // Approximation
-    auto years = months / 12;
-    months %= 12;
-
-    return "Fusion Quest - Power Plant Comissioning: " + std::to_string(years) +
-           "y " + std::to_string(months) + "m " + std::to_string(days) + "d " +
-           std::to_string(hours) + "h " + std::to_string(minutes) + "m " +
-           std::to_string(seconds) + "s";
-  }
-
-  Element Render() {
-    // Force an animation frame update every second
-    if (animation_frame_++ % 60 == 0) {
-      // Assuming ~60fps, update every second
-      // The screen will refresh automatically
-    }
-    return text(GetCountdownString()) | bold | center;
-  }
-
-private:
-  std::chrono::system_clock::time_point start_time_;
-  std::chrono::system_clock::time_point target_time_;
-  int animation_frame_ = 0;
-};
+// NOTE: layout tree (vbox/hbox/border/window structure) kept identical to original.
+// only data sources changed: hardcoded/global lists -> GameEngine state, pulled fresh
+// each render frame (ftxui's existing 100ms refresh-thread pattern already re-renders
+// everything, so no extra polling infra needed).
 
 int selected_equipment_index = 0;
 int selected_patent_index = 0;
 int selected_inventory_index = 0;
 
-Component CreateStatsPage(int *selected_page, Character *character,
-                          Closure exit_closure) {
-  // Create progress bars for experience and progress
-  auto experience_bar = std::make_shared<ProgressBar>(1.0f, 0.01f, true);
-  auto progress_bar = std::make_shared<ProgressBar>(0.07f, 0.005f, true);
-  auto encumberance_bar = std::make_shared<ProgressBar>(0.1f, 0.001f, true);
+Component CreateStatsPage(int* selected_page, GameEngine* engine,
+                           std::shared_ptr<CountdownComponent> countdown_timer,
+                           Closure exit_closure) {
+    auto experience_bar = std::make_shared<ProgressBar>(0.0f, 0.01f, true);
+    auto progress_bar = std::make_shared<ProgressBar>(0.0f, 0.005f, true);
+    auto encumberance_bar = std::make_shared<ProgressBar>(0.0f, 0.001f, true);
+    experience_bar->Start(); encumberance_bar->Start(); progress_bar->Start();
 
-  // Create countdown timer
-  auto countdown_timer = Make<CountdownComponent>();
+    auto back_button = Button("Back to Main", [selected_page] { *selected_page = MAIN_MENU; }) | size(HEIGHT, EQUAL, 3);
+    auto save_button = Button("Save", [engine] { SaveGame::save(*engine, "saves/quicksave.sav"); }) | size(HEIGHT, EQUAL, 3);
+    auto quit_button = Button("Quit", std::move(exit_closure)) | size(HEIGHT, EQUAL, 3);
 
-  // Start the progress bars
-  experience_bar->Start();
-  encumberance_bar->Start();
-  progress_bar->Start();
+    // persistent backing vectors for Menu widgets - contents refilled each render, pointer stable
+    auto equipment_list = std::make_shared<std::vector<std::string>>();
+    auto patent_list = std::make_shared<std::vector<std::string>>();
+    auto inventory_list = std::make_shared<std::vector<std::string>>();
 
-  auto back_button =
-      Button("Back to Main", [selected_page] { *selected_page = MAIN_MENU; }) |
-      size(HEIGHT, EQUAL, 3);
-  auto save_button =
-      Button("Save", [selected_page] { *selected_page = MAIN_MENU; }) |
-      size(HEIGHT, EQUAL, 3);
-  auto quit_button =
-      Button("Quit", std::move(exit_closure)) | size(HEIGHT, EQUAL, 3);
+    auto equipment_items = Menu(equipment_list.get(), &selected_equipment_index);
+    auto patent_items = Menu(patent_list.get(), &selected_patent_index);
+    auto inventory_items = Menu(inventory_list.get(), &selected_inventory_index);
 
-  // Create a container for equipment, patents
-  auto equipment_items = Menu(&equipment_list, &selected_equipment_index);
-  auto patent_items = Menu(&patent_list, &selected_patent_index);
-  auto inventory_items = Menu(&inventory_list, &selected_inventory_index);
+    auto container = Container::Vertical({back_button, save_button, quit_button,
+                                           equipment_items, patent_items, inventory_items});
 
-  // Create a container that includes all components
-  auto container =
-      Container::Vertical({back_button, save_button, quit_button,
-                           equipment_items, patent_items, inventory_items});
+    auto renderer = Renderer(container, [=] {
+        Character* c = engine->getCharacter();
 
-  auto renderer = Renderer(container, [back_button, save_button, quit_button,
-                                       character, experience_bar, progress_bar,
-                                       encumberance_bar, equipment_items,
-                                       patent_items, inventory_items,
-                                       countdown_timer] {
-    // Column 1: Character Stats
+        // refill backing lists from live engine state
+        equipment_list->clear();
+        for (const auto& [type, eq] : c->getEquippedItemsMap())
+            equipment_list->push_back(eq.name + " (+" + std::to_string(eq.equipmentvalue) + ")");
 
-    Element character_stats =
-        vbox({
-            text("Character") | bold | center,
+        patent_list->clear();
+        for (const auto& [name, patent] : Patent::characterPatents)
+            patent_list->push_back(patent.getFullName() + " | Pwr " + std::to_string(patent.getCurrentPower()));
+
+        inventory_list->clear();
+        for (const auto& [name, val] : c->getInventoryMap())
+            inventory_list->push_back(name + " ($" + std::to_string(val) + ")");
+
+        experience_bar->SetProgress(static_cast<float>(c->getFundingProgress() / 100.0));
+        encumberance_bar->SetProgress(static_cast<float>(c->getInventoryCount()) / std::max(1, c->getInventoryLimit()));
+
+        Element character_stats =
+            vbox({
+                text("Character") | bold | center,
+                separator(),
+                hbox({text("Name: ") | bold | size(WIDTH, EQUAL, 16), text(c->getName())}),
+                hbox({text("Position: ") | bold | size(WIDTH, EQUAL, 16), text(c->getStartup())}),
+                separator(),
+                hbox({text("Runway: ") | bold | size(WIDTH, EQUAL, 16),
+                      text(std::to_string(c->getRunway()) + "/" + std::to_string(c->getMaxRunway()))}),
+                hbox({text("Hype Energy: ") | bold | size(WIDTH, EQUAL, 16),
+                      text(std::to_string(c->getHypeEnergy()) + "/" + std::to_string(c->getMaxHypeEnergy()))}),
+                hbox({text("Money: ") | bold | size(WIDTH, EQUAL, 16), text("$" + std::to_string(c->getMoney()))}),
+                separator(),
+                hbox({text("Hustle: ") | bold | size(WIDTH, EQUAL, 16), text(std::to_string(c->getModifiedHustle()))}),
+                hbox({text("Agile-ity: ") | bold | size(WIDTH, EQUAL, 16), text(std::to_string(c->getModifiedAgility()))}),
+                hbox({text("NDAs: ") | bold | size(WIDTH, EQUAL, 16), text(std::to_string(c->getModifiedNDAs()))}),
+                hbox({text("Luck: ") | bold | size(WIDTH, EQUAL, 16), text(std::to_string(c->getModifiedLuck()))}),
+                hbox({text("Synergy: ") | bold | size(WIDTH, EQUAL, 16), text(std::to_string(c->getModifiedSynergy()))}),
+                hbox({text("Technical Debt: ") | bold | size(WIDTH, EQUAL, 16), text(std::to_string(c->getTechnicalDebt()))}),
+                hbox({text("Bus Factor: ") | bold | size(WIDTH, EQUAL, 16), text(std::to_string(c->getBusFactor()))}),
+            }) | border;
+
+        Element experience_gauge = window(
+            text("Funding") | bold | center,
+            vbox({
+                gauge(experience_bar->GetProgress()) | color(Color::Yellow),
+                text("Series " + std::to_string(c->getSeries()) +
+                     " (" + std::to_string(int(experience_bar->GetProgress() * 100)) + "%)") | center,
+            }));
+
+        Element patents =
+            vbox({text("Patents") | bold | center, separator(),
+                  patent_items->Render() | vscroll_indicator | frame}) |
+            border | size(HEIGHT, LESS_THAN, 14);
+
+        Element inventory =
+            vbox({text("Bees Knees Central") | bold | center, separator(),
+                  inventory_items->Render() | vscroll_indicator | frame,
+                  vbox({gauge(encumberance_bar->GetProgress()) | color(Color::Red),
+                        text("Storage (" + std::to_string(c->getInventoryCount()) + "/"
+                             + std::to_string(c->getInventoryLimit()) + ")") | center}) |
+                      border | size(HEIGHT, EQUAL, 11)}) |
+            border | size(HEIGHT, EQUAL, 18);
+
+        // battle log replaces static "Quests"/"Project Management" placeholder panels
+        Element battle_log_panel = vbox({
+            text("Battle Log") | bold | center,
             separator(),
-            hbox({text("Name: ") | bold| size(WIDTH,EQUAL,16),
-                  text(character->name.empty() ? "Unknown" : character->name)}),
-            hbox({text("Employee nr: ") | bold| size(WIDTH,EQUAL,16), text("57")}),
-            hbox({text("Position: ") | bold| size(WIDTH,EQUAL,16),
-                  text(RACES[character->race_index])}),
-            hbox({text("Startup Name: ") | bold| size(WIDTH,EQUAL,16),
-                  text(FUSION_STARTUPS[character->fusion_index])}),
-            // separator(),
-            // hbox({text("Weapon: ") | bold, text("Vintage Macbook")}),
-            // hbox({text("Dress: ") | bold, text("Smelly Sweater")}),
-            // hbox({text("Accessory: ") | bold,
-            //       text("Battery powered heated mug")}),
-            separator(),
-            hbox({text("Runway: ") | bold | size(WIDTH,EQUAL,16),
-                  text(std::to_string(int(character->health * 100)) + "/100")}),
-            hbox({text("Hype Energy: ") | bold| size(WIDTH,EQUAL,16),
-                  text(std::to_string(int(character->mana * 100)) + "/100")}),
-            hbox({text("Income: ") | bold| size(WIDTH,EQUAL,16),
-                  text("0,000,000,000,000.60 $")}),
-            separator(),
-            hbox({text("Hustle: ") | bold| size(WIDTH,EQUAL,16),
-                  text(std::to_string(character->hustle))}),
-            hbox({text("Agile-ity: ") | bold| size(WIDTH,EQUAL,16),
-                  text(std::to_string(character->agility))}),
-            hbox(
-                {text("NDAs: ") | bold| size(WIDTH,EQUAL,16), text(std::to_string(character->ndas))}),
-            hbox(
-                {text("Luck: ") | bold| size(WIDTH,EQUAL,16), text(std::to_string(character->luck))}),
-            hbox({text("Synergy: ") | bold| size(WIDTH,EQUAL,16),
-                  text(std::to_string(character->Synergy))}),
-            hbox({text("Technical Debt: ") | bold| size(WIDTH,EQUAL,16),
-                  text(std::to_string(character->techdebt))}),
-            hbox({text("Bus Factor: ") | bold| size(WIDTH,EQUAL,16),
-                  text(std::to_string(character->busfactor))}),
+            [&] {
+                std::vector<Element> lines;
+                const auto& log = engine->getLog().lines();
+                size_t start = log.size() > 12 ? log.size() - 12 : 0;
+                for (size_t i = start; i < log.size(); ++i) lines.push_back(text(log[i]));
+                return vbox(std::move(lines));
+            }(),
+        }) | border | size(HEIGHT, EQUAL, 20);
 
-        }) |
-        border;
+        Element equipment =
+            vbox({text("Equipment") | bold | center, separator(),
+                  equipment_items->Render() | vscroll_indicator | frame}) |
+            border | size(HEIGHT, EQUAL, 12);
 
-    // Column 1: Experience bar
-    Element experience_gauge = window(
-        text("Funding") | bold | center,
-        vbox({
-            gauge(experience_bar->GetProgress()) | color(Color::Yellow),
-            text("Series " +
-                 std::to_string(1 + int(experience_bar->GetProgress() * 10)) +
-                 " (" +
-                 std::to_string(int(experience_bar->GetProgress() * 100)) +
-                 "%)") |
-                center,
-        }));
+        Element progress_gauge =
+            window(text("Progress") | bold | center,
+                   vbox({text("Battles won: " + std::to_string(engine->getCounters().totalVictories)),
+                         gauge(std::min(1.0f, c->getSeries() / 20.0f)) | color(Color::Blue)})) |
+            size(HEIGHT, EQUAL, 4);
 
-    // Column 1: Patents
+        return window(countdown_timer->Render(),
+                       vbox({
+                           hbox({
+                               vbox({character_stats, experience_gauge, equipment | flex}) | flex,
+                               vbox({inventory | flex, patents | flex}) | flex,
+                               vbox({battle_log_panel}) | flex,
+                           }),
+                           progress_gauge,
+                           separator(),
+                           hbox({back_button->Render(), save_button->Render(), quit_button->Render()}) | center,
+                       }));
+    });
 
-    Element patents =
-        vbox({text("Patents") | bold | center, separator(),
-              patent_items->Render() | vscroll_indicator | frame}) |
-        border | size(HEIGHT, LESS_THAN, 14);
-
-    // Column 2: Quests
-    Element quests =
-        vbox(
-            {text("Quests") | bold | center, separator(),
-             text("Main Quest: Druming up the Beats") | color(Color::Yellow),
-             gauge(0.7f) | color(Color::Yellow), separator(),
-             text("Side Hustle: Comsol Consultancy") | color(Color::GreenLight),
-             gauge(0.3f) | color(Color::GreenLight), separator(),
-             text("Dev: Quantum Dots") | color(Color::DeepPink4),
-             gauge(0.5f) | color(Color::DeepPink4), separator(),
-             text("Active Quests: 3/5") | bold | size(HEIGHT, EQUAL, 1),
-             separator(),
-             text("Completed Projects: 12") | bold | size(HEIGHT, EQUAL, 1)}) |
-        border | size(HEIGHT, EQUAL, 16);
-
-    Element inventory =
-        vbox({text("Bees Knees Central") | bold | center, separator(),
-              inventory_items->Render() | vscroll_indicator | frame,
-              vbox({gauge(encumberance_bar->GetProgress()) | color(Color::Red),
-                    text("Selloff (" +
-                         std::to_string(
-                             int(encumberance_bar->GetProgress() * 100)) +
-                         "%)")|center}) |
-                  border | size(HEIGHT, EQUAL, 11)}) |
-        border | size(HEIGHT, EQUAL, 18);
-
-    // Column 3: Plot Development
-    Element plot_dev =
-        vbox({
-            text("Project Management") | bold | center,
-            separator(),
-            text("Sprint 1: The Beginning") | color(Color::Green),
-            text("✓ Got first Dollar") | color(Color::Green),
-            text("✓ Sold Grandmothers Soul to NFT") | color(Color::Green),
-            separator(),
-            text("Sprint 2: Dark Tidings") | color(Color::Yellow),
-            text("✓ Changed Politics") | color(Color::Green),
-            text("➤ Confront the cultists") | color(Color::Yellow),
-            text("□ Find abandoned warehouse") | color(Color::GrayDark),
-            separator(),
-            text("Project Progress: Sprint 2 of 5") | bold,
-        }) |
-        border | size(HEIGHT, EQUAL, 20);
-
-    // Element equipment =
-    //     vbox({text("Equipment") | bold | center, separator(),
-    //           equipment_items->Render() | vscroll_indicator | frame}) |
-    //     border | size(HEIGHT, GREATER_THAN, 28) |yflex;
-
-    Element equipment =
-        vbox({
-            text("Equipment") | bold | center,
-            separator(),
-            hbox({text("Weapon: ") | bold | size(WIDTH, EQUAL, 16), text("+1 ") | size(WIDTH, EQUAL, 8),text("Vorpal Macbook Pro")}),
-            hbox({text("Phone: ") | bold | size(WIDTH, EQUAL, 16), text("+21 ") | size(WIDTH, EQUAL, 8), text("Yphone 18")}),
-            hbox({text("Backpack: ") | bold | size(WIDTH, EQUAL, 16), text("+2 ") | size(WIDTH, EQUAL, 8),text("Alpine Rockjocky")}),
-            hbox({text("Biking Helmet: ") | bold | size(WIDTH, EQUAL, 16), text("+1 ") | size(WIDTH, EQUAL, 8), text("Specialized")}),
-            hbox({text("Headphones: ") | bold | size(WIDTH, EQUAL, 16), text("+54 ") | size(WIDTH, EQUAL, 8), text("airbuds")}),
-            hbox({text("Bicycle: ") | bold | size(WIDTH, EQUAL, 16), text("+80 ") | size(WIDTH, EQUAL, 8), text("Norco Rockfacer XL")}),
-            hbox({text("Jacket: ") | bold | size(WIDTH, EQUAL, 16), text("+3 ") | size(WIDTH, EQUAL, 8), text("Canadian Goose")}),
-            hbox({text("Gloves: ") | bold | size(WIDTH, EQUAL, 16), text("-20 ") | size(WIDTH, EQUAL, 8), text("Shitty leather gloves")}),
-            hbox({text("Pants: ") | bold | size(WIDTH, EQUAL, 16), text("-8 ") | size(WIDTH, EQUAL, 8), text("Shorts")}),
-            hbox({text("Shoes: ") | bold | size(WIDTH, EQUAL, 16), text("-5 ") | size(WIDTH, EQUAL, 8), text("Campers one size too small")}),
-        }) | border | size(HEIGHT, EQUAL, 12);
-
-    // Bottom progress bar
-    Element progress_gauge =
-        window(
-            text("Progress") | bold | center,
-            vbox({text("Axing the Monkey " +
-                       std::to_string(int(progress_bar->GetProgress() * 100)) +
-                       "%"),
-                  gauge(progress_bar->GetProgress()) | color(Color::Blue)})) |
-        size(HEIGHT, EQUAL, 4);
-
-    return window(countdown_timer->Render(),
-                  vbox({
-                      // Row 1
-                      hbox({
-                          vbox({
-                              character_stats,
-                              experience_gauge,
-                              equipment | flex,
-                          }) | flex,
-                          //Row 2
-                          vbox({
-                              inventory | flex,
-                              patents | flex
-                          }) | flex,
-                          //Row 3
-                          vbox({plot_dev, quests,}) | flex,
-                      }),
-                      // Progress bar at the bottom
-                      progress_gauge,
-                      separator(),
-                      hbox({back_button->Render(), save_button->Render(),
-                            quit_button->Render()}) |
-                          center,
-                  }));
-  });
-
-  return renderer;
+    return renderer;
 }

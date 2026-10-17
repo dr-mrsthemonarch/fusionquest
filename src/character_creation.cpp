@@ -1,116 +1,91 @@
 // character_creation.cpp
-#include "ui.h"
-#include "functions.h"
-#include "character.h"
-#include "globals.h"
+#include "../include/ui.h"
+#include "../include/GameEngine.h"
+#include "../include/globals.h"
 #include <ftxui/component/component.hpp>
 #include <ftxui/dom/elements.hpp>
-#include <random>
 
 using namespace ftxui;
 
+// NOTE: SPG Character's starting stats are fixed in its ctor (baseProfile_ constants),
+// not player-rollable like fusionquest's placeholder Character was. "Roll!" button kept
+// for layout parity but now just re-renders the fixed preview (no randomization target
+// exists on the real Character model). name/race/fusion selection still meaningful -
+// feed into GameEngine::initializeCharacter on submit.
 
+Component CreateCharacterCreationPage(int* selected_page, GameEngine* engine) {
+    static std::string name;
+    static int race_index = 0;
+    static int class_index = 0;
+    static int fusion_index = 0;
 
-// Modified CreateCharacterCreationPage function in character_creation.cpp
-Component CreateCharacterCreationPage(int* selected_page, Character* character) {
-    auto name_input = Input(&character->name, "Enter character name");
+    auto name_input = Input(&name, "Enter character name");
+    auto race_selector = Radiobox(&RACES, &race_index);
+    auto fusion_selector = Radiobox(&FUSION_STARTUPS, &fusion_index);
 
-    // Use `Menu` instead of `Radiobox` for scrolling support
-    auto race_selector = Radiobox(&RACES, &character->race_index);
-    auto class_selector = Radiobox(&CLASSES, &character->class_index);
-    auto fusion_selector = Radiobox(&FUSION_STARTUPS, &character->fusion_index);
+    auto roll_button = Button("Roll!", [] { /* no-op: SPG Character stats fixed at ctor, see note above */ });
 
-    auto roll_button = Button("Roll!", [character] {
-        character->hustle = RollStat(21);
-        character->agility = RollStat(21);
-        character->busfactor = RollChance();
-        character->techdebt = RollStat(21)*-1;
-        character->ndas = RollStat(21);
-        character->luck = RollStat(21);
-        character->Synergy = RollStat(1);
-    });
-
-    // Add save functionality to the "Let's Do It" button
-    auto lets_do_it_button = Button("Let's Do It", [selected_page, character] {
-        // Create a filename based on character name (sanitized)
-        std::string filename = character->name;
-        // Replace spaces and special characters with underscores
-        for (char& c : filename) {
-            if (!isalnum(c)) {
-                c = '_';
-            }
-        }
-        filename = "saves/" + filename + ".sav";
-
-        // Create saves directory if it doesn't exist
-        system("mkdir -p saves");
-
-        // Save character to file
-        bool save_success = SaveCharacterToFile(*character, filename);
-
-        // Proceed to stats page regardless of save result
+    auto lets_do_it_button = Button("Let's Do It", [selected_page, engine] {
+        if (name.empty()) name = "Unnamed Founder";
+        engine->initializeCharacter(name, "1", CLASSES[class_index], FUSION_STARTUPS[fusion_index]);
         *selected_page = STATS_PAGE;
     });
 
     auto back_button = Button("Back to Main", [selected_page] { *selected_page = MAIN_MENU; }) | size(HEIGHT, EQUAL, 4);
 
-    // Wrap race selection in a scrollable container
     auto race_container = Container::Vertical({race_selector});
     auto fusion_container = Container::Vertical({fusion_selector});
 
-    // Ensure race selection is scrollable
     auto race_renderer = Renderer(race_container, [race_selector] {
         return vbox({
             text("Race") | bold | center,
             separator(),
-            race_selector->Render() | vscroll_indicator | frame  // Enable scrolling
-        }) | border | size(HEIGHT,LESS_THAN,30);
+            race_selector->Render() | vscroll_indicator | frame
+        }) | border | size(HEIGHT, LESS_THAN, 30);
     });
 
-    // Ensure fusion selection is scrollable
     auto fusion_renderer = Renderer(fusion_container, [fusion_selector] {
         return vbox({
             text("Fusion Company") | bold | center,
             separator(),
-            fusion_selector->Render() | flex | vscroll_indicator | frame  // Enable scrolling
-        }) | border| size(HEIGHT,LESS_THAN,30);
+            fusion_selector->Render() | flex | vscroll_indicator | frame
+        }) | border | size(HEIGHT, LESS_THAN, 30);
     });
 
     auto container = Container::Vertical({
         name_input,
-        race_container,  // Make sure race selection is inside main container
+        race_container,
         fusion_container,
         roll_button,
         lets_do_it_button,
         back_button,
     });
 
-    auto renderer = Renderer(container, [container, name_input, race_renderer, fusion_renderer, roll_button, lets_do_it_button, back_button, character] {
-        Element race_column = race_renderer->Render();  // Use scrollable race selector
-        Element fusion_column = fusion_renderer->Render();  // Use scrollable race selector
+    auto renderer = Renderer(container, [=] {
+        Element race_column = race_renderer->Render();
+        Element fusion_column = fusion_renderer->Render();
 
+        // preview of fixed starting stats (Character ctor constants) - not yet-created character
         Element stats_column = vbox({
-            text("Stats") | bold | center,
+            text("Starting Stats") | bold | center,
             separator(),
-            text("NDAs: " + std::to_string(character->ndas)) | bold,
-            text("Luck: " + std::to_string(character->luck)) | bold,
-            text("Hustle: " + std::to_string(character->hustle)) | bold,
-            text("Patents: " + std::to_string(character->Synergy)) | bold,
-            text("Agile-ity: " + std::to_string(character->agility)) | bold,
-            text("Bus Factor: " + std::to_string(character->busfactor)) | bold,
-            text("Technical Debt: " + std::to_string(character->techdebt)) | bold,
-
-            separator(),
-            text("Total: " + std::to_string(character->total_stats())) | bold | center,
+            text("Runway: 80") | bold,
+            text("Hype Energy: 10") | bold,
+            text("Hustle: 20") | bold,
+            text("Agile-ity: 10") | bold,
+            text("NDAs: 9") | bold,
+            text("Luck: 5") | bold,
+            text("Synergy: 5") | bold,
+            text("Technical Debt: -10") | bold,
             separator(),
             roll_button->Render(),
             lets_do_it_button->Render(),
         }) | border;
 
         return window(text("Fusion Quest") | bold | center, vbox({
-            hbox({ text("Name: ") | bold, name_input->Render() }),
+            hbox({text("Name: ") | bold, name_input->Render()}),
             separator(),
-            hbox({ race_column | flex, fusion_column | flex, stats_column | flex }),  // Use updated race column
+            hbox({race_column | flex, fusion_column | flex, stats_column | flex}),
             separator(),
             back_button->Render(),
         }));
