@@ -168,6 +168,35 @@ public:
 
     int getModifiedSynergy() const override;
 
+    // paste into Character.h, public section. impl added to Character.cpp (see additions file).
+
+    // --- direct-set accessors, for SaveGame restore only. bypass normal game-logic paths. ---
+    void setNameDirect(const std::string& name) { name_ = name; }
+    void setStartupDirect(const std::string& startup) { startupName_ = startup; }
+    void setSeriesDirect(int series) { series_ = series; }
+    void setMoneyDirect(int money) { money_ = money; }
+    void setCurrentFundingDirect(double funding) { currentFunding_ = funding; }
+    void setMaxRunwayDirect(int maxRunway) { maxRunway_ = maxRunway; }
+    void setMaxHypeEnergyDirect(int maxHype) { maxHypeEnergy_ = maxHype; }
+
+    // full stat block restore. sets baseProfile_, recalculates profile_ w/ equipment.
+    void setBaseProfileDirect(const CharacterProfile& p) { baseProfile_ = p; recalculateStats(); }
+    const CharacterProfile& getBaseProfile() const { return baseProfile_; }
+
+    // equipment restore (equippedItems_ / equipmentInventory_ both private, no bulk getter existed)
+    const std::map<EquipmentType, Equipment>& getEquippedItemsMap() const { return equippedItems_; }
+    void setEquippedItemsDirect(const std::map<EquipmentType, Equipment>& items) {
+        equippedItems_ = items;
+        recalculateStats();
+    }
+    const std::vector<Equipment>& getEquipmentInventoryVec() const { return equipmentInventory_; }
+    void setEquipmentInventoryDirect(const std::vector<Equipment>& inv) { equipmentInventory_ = inv; }
+
+    // inventory_ is STATIC (shared across all Character instances - pre-existing design).
+    // setter mutates the shared static map.
+    static void setInventoryMapDirect(const std::unordered_map<std::string, int>& inv) { inventory = inv; }
+
+
 private:
     TemporaryEffectsManager effectsManager_;
     std::string name_;

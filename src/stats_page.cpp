@@ -2,9 +2,10 @@
 #include "../include/GameClock.h"
 #include "../include/SaveGame.h"
 #include "../include/Patent.h"
+#include "../include/progress_bar.h"
 #include "../include/ui.h"
 #include "../include/globals.h"
-#include "progress_bar.h"
+#include <algorithm>
 #include <ftxui/component/component.hpp>
 #include <ftxui/dom/elements.hpp>
 
@@ -22,14 +23,15 @@ int selected_inventory_index = 0;
 Component CreateStatsPage(int* selected_page, GameEngine* engine,
                            std::shared_ptr<CountdownComponent> countdown_timer,
                            Closure exit_closure) {
-    auto experience_bar = std::make_shared<ProgressBar>(0.0f, 0.01f, true);
-    auto progress_bar = std::make_shared<ProgressBar>(0.0f, 0.005f, true);
-    auto encumberance_bar = std::make_shared<ProgressBar>(0.0f, 0.001f, true);
-    experience_bar->Start(); encumberance_bar->Start(); progress_bar->Start();
 
     auto back_button = Button("Back to Main", [selected_page] { *selected_page = MAIN_MENU; }) | size(HEIGHT, EQUAL, 3);
     auto save_button = Button("Save", [engine] { SaveGame::save(*engine, "saves/quicksave.sav"); }) | size(HEIGHT, EQUAL, 3);
     auto quit_button = Button("Quit", std::move(exit_closure)) | size(HEIGHT, EQUAL, 3);
+
+    // target-mode bars: engine pushes targets each frame, bar interpolates (50ms tick, 0.02 step)
+    auto experience_bar = std::make_shared<ProgressBar>(0.05f, 0.02f, false);
+    auto encumberance_bar = std::make_shared<ProgressBar>(0.05f, 0.02f, false);
+    experience_bar->Start(); encumberance_bar->Start();
 
     // persistent backing vectors for Menu widgets - contents refilled each render, pointer stable
     auto equipment_list = std::make_shared<std::vector<std::string>>();
@@ -59,8 +61,10 @@ Component CreateStatsPage(int* selected_page, GameEngine* engine,
         for (const auto& [name, val] : c->getInventoryMap())
             inventory_list->push_back(name + " ($" + std::to_string(val) + ")");
 
-        experience_bar->SetProgress(static_cast<float>(c->getFundingProgress() / 100.0));
-        encumberance_bar->SetProgress(static_cast<float>(c->getInventoryCount()) / std::max(1, c->getInventoryLimit()));
+        experience_bar->SetTarget(static_cast<float>(c->getFundingProgress() / 100.0));
+        encumberance_bar->SetTarget(static_cast<float>(c->getInventoryCount()) / std::max(1, c->getInventoryLimit()));
+        float funding_pct = experience_bar->GetProgress();
+        float encumb_pct = encumberance_bar->GetProgress();
 
         Element character_stats =
             vbox({
@@ -87,9 +91,9 @@ Component CreateStatsPage(int* selected_page, GameEngine* engine,
         Element experience_gauge = window(
             text("Funding") | bold | center,
             vbox({
-                gauge(experience_bar->GetProgress()) | color(Color::Yellow),
+                gauge(funding_pct) | color(Color::Yellow),
                 text("Series " + std::to_string(c->getSeries()) +
-                     " (" + std::to_string(int(experience_bar->GetProgress() * 100)) + "%)") | center,
+                     " (" + std::to_string(int(funding_pct * 100)) + "%)") | center,
             }));
 
         Element patents =
@@ -100,7 +104,7 @@ Component CreateStatsPage(int* selected_page, GameEngine* engine,
         Element inventory =
             vbox({text("Bees Knees Central") | bold | center, separator(),
                   inventory_items->Render() | vscroll_indicator | frame,
-                  vbox({gauge(encumberance_bar->GetProgress()) | color(Color::Red),
+                  vbox({gauge(encumb_pct) | color(Color::Red),
                         text("Storage (" + std::to_string(c->getInventoryCount()) + "/"
                              + std::to_string(c->getInventoryLimit()) + ")") | center}) |
                       border | size(HEIGHT, EQUAL, 11)}) |

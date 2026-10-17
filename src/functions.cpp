@@ -9,11 +9,6 @@
 #include <sstream>
 #include <filesystem>
 
-// REMOVED: SaveCharacterToFile/LoadCharacterFromFile - depended on old placeholder
-// `character.h` struct (deleted, see rename decision). superseded by SaveGame (versioned
-// binary, covers full SPG Character + engine progress). RollStat/RollChance also removed -
-// were used by fusionquest's placeholder stat-rolling, not applicable to SPG Character model
-// (fixed base stats + equipment, see character_creation.cpp note).
 
 std::string GetTimestamp() {
     auto now = std::chrono::system_clock::now();

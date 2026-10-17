@@ -82,6 +82,11 @@ public:
 
     // DEBUG: Show boss calendar
     void debugPrintCalendar() const;
+    struct ReviewFlag { int year; int month; bool encountered; bool defeated; };
+    std::vector<ReviewFlag> exportFlags() const;
+    // restoreFlags: call AFTER generateReviewCalendar() has rebuilt the 240 entries
+    // (post-load, clock reset to elapsed=0). matches by year+month, sets encountered/defeated.
+    void restoreFlags(const std::vector<ReviewFlag>& flags);
 
 private:
     std::vector<ScheduledBoss> reviewCalendar_;

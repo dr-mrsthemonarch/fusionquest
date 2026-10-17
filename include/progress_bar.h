@@ -8,6 +8,7 @@
 #include <chrono>
 #include <atomic>
 #include <memory>
+#include <algorithm>
 
 using namespace ftxui;
 
@@ -15,6 +16,8 @@ class ProgressBar {
 public:
     ProgressBar(float update_frequency = 0.01f, float increment = 0.01f, bool loop = false)
         : update_frequency_(update_frequency), increment_(increment), loop_(loop), progress_(0.0f), running_(false) {}
+
+    ~ProgressBar() { Stop(); }
 
     // Delete copy constructor and copy assignment
     ProgressBar(const ProgressBar&) = delete;
@@ -27,6 +30,8 @@ public:
           loop_(other.loop_),
           progress_(other.progress_.load()),
           running_(other.running_.load()),
+          target_(other.target_.load()),
+          use_target_(other.use_target_.load()),
           update_thread_(std::move(other.update_thread_)) {}
 
     ProgressBar& operator=(ProgressBar&& other) noexcept {
@@ -36,6 +41,8 @@ public:
             loop_ = other.loop_;
             progress_.store(other.progress_.load());
             running_.store(other.running_.load());
+            target_.store(other.target_.load());
+            use_target_.store(other.use_target_.load());
             update_thread_ = std::move(other.update_thread_);
         }
         return *this;
@@ -73,6 +80,13 @@ public:
         Start(); // Start again
     }
 
+    // Target mode: engine pushes target value (0..1), bar interpolates toward it by increment_
+    // per update tick. thread never self-stops in this mode. safe to call every frame.
+    void SetTarget(float target) {
+        target_.store(std::clamp(target, 0.0f, 1.0f));
+        use_target_.store(true);
+    }
+
     // Get the current progress value
     float GetProgress() const {
         return progress_.load();
@@ -99,6 +113,13 @@ private:
     void UpdateLoop() {
         while (running_) {
             std::this_thread::sleep_for(std::chrono::milliseconds(int(update_frequency_ * 1000)));
+            if (use_target_.load()) {
+                float cur = progress_.load(), tgt = target_.load();
+                if (cur < tgt) cur = std::min(tgt, cur + increment_);
+                else if (cur > tgt) cur = std::max(tgt, cur - increment_);
+                progress_.store(cur);
+                continue;
+            }
             float new_progress = progress_.load() + increment_;
             if (new_progress > 1.0f) {
                 if (loop_) {
@@ -117,6 +138,8 @@ private:
     bool loop_;             // Whether to loop the progress bar
     std::atomic<float> progress_; // Current progress value (atomic for thread safety)
     std::atomic<bool> running_;  // Flag to control the update loop
+    std::atomic<float> target_{0.0f};
+    std::atomic<bool> use_target_{false};
     std::thread update_thread_;  // Thread for updating progress
 };
 

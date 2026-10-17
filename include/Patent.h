@@ -159,6 +159,7 @@ public:
 
     static Patent createFromNamedDef(const PatentDefinition& def);
 
+    void setLevelDirect(int level) { level_ = level; }
 
 private:
     int customHustleModifier_ = 0;

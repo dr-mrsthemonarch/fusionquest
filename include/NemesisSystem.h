@@ -52,6 +52,9 @@ public:
     
     // DEBUG: Force a nemesis encounter at any time point
     Monster debugGenerateNemesis(int playerSeries, double debugTimeSeconds, const std::string& playerName);
+
+
+    void setPowerLevelDirect(int level) { nemesisPowerLevel_ = level; }
     
 private:
     std::vector<NemesisEncounter> encounterHistory_;
