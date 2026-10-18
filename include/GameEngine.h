@@ -46,6 +46,7 @@ public:
     int getRoundNumber() const { return roundNumber_; }
     const BattleLog& getLog() const { return log_; }
     SpecialDropsLibrary& getSpecialDropsLibrary() { return *specialDropsLibrary_; }
+    const SpecialDropsLibrary& getSpecialDropsLibrary() const { return *specialDropsLibrary_; }
 
     struct Counters {
         int totalBattles = 0, totalVictories = 0, totalDefeats = 0;
@@ -59,7 +60,9 @@ public:
 
     // for SaveGame restore (needs class-internal access to sub-systems)
     NemesisSystem* getNemesisSystem() { return nemesisSystem_.get(); }
+    const NemesisSystem* getNemesisSystem() const { return nemesisSystem_.get(); }
     ReviewCalendarSystem* getReviewCalendarSystem() { return reviewCalendarSystem_.get(); }
+    const ReviewCalendarSystem* getReviewCalendarSystem() const { return reviewCalendarSystem_.get(); }
     Counters& mutableCounters() { return counters_; }
     // rebuild review calendar against fresh (elapsed=0) clock, keep series-based content,
     // then caller reapplies saved ReviewFlag list via getReviewCalendarSystem()->restoreFlags(...)

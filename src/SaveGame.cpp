@@ -1,5 +1,6 @@
 #include "../include/SaveGame.h"
 #include "../include/Patent.h"
+#include <map>
 #include <fstream>
 #include <iostream>
 
@@ -92,7 +93,7 @@ bool SaveGame::save(const GameEngine& engine, const std::string& filename) {
     w(f, engine.getNemesisSystem() ? engine.getNemesisSystem()->getNemesisPowerLevel() : 0);
 
     // review calendar flags
-    if (auto* rc = const_cast<GameEngine&>(engine).getReviewCalendarSystem()) {
+    if (auto* rc = engine.getReviewCalendarSystem()) {
         auto flags = rc->exportFlags();
         w(f, flags.size());
         for (const auto& fl : flags) { w(f, fl.year); w(f, fl.month); w(f, fl.encountered); w(f, fl.defeated); }
@@ -104,7 +105,7 @@ bool SaveGame::save(const GameEngine& engine, const std::string& filename) {
     w(f, engine.isShadowPlayerDefeated());
 
     // special drops library
-    const auto& lib = const_cast<GameEngine&>(engine).getSpecialDropsLibrary().getLibrary();
+    const auto& lib = engine.getSpecialDropsLibrary().getLibrary();
     w(f, lib.size());
     for (const auto& drop : lib) {
         w(f, drop.type);
@@ -143,7 +144,7 @@ bool SaveGame::load(GameEngine& engine, const std::string& filename) {
     r(f, series); r(f, money); r(f, runway); r(f, maxRunway); r(f, hype); r(f, maxHype); r(f, funding);
 
     size_t equippedCount; r(f, equippedCount);
-    std::unordered_map<EquipmentType, Equipment> equipped;
+    std::map<EquipmentType, Equipment> equipped;
     for (size_t i = 0; i < equippedCount; ++i) {
         EquipmentType type; r(f, type);
         equipped[type] = readEquipment(f);

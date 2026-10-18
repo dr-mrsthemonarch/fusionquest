@@ -123,7 +123,7 @@ public:
     double getFundingProgress() const;
 
     // Get maximum values
-    int getMaxHypeEnergy() const;
+    int getMaxHypeEnergy() const override;
 
     // Restore character to full health/energy
     void restoreToFull();

@@ -1,0 +1,64 @@
+# Named Patents - First 3 are starting patents
+# Format: [PATENT] ... [END]
+
+[PATENT]
+name=Shitty Coffee
+type=HEAL
+power=15
+cost=5
+target=SELF
+series_required=0
+technical_debt_mod=5
+duration=0
+[END]
+
+[PATENT]
+name=Late Nights
+type=ATTACK
+power=20
+cost=10
+target=ENEMY
+series_required=0
+[END]
+
+[PATENT]
+name=Startup Shield
+type=DEFENSE
+power=12
+cost=7
+target=SELF
+series_required=0
+[END]
+
+# Additional named patents pool
+[PATENT]
+name=Pivot Maneuver
+type=BUFF
+power=15
+cost=8
+target=SELF
+series_required=2
+agility_mod=5
+duration=3
+[END]
+
+[PATENT]
+name=Burn Rate Surge
+type=ATTACK
+power=35
+cost=15
+target=ENEMY
+series_required=5
+[END]
+
+[PATENT]
+name=VC Pitch
+type=BUFF
+power=20
+cost=12
+target=SELF
+series_required=3
+synergy_mod=8
+luck_mod=5
+duration=4
+[END]

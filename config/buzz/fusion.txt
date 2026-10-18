@@ -1,0 +1,142 @@
+Additional Heating
+ADITYA‑U
+Alcator C‑Mod
+Alfvén waves
+Alpha heating
+Alpha particle
+Antenna
+ASDEX Upgrade
+Aspect ratio (plasma)
+Beamlines
+Bioshield
+Blanket
+Breakeven
+Breeding Blanket
+Breeding Technologies
+Broader Approach
+Burn
+Burning Plasma
+CEA
+Central Solenoid
+Commissioning
+Confinement
+Confinement Time
+Cooldown
+Cooling Water System
+Correction Coils
+Cryogenic
+Cryoplant
+Cryopump
+Cryostat
+Current Drive
+Decommissioning
+DEMO
+Deuterium
+Deuterium‑Tritium Plasma
+Deuterium‑Tritium Reactions
+Diagnostics
+DIII‑D
+Disruption
+Disruption Mitigation
+Divertor
+Divertor Channel
+Domestic Agencies
+Double pancake
+EAST
+Electron Beam
+Electron Cyclotron Resonance Heating
+ELM
+Energy Breakeven
+Energy Confinement Time
+EPFL
+Equatorial Port
+EUROfusion
+First Wall
+Fuel Cycle System
+Fuel Pellets
+Fusion
+Fusion Performance
+Fusion Triple Product
+Gas Puffing
+Gyrotron
+H‑Mode
+Helium ash
+Hot Cell
+IAEA
+IFMIF‑DONES
+IFMIF/EVEDA
+Ignition
+Impurities
+In‑vessel components
+Ion
+Ion cyclotron resonance heating
+Ionization
+IPP
+Isotope
+ITER (the name)
+ITPA
+IUA
+JET
+JT‑60SA
+KSTAR
+Lawson’s Criteria
+Lithium
+Lower Ports
+Magnetic Confinement
+Major Plasma Radius
+MAST Upgrade
+NBTF
+NbTi Conductor
+Net Energy
+Neutral Beam Injection
+NSTX‑U
+Ohmic Heating
+Pellet Injector
+Plasma
+Plasma Current
+Plasma Shutdown
+Plasma Temperature
+Plasma‑Facing Components
+Poloidal Direction
+Poloidal Field
+Poloidal Field Coils
+Procurement Arrangement
+Q
+Quench
+Ramp‑Up Time
+Remote Handling
+Remote Maintenance
+Resistive Heating
+Runaway electrons
+Scrape‑off layer
+Separatrix
+Shattered Pellet Injection
+Shield Block Module
+Shutdown Time
+SST‑1
+Steady State Operation
+Steady State Tokamak
+Stellarator
+Superconducting Magnets
+Superconductivity
+Superconductor
+Supercritical Helium
+T‑15MD
+TCV
+TFTR
+Thermal Shield
+Tokamak
+Tore Supra
+Toroidal Current
+Toroidal Direction
+Toroidal Field
+Toroidal Field Coils
+Torus
+Tritium
+Tritium Recycling
+Upper Ports
+Vacuum Pumps
+Vacuum Vessel
+Wall conditioning
+Wall load
+WEST

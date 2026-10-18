@@ -1,0 +1,396 @@
+5G from Space
+AI for Space Systems
+Ablation
+Abort System
+Acceptance Testing
+Acoustic Testing
+Active Debris Removal
+Actuators
+Additive Manufacturing
+Agile Project Management
+Agile Space
+Air Launch
+Airbags
+Alcubierre Drive
+Alternative PNT
+Analytics as a Service
+Antenna Farms
+Antimatter Propulsion
+Ascent
+Assured PNT
+Asteroid Detection
+Asteroid Mining
+Asteroid Redirect
+Astrobiology
+Atmospheric Drag
+Atmospheric Reentry
+Atomic Oxygen
+Automatic Dependent Surveillance-Broadcast
+Automatic Identification System
+Autonomous Flight
+Autonomous Landing
+Autonomous Operations
+Backhaul
+Backward Contamination
+Balloon Launch
+Batteries
+Beamed Core
+Beamed Energy
+Beamforming
+Berthing
+Biological Burden
+Biosignatures
+Bipropellant
+Breakthrough Starshot
+Cache
+Capture Mechanisms
+Celestial Navigation
+Charging
+Cislunar
+Cleanroom
+Closed-Loop Systems
+Cloud-Based Ground Segment
+Cluster Flight
+Cold Gas
+Collision Avoidance
+Command
+Commercial LEO Destination
+Commercial Off-The-Shelf
+Composite Overwrapped Pressure Vessel
+Computational Fluid Dynamics
+Concept of Operations
+Conic Sections
+Constellation
+Continuous Integration
+Control Moment Gyros
+Controlled Reentry
+Coronagraph
+Cost Budget
+Crew Safety
+Critical Path
+Cryogenic Storage
+CubeSat
+Data Budget
+Data Downlink
+Data as a Service
+Debris Mitigation
+Dedicated Launch
+Deep Space
+Delay Tolerant Networking
+Delta-V Budget
+Demise Analysis
+Demo Flight
+Deorbit
+Deorbiting Systems
+Deployable Structures
+Design Life
+DevOps for Space
+Digital Thread
+Digital Twin
+Direct-to-Cell
+Direct-to-Device
+Disruption Tolerant Networking
+Distributed Systems
+Docking
+Doppler Radar
+Drilling
+Dual-Mode
+EMC/EMI
+EVA Systems
+Earned Value Management
+Earth Observation
+Edge Computing
+Edge Computing in Orbit
+Electric Propulsion
+Electrostatic Discharge
+Emergency Services
+End-of-Life Disposal
+Engineering Model
+Entry, Descent, Landing
+Environmental Control
+Error Correction
+Exoplanets
+Fault Tolerance
+Feed System
+Finite Element Analysis
+First Article
+Fission Surface Power
+Fleet Operations
+Flight Heritage
+Flight Model
+Flight Proven
+Flight Termination
+Fluid Systems
+Formation Flying
+Forward Contamination
+Fractionated Architecture
+Fuel Cells
+Functional Requirements
+Fusion Rockets
+GPS Denied Environment
+Geomagnetic Storms
+Geospatial Intelligence
+Gimbals
+Global Broadband
+Graveyard Orbit
+Green Propellant
+Grippers
+Ground Segment
+Ground Station Network
+Guidance Navigation & Control
+Habitable Volume
+Halo Orbits
+Handheld Satellite Communication
+Hazard Detection
+Heat Pipes
+Heat Shield
+Helium
+Hosted Payloads
+Human Rating
+Hyperspectral Imaging
+In-Situ Resource Utilization
+In-Space Propulsion
+Inertial Navigation
+Inflatables
+Infrared Emittance
+Instrument Deployment
+Inter-Satellite Links
+Interface Control Document
+Interferometry
+Internet of Satellites
+Interplanetary
+Intersatellite Links
+Interstellar
+Iterative Development
+J2 Effect
+Keplerian Elements
+Kessler Syndrome
+Lagrange Points
+Landing Ellipse
+Lasercom
+Last-Mile Delivery
+Latch-Up
+Launch Escape System
+Launch License
+Launch Loop
+Launch Vehicle
+Launch as a Service
+Lidar
+Life Support Systems
+Lightsails
+Link Budget
+Lissajous Orbits
+Loop Heat Pipes
+Lunar Polar Ice
+Machine Learning in Space
+Magnetic Torquers
+Magnetometer
+Maneuver Planning
+Maritime Domain Awareness
+Mass Budget
+Mass Driver
+Mass Production
+Materials Selection
+Mechanisms
+Mesh Networks
+Microgravity Research
+Micrometeoroids
+Mission Control Software
+Mission Duration
+Mission Planning
+Mission as a Service
+Mitigation Techniques
+Model-Based Systems Engineering
+Modified Commercial Off-The-Shelf
+Momentum Exchange
+Monopropellant
+Motors
+Multilayer Insulation
+Near-Earth Objects
+NewSpace
+Non-Terrestrial Networks
+Nuclear Thermal Propulsion
+Obsolescence
+On-Board Processing
+On-Orbit Servicing
+Optical Communications
+Optical Navigation
+Optical Properties
+Optical Terrain Recognition
+Orbit Determination
+Orbit Maintenance
+Orbit Propagation
+Orbital
+Orbital Hotel
+Orbital Logistics
+Orbital Mechanics
+Orbital Rendezvous
+Orbital Ring
+Orbital Transfer Vehicle
+Organ Printing
+Outgassing
+Parachutes
+Pathfinder Mission
+Performance Requirements
+Persistent Monitoring
+Perturbations
+Pharmaceuticals in Space
+Phase Change Materials
+Phased Array
+Pinpoint Landing
+Planetary Defense
+Planetary Protection
+Planetary Quarantine
+Planetary Science
+Plasma Thruster
+Platinum Group Metals
+Point-to-Point Space Transportation
+Power Budget
+Power Systems
+Precision Agriculture
+Precision Navigation
+Pressure Vessel
+Production Line
+Propellant Management
+Protoflight
+Proximity Operations
+Qualification Model
+Qualification Testing
+Radiation Belts
+Radiation Hardened
+Radiation Shielding
+Radioisotope Thermoelectric Generator
+Range Operations
+Range Safety
+Rapid Prototyping
+Rapid Turnaround
+Rare Earth Elements
+Reaction Wheels
+Reconfigurable Satellite
+Recovery
+Redundancy
+Reflight
+Refurbishment
+Regulatory Framework
+Rendezvous
+Rendezvous and Docking
+Restricted Three-Body Problem
+Retrorockets
+Reusable Rocket
+Rideshare
+Risk Assessment
+Robotic Arms
+Rovers
+Rural Connectivity
+SINDA/FLUINT
+Safe Mode
+Sail Deployment
+Sample Handling
+Sample Return
+Satellite Communications
+Satellite Messaging
+Schedule
+Search and Rescue
+Second Source
+Serial Number 1
+Shock Testing
+Single Event Effects
+Single-Stage-to-Orbit
+Sky Crane
+Slosh
+SmallSat
+Smallsat Launch
+Software-Defined Payload
+Solar Absorptance
+Solar Arrays
+Solar Flares
+Solar Radiation Pressure
+Solar Sails
+Space Climate
+Space Cloud
+Space Debris
+Space Domain Awareness
+Space Elevator
+Space Environment
+Space Grade
+Space Habitat
+Space Hub
+Space Insurance
+Space Internet
+Space Manufacturing
+Space Mining
+Space Plasma
+Space Port
+Space Resources
+Space Situational Awareness
+Space Station
+Space Suits
+Space Telescopes
+Space Tourism
+Space Traffic Management
+Space Tugs
+Space Weather
+Space-Based IoT
+Space-Based Solar Power
+Space-Grade Components
+Space-Qualified
+Spectrum Allocation
+Spin Launch
+Spiral
+Splashdown
+Star Tracker
+Starshade
+Station Keeping
+Sterilization
+Stirling Radioisotope Generator
+Suborbital
+Sun Sensor
+Supply Chain
+Surface Operations
+Swarm Intelligence
+Synthetic Aperture Radar
+Systems Engineering
+Tank Pressurization
+Technology Readiness Level
+Telemetry
+Tensegrity
+Terminator Tape
+Terrain Relative Navigation
+Testing
+Thermal Coatings
+Thermal Control
+Thermal Cycling
+Thermal Desktop
+Thermal Protection System
+Thermal Straps
+Thermal Vacuum
+Third-Body Effects
+Three-Body Problem
+Thrusters
+Tissue Chips
+Total Ionizing Dose
+Touchdown
+Tracking
+Trans-Earth Injection
+Tri-Mode
+Triple Modular Redundancy
+Truss Structures
+Two-Body Problem
+Two-Stage-to-Orbit
+Ullage
+Ultraviolet Radiation
+Uncontrolled Reentry
+V-Model
+Vacuum to Antimatter Rocket Interstellar Explorer
+Vapor-Cooled Shielding
+Verification and Validation
+Vertical Landing
+Vibration Testing
+Virtualized Ground Station
+Warp Drive
+Watchdog Timer
+Water Extraction
+Waterfall
+Wireless Power Transmission
+X-Ray Pulsar Navigation
+Zero Boil-Off

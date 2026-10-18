@@ -1,0 +1,708 @@
+51% Attack
+AEPD
+AFM
+AMF
+AML
+APR
+APY
+AUC-PR
+AUC-ROC
+Aave
+Abstractive Summarization
+Account Model
+Accountability
+Accumulation
+Accuracy
+Action
+Adequacy Decision
+Adjusted Mutual Information
+Adjusted R-Squared
+Adjusted Rand Index
+Administrative Fine
+Adoption Curve
+Age of Consent
+Agencia Española de Protección de Datos
+Air Gap
+Airdrop
+Algorand
+Algorithmic Stablecoin
+Altcoin
+Angular Distance
+Angular Similarity
+Annual Percentage Rate
+Annual Percentage Yield
+Anonymity Set
+Anti-Money Laundering
+Arbitrage
+Aspect-Based Sentiment Analysis
+Asset Tokenization
+Atomic Swap
+Attention Mechanism
+Audience Segmentation
+Authority for the Financial Markets
+Autoencoding Model
+Automated Individual Decision-Making
+Automated Market Maker
+Autoregressive Model
+Autorité des Marchés Financiers
+Avalanche
+BCRs
+BIP
+BIP39
+BLEU
+BaFin
+Bagholder
+Ban on Processing
+Beacon Chain
+Bear Market
+Behavioral Advertising
+Bhattacharyya Distance
+Binding Corporate Rules
+Biometric Data
+Bitcoin
+Bitcoin Improvement Proposal
+Bitcoin Pizza
+Block Size
+Block Size War
+Block Time
+Blockchain
+Brain Wallet
+Breakdown
+Breakout
+Bridge
+Broker Definition
+Bull Market
+Burning
+Buyback and Burn
+Byte-Pair Encoding
+Byzantine Fault Tolerance
+CBDC
+CCPA
+CEX
+CFTC
+CIDEr
+CNIL
+CNMV
+CTF
+California Consumer Privacy Act
+Capital Gains
+Cardano
+Censorship-Resistant
+Central Bank Digital Currency
+Centralized Exchange
+Certification Mechanisms
+Character-Level Model
+Chatbot
+Chebyshev Distance
+Children's Consent
+ChrF
+Circulating Supply
+Class Action
+Clear Affirmative Action
+Code is Law
+Codes of Conduct
+Coefficient of Determination
+Coefficient of Variation
+Cohen's Kappa
+Coherence
+Cohesion
+CoinJoin
+Cold Storage
+Collaborative Filtering
+Collateralized Debt Position
+Collective Redress
+Comisión Nacional del Mercado de Valores
+Commission Nationale de l'Informatique et des Libertés
+Commissione Nazionale per le Società e la Borsa
+Commodity Futures Trading Commission
+Communication
+Compensation
+Competent Authority
+Completeness
+Compliance
+Compound
+Confusion Matrix
+Consensus Mechanism
+Consent
+Consent Management
+Consob
+Constituency Parsing
+Constituency Tree
+Content-Based Filtering
+Contextual Advertising
+Contingency Coefficient
+Contract
+Conversational Agent
+Conversational Analysis
+Cookie Consent
+Coreference Chain
+Coreference Resolution
+Corporate Treasury
+Cosine Distance
+Cosine Similarity
+Cosmos
+Counter-Terrorist Financing
+Cramér's V
+Critical Success Index
+Cross-Border Processing
+Cross-Chain
+Cross-Chain Messaging
+Cross-Entropy
+Crpyto AG
+Crypto Bill
+Cryptocurrency
+Cryptography
+Curve
+Custody
+Customer Segmentation
+Cypherpunk
+DAO
+DEX
+DPA
+DPIA
+DPO
+DYOR
+Damages
+Damerau–Levenshtein Distance
+Data Breach
+Data Controller
+Data Minimization
+Data Processor
+Data Protection
+Data Protection Authority
+Data Protection Authority of Norway
+Data Protection Impact Assessment
+Data Protection Officer
+Data Subject
+Datatilsynet
+Datenschutz
+DeFi
+DeSci
+Decentralized Application
+Decentralized Autonomous Organization
+Decentralized Exchange
+Decentralized Finance
+Decentralized Science
+Delegated Proof of Stake
+Delegator
+Dependency Parsing
+Dependency Tree
+Derivation Path
+Derivatives
+Deterministic Wallet
+Dialog Act
+Dialog Management
+Diamond Hands
+Dice Coefficient
+Difficulty Adjustment
+Digital Asset
+Digital Dollar
+Digital Euro
+Digital Gold
+Digital Signature
+Digital Yuan
+Directed Acyclic Graph
+Discourse Analysis
+Distribution
+Do Your Own Research
+Dropout
+ECB
+EDPB
+EIP
+EIP-1559
+ETF
+EVM
+Earth Mover's Distance
+Edit Distance
+Electronic Privacy
+Elliptic Curve
+Emotion Analysis
+Encoder-Decoder Model
+Enforcement
+Entity Linking
+Entropy
+Ethereum
+Ethereum Improvement Proposal
+Ethereum Virtual Machine
+Euclidean Distance
+European Central Bank
+European Data Protection Board
+Evaluation Metrics
+Event Extraction
+Event Linking
+Exchange-Traded Fund
+Exit Scam
+Explained Variance
+Explicit Consent
+Extractive Summarization
+F1-Score
+FATF
+FINMA
+FMA
+FOMO
+FOS
+FSA
+FSC
+FSCS
+FUD
+Fall-Out
+False Discovery Rate
+False Negative
+False Omission Rate
+False Positive
+Fantom
+Fear and Greed Index
+Fed
+Federal Financial Supervisory Authority
+Federal Reserve
+Fee Market
+Feed-Forward Network
+FinCEN
+Finality
+Financial Action Task Force
+Financial Crimes Enforcement Network
+Financial Market Authority
+Financial Ombudsman Service
+Financial Services Agency
+Financial Services Commission
+Financial Services Compensation Scheme
+Flash Loan
+Fleiss' Kappa
+Formal Verification
+Fowlkes-Mallows Index
+Fractional Ownership
+Freely Given
+Front-Running
+Fundamental Analysis
+Futures
+GDPR
+GameFi
+Garante
+Garante per la protezione dei dati personali
+Gas Fees
+Gas Limit
+General Data Protection Regulation
+Genesis Block
+Genetic Data
+Goodman and Kruskal's Gamma
+Governance Token
+Grammar Checking
+Graph Edit Distance
+Grounding
+Halving
+Hamming Distance
+Hard Fork
+Hardware Wallet
+Hash Function
+Hash Rate
+Hashgraph
+Headline Generation
+Health Data
+Hellinger Distance
+Hierarchical Deterministic Wallet
+Hodl
+Homogeneity
+Hot Wallet
+Howey Test
+Hybrid Consensus
+Hybrid Filtering
+Hyperbitcoinization
+ICO
+IDO
+IMY
+IRS
+Immutable
+Impermanent Loss
+Inactivity
+Index Token
+Index of Agreement
+Indication of Wishes
+Information Commissioner's Office
+Informed
+Infrastructure Bill
+Initial Coin Offering
+Initial DEX Offering
+Initiative
+Injunction
+Institutional Adoption
+Insurance Fund
+Integritetsskyddsmyndigheten
+Integrity and Confidentiality
+Intent Analysis
+Internal Revenue Service
+Interoperability
+Intraclass Correlation Coefficient
+Jaccard Index
+Jaro Distance
+Jaro–Winkler Distance
+Jensen–Shannon Divergence
+Judicial Remedy
+KYC
+Kendall's Tau
+Kendall's W
+Kling–Gupta Efficiency
+Know Your Customer
+Knowledge Graph
+Kullback–Leibler Divergence
+LGPD
+Language Modeling
+Latency
+Latent Dirichlet Allocation
+Lawful Basis
+Layer 2
+Layer Normalization
+Lead Supervisory Authority
+Legal
+Legal Obligation
+Legates and McCabe's Index
+Legitimate Interests
+Lei Geral de Proteção de Dados
+Lemmatization
+Levenshtein Distance
+Leverage
+Liability and Compensation
+Licensing
+Lightning Network
+Limit Order
+Liquid Proof of Stake
+Liquidation
+Liquidity Pool
+Liquidity Provider
+London Hard Fork
+Longest Common Subsequence
+Longest Common Substring
+Lookalike Audience
+M-Pesa
+MAS
+METEOR
+MEV Auction
+Mahalanobis Distance
+Mainnet
+MakerDAO
+Manhattan Distance
+Margin Trading
+Market Cap
+Market Manipulation
+Market Order
+Markets in Crypto-Assets
+Matrix Factorization
+Matthews Correlation Coefficient
+Max Supply
+Maximalist
+Mean Absolute Error
+Mean Absolute Percentage Error
+Mean Arctangent Absolute Percentage Error
+Mean Directional Accuracy
+Mean Percentage Error
+Mean Squared Error
+Medium of Exchange
+Mempool
+Merkle Tree
+Metaverse
+MiCA
+Miner Extractable Value
+Mining
+Mining Pool
+Minkowski Distance
+Minting
+Miss Rate
+Mixed-Initiative
+Mixer
+Mixin
+Mnemonics
+Monero
+Monetary Authority of Singapore
+Morphological Analysis
+Multi-Head Attention
+Multi-Party Computation
+Multi-Signature
+Mutual Information
+Mutual Information Based Scores
+N-gram
+NFT
+NGMI
+Named Entity Recognition
+Nash–Sutcliffe Model Efficiency Coefficient
+Near
+Needleman–Wunsch Algorithm
+Negative Predictive Value
+Network Effect
+Neural Language Model
+Node
+Nominated Proof of Stake
+Non-Custodial
+Non-Fungible Token
+Normalized Mutual Information
+Normalized Root Mean Squared Error
+Notification
+OCC
+OFAC
+Off-Chain
+Office of the Comptroller of the Currency
+On-Chain
+On-Chain Analytics
+One-Stop-Shop
+Opinion Mining
+Opt-In
+Opt-Out
+Optimistic Rollup
+Options
+Oracle
+Order Book
+Overlap Coefficient
+P2E
+PBOC
+PBS
+PDPA
+PIPL
+POPIA
+Paper Hands
+Paper Wallet
+Parachain
+Paraphrase Generation
+Parental Responsibility
+Parse Tree
+Part-of-Speech Tagging
+Peak
+Pearson Correlation
+Penalty
+People's Bank of China
+Permissionless
+Perpetual Swaps
+Perplexity
+Personal Data Breach
+Personal Data Protection Act
+Personal Information Protection Law
+Personalization
+Personalized Advertising
+Phi Coefficient
+Plasma
+Play-to-Earn
+Point-Biserial Correlation
+Policy Learning
+Polkadot
+Polygon
+Positional Encoding
+Pre-Ticked Boxes
+Precision
+Predictable Fees
+Prior Consultation
+Privacy Coin
+Privacy by Default
+Privacy by Design
+Private Key
+Profiling
+Project Jasper
+Project Khokha
+Project Ubin
+Proof of Stake
+Proof of Work
+Proposer-Builder Separation
+Protection of Personal Information Act
+Proxy Pattern
+Public Key
+Public Task
+Public-Key Cryptography
+Pump and Dump
+Purpose Limitation
+Quadratic Funding
+R-Squared
+ROUGE
+RWAs
+Rand Index
+ReFi
+ReKT
+Real-World Assets
+Recall
+Recommendation Engine
+Reflection Token
+Regenerative Finance
+Regulation
+Regulatory Clarity
+Relation Extraction
+Relation Linking
+Relative Absolute Error
+Relative Squared Error
+Relay Chain
+Remarketing
+Representative
+Residual Connection
+Resistance
+Retargeting
+Reward Function
+Rhetorical Structure Theory
+Right of Access
+Right to Data Portability
+Right to Erasure
+Right to Object
+Right to Rectification
+Right to Restriction of Processing
+Right to be Forgotten
+Right to be Informed
+Rights in Relation to Automated Decision Making and Profiling
+Roadmap
+Rollup
+Root Mean Squared Error
+Root Relative Squared Error
+Rug Pull
+SCCs
+SEC
+SPICE
+STO
+Sanctions
+Sandwich Attack
+Satoshi Nakamoto
+Satoshi's Vision
+Scalability
+Securities Law
+Securities and Exchange Commission
+Security Token
+Security Token Offering
+Seed
+Seed Phrase
+SegWit
+Self-Attention
+Semantic Graph
+Semantic Role Labeling
+Sensitive Data
+Sensitivity
+Sentence Segmentation
+SentencePiece
+Sentiment Analysis
+Sequence-to-Sequence Model
+Settlement
+Shanghai Upgrade
+Sharding
+Shill
+Sidechain
+Silence
+Singular Value Decomposition
+Slashing
+Slippage
+Smart Contract
+Smart Legal Contract
+Smith–Waterman Algorithm
+Social Recovery
+SocialFi
+Soft Fork
+Solana
+Solidity
+Somers' D
+Soulbound Token
+Sound Money
+Spearman Correlation
+Spearman's Rank Correlation
+Special Category Data
+Specific
+Specificity
+Spell Checking
+Squared Euclidean Distance
+Stable Fee
+Stablecoin
+Stablecoin Act
+Staking
+Standard Contractual Clauses
+State Channels
+State Tracking
+Stemming
+Storage Limitation
+Store of Value
+Strategy
+Style Transfer
+Subword Tokenization
+Supervisory Authority
+Support
+Suspension of Data Flows
+Swiss Financial Market Supervisory Authority
+Symmetric Mean Absolute Percentage Error
+Syntax Tree
+Synthetic Asset
+Sørensen–Dice Coefficient
+TER
+TVL
+Tangle
+Tanimoto Coefficient
+Taproot
+Targeted Advertising
+Task-Oriented Dialog
+Taxation
+Technical Analysis
+Testnet
+Text Classification
+Text Generation
+Text Normalization
+Text Simplification
+Text Summarization
+The Merge
+Theil's U Statistic
+Threat Score
+Threshold Signature
+Throughput
+To the Moon
+Token Burn
+Tokenization
+Tokenized Real-World Assets
+Tokenized Securities
+Tokenomics
+Topic Modeling
+Total Value Locked
+Total Variation Distance
+Tracking
+Transaction Per Second
+Transformer Language Model
+Transparent
+Travel Rule
+Tree Edit Distance
+Tron
+True Negative
+True Positive
+Trustless
+Tumbler
+Turing Complete
+Turn-Taking
+UTXO
+Unambiguous Consent
+Uncertainty Coefficient
+Unigram Language Model
+Uniswap
+Unit of Account
+Upgradable Contracts
+Uptime
+User Profiling
+User Simulation
+Utility Token
+V-Measure
+VASP
+Validator
+Validium
+Variation of Information
+Vault
+Verifiable Consent
+Vesting
+Virtual Asset
+Virtual Asset Service Provider
+Virtual Assistant
+Virtual Currency
+Vital Interests
+Volumetric Efficiency
+WAGMI
+Wallet Address
+Wasserstein Metric
+Web3
+Weight Tying
+Whale
+Whale Alert
+Whitepaper
+Withdrawal of Adequacy
+Withdrawal of Consent
+Word Segmentation
+WordPiece
+Wrapped Token
+Yield Farming
+ZK-Rollup
+Zcash
+Zero-Knowledge Proof
+dApp
+ePrivacy
+zk-SNARK
+zk-STARK

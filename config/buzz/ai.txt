@@ -1,0 +1,188 @@
+AGI
+AI Accelerator
+AI Agent
+AI Alignment
+AI Assistant
+AI Bias
+AI Boxing
+AI Canvas
+AI Center of Excellence
+AI Chip
+AI Consciousness
+AI Copilot
+AI Democratization
+AI Dystopia
+AI Ethics Board
+AI Existential Risk
+AI Governance
+AI Hallucination
+AI Literacy
+AI Regulation
+AI Roadmap
+AI Safety
+AI Safety Research
+AI Skills Gap
+AI Spring
+AI Strategy
+AI Transformation
+AI Utopia
+AI Winter
+AI at Scale
+AI for Good
+AI for Science
+AI in Finance
+AI in Healthcare
+AI-Generated Content
+AI-as-a-Service
+AIOps
+API Economy
+ASI
+Accountability
+Adversarial Attacks
+Affective Computing
+Algorithmic Auditing
+Anomaly Detection
+Artificial General Intelligence
+Artificial Intelligence
+Artificial Superintelligence
+Attention Mechanism
+AutoML
+Autonomous Agent
+Blue Teaming
+Carbon-Aware Computing
+Catastrophic Forgetting
+Causal AI
+Chain-of-Thought
+Chatbot
+Code Generation
+Cognitive Automation
+Cognitive Computing
+Competitive AI
+Compute Budget
+Compute-Optimal Scaling
+Computer Vision
+Concept Drift
+Constitutional AI
+Conversational AI
+Convolutional Neural Networks
+Cooperative AI
+Corrigibility
+Data Augmentation
+Data Drift
+Data Flywheel
+Data Parallelism
+Data Poisoning
+Data-Centric AI
+Decision Intelligence
+Deep Learning
+Differential Privacy
+Diffusion Models
+Digital Human
+Edge AI
+Embodied AI
+Emergent Abilities
+Emotional AI
+Ethical AI
+Explainable AI
+Fairness
+Federated Learning
+Few-Shot Learning
+Fine-Tuning
+Foundation Models
+Future of Work
+Game-Theoretic AI
+Generative AI
+Generative Adversarial Networks
+Generative Design
+Graph Neural Networks
+Green AI
+Homomorphic Encryption
+Human-AI Collaboration
+Hybrid AI
+Hyperautomation
+Hyperparameter Tuning
+In-Context Learning
+Inductive Bias
+Inference
+Instruction Tuning
+Instrumental Convergence
+Intelligent Process Automation
+Knowledge Distillation
+Knowledge Graphs
+LLMOps
+Large Language Models
+Latency
+Lifelong Learning
+Low-Code AI
+MLOps
+Machine Learning
+Memory-Augmented Networks
+Moats
+Model Collapse
+Model Compression
+Model Deployment
+Model Monitoring
+Model Parallelism
+Model Registry
+Model Serving
+Model Stealing
+Model-as-a-Service
+Multi-Agent Systems
+Multimodal AI
+Multiplayer AI
+Myopia
+Natural Language Processing
+Network Effects
+Neural Architecture Search
+Neural Networks
+Neuro-Symbolic AI
+Neuromorphic Computing
+No-Code AI
+Orthogonality Thesis
+Parameter-Efficient Fine-Tuning
+Personalization
+Predictive Analytics
+Productive AI
+Prompt Engineering
+Pruning
+Quantization
+Recommendation Systems
+Recurrent Neural Networks
+Red Teaming
+Reinforcement Learning
+Responsible AI
+Retrieval-Augmented Generation
+Robustness
+Scaling Laws
+Search and Discovery
+Self-Supervised Learning
+Semi-Supervised Learning
+Sentient AI
+Simulation Hypothesis
+Sparks of AGI
+Speech-to-Text
+Superalignment
+Superhuman AI
+Supervised Learning
+Sustainable AI
+Swarm Intelligence
+Symbolic AI
+Synthetic Data
+Tensor Processing Unit
+Text-to-Image
+Text-to-Speech
+Text-to-Video
+The Control Problem
+The Singularity
+Throughput
+TinyML
+Training Compute
+Transfer Learning
+Transformer Architecture
+Transformers
+Transparency
+Unsupervised Learning
+Value Loading
+Variational Autoencoders
+Virtual Assistant
+Zero-Shot Learning

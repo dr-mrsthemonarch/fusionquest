@@ -1,0 +1,8 @@
+# Word value modifiers
+AI -100
+Blockchain 12
+Disruptive 5
+Fusion 20
+Neural 8
+Quantum 15
+Scalable 3

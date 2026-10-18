@@ -1,0 +1,27 @@
+Analyst
+Architect
+Chief Executive Officer
+Chief Financial Officer
+Chief Marketing Officer
+Chief Operating Officer
+Chief Product Officer
+Chief Revenue Officer
+Chief Technology Officer
+Co-Founder
+Designer
+Developer
+Engineer
+Engineering Manager
+Founder
+Head of Product
+Non-Technical Co-Founder
+Product Manager
+Program Manager
+Project Manager
+Researcher
+Scientist
+Technical Co-Founder
+Technical Lead
+VP Engineering
+Rocket Biologists
+
