@@ -69,6 +69,7 @@ set(HEADERS
         include/NemesisSystem.h
         include/ExpandedMonsterTypes.h
         include/SpecialDropsLibrary.h
+        include/StdoutSink.h
         include/TemporaryEffect.h
         include/NamedMonster.h
         include/NamedMonsterLibrary.h

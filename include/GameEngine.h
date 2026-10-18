@@ -35,6 +35,24 @@ public:
     void tick(double elapsedSeconds);
 
     bool isInitialized() const { return initialized_; }
+
+    // bumps on every initializeCharacter() (new game / load baseline). main loop watches this
+    // to restart the master clock.
+    int getInitGeneration() const { return initGeneration_; }
+
+    // identity fields Character doesn't expose
+    const std::string& getEmployeeNr() const { return employeeNr_; }
+    const std::string& getPosition() const { return position_; }
+    void setIdentityDirect(const std::string& emp, const std::string& pos) { employeeNr_ = emp; position_ = pos; }
+
+    void addLog(const std::string& line) { log_.add(line); }
+
+    // 0..1 progress of current activity (battle damage dealt / start delay / rest between battles)
+    float getActivityProgress() const;
+    // 0..1 progress to next series (funding round). uses cached required funding (no rng jitter)
+    float getFundingFraction() const;
+    // call after SaveGame::load: resync cached funding/series trackers
+    void onStateRestored();
     bool isGameWon() const { return character_ && character_->getSeries() >= 20; }
 
     // accessors for UI (read-only)
@@ -74,6 +92,10 @@ public:
 private:
     // --- state machine (mirrors old MainWindow) ---
     bool initialized_ = false;
+    int initGeneration_ = 0;
+    std::string employeeNr_, position_, configRoot_ = "config/";
+    // funding awarded per $ of monster reward. was moneyReward/10 in Qt build. tune for pacing.
+    static constexpr double FUNDING_PER_MONEY = 0.1;
     bool debugInstakill_ = false;
 
     std::unique_ptr<Character> character_;

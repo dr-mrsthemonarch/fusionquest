@@ -1,4 +1,5 @@
 #include "../include/GameEngine.h"
+#include "../include/StdoutSink.h"
 #include "../include/Patent.h"
 #include "../include/PatentStrategy.h"
 #include <algorithm>
@@ -8,6 +9,8 @@ GameEngine::GameEngine(bool debugInstakill)
     : debugInstakill_(debugInstakill), rng_(std::random_device{}()) {}
 
 bool GameEngine::loadConfig(const std::string& configRoot) {
+    StdoutSink silence;
+    configRoot_ = configRoot;
     equipGen_ = std::make_unique<EquipmentGenerator>();
     monsterGen_ = std::make_unique<MonsterGenerator>();
     itemGen_ = std::make_unique<ItemGenerator>();
@@ -36,6 +39,29 @@ bool GameEngine::loadConfig(const std::string& configRoot) {
 
 void GameEngine::initializeCharacter(const std::string& name, const std::string& employeeNr,
                                       const std::string& position, const std::string& startup) {
+    StdoutSink silence;
+    // --- full run-state reset (new game, or baseline before SaveGame::load) ---
+    currentEncounter_.reset();
+    inBattle_ = false; playerTurn_ = true; needsRecovery_ = false;
+    waitingForNextBattle_ = false; waitingForBattleStart_ = false; battleStartTime_ = 0.0;
+    roundNumber_ = 0; ticksSinceLastAction_ = 0; ticksSinceBattleEnd_ = 0;
+    counters_ = Counters{};
+    shadowPlayerDefeated_ = false;
+    lastNemesisTime_ = -3600.0 * 24 * 365;
+    lastEquipmentPurchaseSeries_ = 0;
+    purchasedThisCycle_.clear();
+    nemesisSystem_ = std::make_unique<NemesisSystem>();
+    reviewCalendarSystem_ = std::make_unique<ReviewCalendarSystem>();
+    shadowPlayerSystem_ = std::make_unique<ShadowPlayerSystem>();
+    specialDropsLibrary_ = std::make_unique<SpecialDropsLibrary>();
+    namedMonsterLibrary_ = std::make_unique<NamedMonsterLibrary>();
+    namedMonsterLibrary_->loadFromFile(configRoot_ + "mobs/named_monsters.txt");
+    Patent::characterPatents.clear();
+    Character::setInventoryMapDirect({});
+    log_.clear();
+
+    employeeNr_ = employeeNr;
+    position_ = position;
     character_ = std::make_unique<Character>(name, employeeNr, position, startup);
     log_.add("character created: " + name);
 
@@ -61,10 +87,12 @@ void GameEngine::initializeCharacter(const std::string& name, const std::string&
     reviewCalendarSystem_->generateReviewCalendar(character_->getSeries());
 
     initialized_ = true;
+    initGeneration_++;
     log_.add("init complete. goal: series 20");
 }
 
 void GameEngine::tick(double elapsedSeconds) {
+    StdoutSink silence;
     if (!initialized_) return;
     currentElapsedSeconds_ = elapsedSeconds;
     character_->setElapsedSeconds(elapsedSeconds);
@@ -394,7 +422,7 @@ void GameEngine::handleVictory() {
               + " in " + std::to_string(roundNumber_) + " rounds");
 
     int moneyReward = currentEncounter_->getTotalMoneyReward();
-    int fundingReward = moneyReward / 10;
+    int fundingReward = static_cast<int>(moneyReward * FUNDING_PER_MONEY);
     character_->addMoney(moneyReward);
     character_->setElapsedSeconds(currentElapsedSeconds_);
     character_->addFunding(fundingReward);
@@ -546,4 +574,33 @@ void GameEngine::visitTownForRecovery() {
     character_->restoreToFull();
     log_.add("emergency recovery: full restore");
     counters_.townVisits++;
+}
+
+float GameEngine::getActivityProgress() const {
+    if (!initialized_) return 0.0f;
+    if (!inBattle_) {
+        if (waitingForNextBattle_)
+            return std::min(1.0f, static_cast<float>(ticksSinceBattleEnd_) / TICKS_BETWEEN_BATTLES);
+        return 0.0f;
+    }
+    if (waitingForBattleStart_) return std::min(1.0f, static_cast<float>(battleStartTime_ / 2.0));
+    if (!currentEncounter_) return 0.0f;
+
+    double hp = 0, maxHp = 0;
+    for (auto* e : currentEncounter_->getAllEnemies()) {
+        hp += std::max(0, e->health);
+        maxHp += std::max(1, e->maxHealth);
+    }
+    return maxHp > 0 ? static_cast<float>(1.0 - hp / maxHp) : 0.0f;
+}
+
+float GameEngine::getFundingFraction() const {
+    if (!character_ || cachedRequiredFunding_ <= 0) return 0.0f;
+    return static_cast<float>(std::clamp(character_->getCurrentFunding() / cachedRequiredFunding_, 0.0, 1.0));
+}
+
+void GameEngine::onStateRestored() {
+    cachedRequiredFunding_ = character_->getRequiredFunding();
+    lastSeries_ = character_->getSeries();
+    purchasedThisCycle_.clear();
 }

@@ -1,11 +1,14 @@
 #include "../include/SaveGame.h"
+#include "../include/StdoutSink.h"
 #include "../include/Patent.h"
 #include <map>
+#include <filesystem>
+#include <cctype>
 #include <fstream>
 #include <iostream>
 
 namespace {
-constexpr int32_t SAVE_VERSION = 1;
+constexpr int32_t SAVE_VERSION = 2; // v2: + employeeNr, position
 
 template <typename T>
 void w(std::ofstream& f, const T& v) { f.write(reinterpret_cast<const char*>(&v), sizeof(v)); }
@@ -43,6 +46,7 @@ Equipment readEquipment(std::ifstream& f) {
 } // namespace
 
 bool SaveGame::save(const GameEngine& engine, const std::string& filename) {
+    StdoutSink silence;
     const Character* c = engine.getCharacter();
     if (!c) { std::cerr << "SaveGame: no character\n"; return false; }
 
@@ -52,6 +56,8 @@ bool SaveGame::save(const GameEngine& engine, const std::string& filename) {
     w(f, SAVE_VERSION);
     writeStr(f, c->getName());
     writeStr(f, c->getStartup());
+    writeStr(f, engine.getEmployeeNr());
+    writeStr(f, engine.getPosition());
 
     // base profile (pre-equipment stats) - restoring this + equipment gives correct profile_ post-recalc
     const CharacterProfile& bp = c->getBaseProfile();
@@ -126,6 +132,7 @@ bool SaveGame::save(const GameEngine& engine, const std::string& filename) {
 }
 
 bool SaveGame::load(GameEngine& engine, const std::string& filename) {
+    StdoutSink silence;
     std::ifstream f(filename, std::ios::binary);
     if (!f) { std::cerr << "SaveGame: cannot open " << filename << "\n"; return false; }
 
@@ -134,6 +141,8 @@ bool SaveGame::load(GameEngine& engine, const std::string& filename) {
 
     std::string name = readStr(f);
     std::string startup = readStr(f);
+    std::string employeeNr = readStr(f);
+    std::string position = readStr(f);
 
     CharacterProfile bp{};
     r(f, bp.runway); r(f, bp.hypeEnergy); r(f, bp.hustle); r(f, bp.agility);
@@ -204,6 +213,7 @@ bool SaveGame::load(GameEngine& engine, const std::string& filename) {
     Character* c = engine.getCharacter();
     if (!c) { std::cerr << "SaveGame::load: engine has no character (call initializeCharacter first)\n"; return false; }
 
+    engine.setIdentityDirect(employeeNr, position);
     c->setNameDirect(name);
     c->setStartupDirect(startup);
     c->setBaseProfileDirect(bp); // also recalculates profile_ from base + (not-yet-set) equipment
@@ -241,7 +251,22 @@ bool SaveGame::load(GameEngine& engine, const std::string& filename) {
     }
 
     engine.mutableCounters() = counters;
+    engine.onStateRestored();
 
     std::cout << "loaded: " << filename << "\n";
     return true;
+}
+
+bool SaveGame::saveSlot(const GameEngine& engine, std::string* outPath) {
+    const Character* c = engine.getCharacter();
+    if (!c) return false;
+    std::string fname = c->getName();
+    for (char& ch : fname) if (!std::isalnum(static_cast<unsigned char>(ch))) ch = '_';
+    if (fname.empty()) fname = "save";
+    std::error_code ec;
+    std::filesystem::create_directories("saves", ec);
+    std::string path = "saves/" + fname + ".sav";
+    bool ok = save(engine, path);
+    if (ok && outPath) *outPath = path;
+    return ok;
 }

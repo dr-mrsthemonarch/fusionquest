@@ -4,6 +4,8 @@
 #include <ftxui/component/screen_interactive.hpp>
 #include <ctime>
 #include <cstdlib>
+#include <iostream>
+#include <memory>
 #include <thread>
 #include <chrono>
 #include <string>
@@ -17,33 +19,40 @@ int main(int argc, char* argv[]) {
         // strip this branch entirely before shipping a release build
     }
 
-    GameEngine engine(debugInstakill);
-    if (!engine.loadConfig("config/")) {
-        // non-fatal: continue, individual generators fall back to defaults where they can
+    {
+        GameEngine engine(debugInstakill);
+        engine.loadConfig("config/");
+
+        int current_page = MAIN_MENU;
+        auto countdown_timer = ftxui::Make<CountdownComponent>();
+
+        auto screen = ftxui::ScreenInteractive::Fullscreen();
+        auto exit_closure = screen.ExitLoopClosure();
+        auto ui = CreateUI(&current_page, &engine, countdown_timer, exit_closure);
+
+        // master tick: countdown_timer is the single clock. tick runs ON the ui thread via
+        // screen.Post so engine state is never mutated while a render reads it.
+        // new game / load bumps engine init generation -> clock restarts at 0.
+        auto seen_generation = std::make_shared<int>(0);
+        std::thread refresh_thread([&screen, &engine, countdown_timer, seen_generation] {
+            while (true) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                screen.Post([&engine, countdown_timer, seen_generation] {
+                    if (!engine.isInitialized()) return;
+                    if (engine.getInitGeneration() != *seen_generation) {
+                        *seen_generation = engine.getInitGeneration();
+                        countdown_timer->ResetClock();
+                    }
+                    engine.tick(countdown_timer->GetElapsedSeconds());
+                });
+                screen.PostEvent(ftxui::Event::Custom);
+            }
+        });
+        refresh_thread.detach();
+
+        screen.Loop(ui);
+        std::exit(0);  // detached thread still alive; skip destructors racing with it
     }
 
-    int current_page = MAIN_MENU;
-    auto countdown_timer = ftxui::Make<CountdownComponent>();
-
-    auto screen = ftxui::ScreenInteractive::Fullscreen();
-    auto exit_closure = screen.ExitLoopClosure();
-
-    auto ui = CreateUI(&current_page, &engine, countdown_timer, exit_closure);
-
-    // master tick loop: countdown_timer is the single clock source. every 100ms,
-    // feed elapsed seconds into engine (only meaningful once character exists),
-    // then post a redraw event.
-    std::thread refresh_thread([&screen, &engine, countdown_timer] {
-        while (true) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-            if (engine.isInitialized()) {
-                engine.tick(countdown_timer->GetElapsedSeconds());
-            }
-            screen.PostEvent(ftxui::Event::Custom);
-        }
-    });
-    refresh_thread.detach();
-
-    screen.Loop(ui);
     return 0;
 }
