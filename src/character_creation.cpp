@@ -73,7 +73,7 @@ Component CreateCharacterCreationPage(int* selected_page, GameEngine* engine) {
         c->setBaseProfileDirect(p);
 
         SaveGame::saveSlot(*engine);  // original chargen also saved on create
-        *selected_page = STATS_PAGE;
+        *selected_page = PREAMBLE_PAGE;
     });
 
     auto back_button = Button("Back to Main", [selected_page] { *selected_page = MAIN_MENU; }) | size(HEIGHT, EQUAL, 4);

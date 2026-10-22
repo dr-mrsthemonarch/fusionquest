@@ -20,6 +20,8 @@ private:
     std::map<std::string, int> valueModifiers;
     
     bool loadedSuccessfully;
+    std::vector<std::string> collectKeywords_;
+    double collectBias_ = 0.0;
 
 public:
     ItemGenerator();
@@ -27,6 +29,8 @@ public:
     void generateRandomItem(class Character* character);
     GeneratedItem generateRandomItem();
     void reloadWordLists();
+    // quest bias: with chance p a generated item name uses one of these keywords
+    void setCollectBias(const std::vector<std::string>& kws, double chance) { collectKeywords_ = kws; collectBias_ = chance; }
 private:
     bool loadListFromFile(const std::string& filename, std::vector<std::string>& targetList);
     bool loadValueModifiers(const std::string& filename);

@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cstdio>
+#include <deque>
 #include <ftxui/component/component.hpp>
 #include <ftxui/dom/elements.hpp>
 
@@ -16,6 +17,20 @@ using namespace ftxui;
 // layout tree identical to original fusionquest stats page. only data sources changed:
 // hardcoded text -> GameEngine state. Quests + Project Management panels are still the
 // original static placeholder text (no engine concept for them yet).
+
+// activity text pacing: log lines arrive faster than anyone can read them. each line is shown
+// at least TEXT_MIN_DWELL; if a backlog builds up, lines flip faster so it never lags far behind.
+constexpr std::chrono::milliseconds TEXT_MIN_DWELL{1800};
+constexpr std::chrono::milliseconds TEXT_FAST_DWELL{600};
+constexpr size_t TEXT_BACKLOG_FAST = 3;  // pending lines before switching to fast dwell
+constexpr size_t TEXT_BACKLOG_MAX = 6;   // older pending lines are dropped past this
+
+struct TextPacer {
+    size_t seen = 0;
+    std::deque<std::string> pending;
+    std::string shown = "Idle";
+    std::chrono::steady_clock::time_point since{};
+};
 
 int selected_patent_index = 0;
 int selected_inventory_index = 0;
@@ -49,6 +64,7 @@ Component CreateStatsPage(int* selected_page, GameEngine* engine,
     activity_bar->Start();
     encumberance_bar->Start();
 
+    auto pacer = std::make_shared<TextPacer>();
     auto save_msg = std::make_shared<std::string>();
     auto save_time = std::make_shared<std::chrono::steady_clock::time_point>();
 
@@ -61,6 +77,8 @@ Component CreateStatsPage(int* selected_page, GameEngine* engine,
             *save_msg = ok ? "Game saved: " + path : "Save failed (no character yet?)";
             *save_time = std::chrono::steady_clock::now();
         }) | size(HEIGHT, EQUAL, 3);
+    auto log_button =
+        Button("Battle Log", [selected_page] { *selected_page = BATTLE_PAGE; }) | size(HEIGHT, EQUAL, 3);
     auto quit_button = Button("Quit", std::move(exit_closure)) | size(HEIGHT, EQUAL, 3);
 
     // Menu backing vectors: stable pointers, contents refilled each frame
@@ -69,7 +87,7 @@ Component CreateStatsPage(int* selected_page, GameEngine* engine,
     auto patent_items = Menu(patent_list.get(), &selected_patent_index);
     auto inventory_items = Menu(inventory_list.get(), &selected_inventory_index);
 
-    auto container = Container::Vertical({back_button, save_button, quit_button, patent_items, inventory_items});
+    auto container = Container::Vertical({back_button, save_button, log_button, quit_button, patent_items, inventory_items});
 
     auto renderer = Renderer(container, [=] {
         // no game started yet (e.g. opened via main menu "Stats Page"): draw the SAME layout
@@ -94,7 +112,7 @@ Component CreateStatsPage(int* selected_page, GameEngine* engine,
             static_cast<float>(c->getInventoryCount()) / std::max(1, c->getInventoryLimit()), 0.0f, 1.0f);
         pushTarget(experience_bar, funding_frac);
         pushTarget(activity_bar, activity_frac);
-        pushTarget(encumberance_bar, encumb_frac);
+        encumberance_bar->SetTarget(encumb_frac); // animate down too, so selloff visibly retracts
 
         // ---- Column 1: character ----
         Element character_stats =
@@ -137,16 +155,18 @@ Component CreateStatsPage(int* selected_page, GameEngine* engine,
             border | flex;
 
         // ---- Column 2: quests (static placeholder, original text) ----
+        QuestSystem* qs = engine->getQuestSystem();
+        auto qgauge = [](const std::string& label, const QuestSystem::Gauge& g, Color col) {
+            return vbox({text(label + g.title) | color(col), gauge(g.frac) | color(col)});
+        };
         Element quests =
             vbox({text("Quests") | bold | center, separator(),
-                  text("Main Quest: Druming up the Beats") | color(Color::Yellow),
-                  gauge(0.7f) | color(Color::Yellow), separator(),
-                  text("Side Hustle: Comsol Consultancy") | color(Color::GreenLight),
-                  gauge(0.3f) | color(Color::GreenLight), separator(),
-                  text("Dev: Quantum Dots") | color(Color::DeepPink4),
-                  gauge(0.5f) | color(Color::DeepPink4), separator(),
-                  text("Active Quests: 3/5") | bold | size(HEIGHT, EQUAL, 1), separator(),
-                  text("Completed Projects: 12") | bold | size(HEIGHT, EQUAL, 1)}) |
+                  qgauge("Main: ", qs->mainGauge(), Color::Yellow), separator(),
+                  qgauge("Hustle: ", qs->hustleGauge(), Color::GreenLight), separator(),
+                  qgauge("Dev: ", qs->devGauge(), Color::DeepPink4), separator(),
+                  text("Active Quests: " + std::to_string(qs->activeCount()) + "/" + std::to_string(qs->maxActive())) |
+                      bold | size(HEIGHT, EQUAL, 1),
+                  text("Completed Projects: " + std::to_string(qs->completedCount())) | bold | size(HEIGHT, EQUAL, 1)}) |
             border | size(HEIGHT, EQUAL, 16);
 
         // height 20 = same as character panel / Project Management, so the patents panel
@@ -161,22 +181,35 @@ Component CreateStatsPage(int* selected_page, GameEngine* engine,
             border | size(HEIGHT, EQUAL, 20);
 
         // ---- Column 3: project management (static placeholder, original text) ----
-        Element plot_dev =
-            vbox({
-                text("Project Management") | bold | center,
-                separator(),
-                text("Sprint 1: The Beginning") | color(Color::Green),
-                text("✓ Got first Dollar") | color(Color::Green),
-                text("✓ Sold Grandmothers Soul to NFT") | color(Color::Green),
-                separator(),
-                text("Sprint 2: Dark Tidings") | color(Color::Yellow),
-                text("✓ Changed Politics") | color(Color::Green),
-                text("➤ Confront the cultists") | color(Color::Yellow),
-                text("□ Find abandoned warehouse") | color(Color::GrayDark),
-                separator(),
-                text("Project Progress: Sprint 2 of 5") | bold,
-            }) |
-            border | size(HEIGHT, EQUAL, 20);
+        std::vector<Element> pm;
+        pm.push_back(text("Project Management") | bold | center);
+        pm.push_back(separator());
+        const Quest* aq = qs->activeQuest();
+        const Dev* ad = qs->activeDev();
+        if (!aq || !ad) {
+            pm.push_back(text("No active project") | dim);
+        } else {
+            pm.push_back(text(aq->title) | color(Color::Green));
+            pm.push_back(text("Dev: " + ad->name) | color(Color::Yellow));
+            pm.push_back(separator());
+            size_t shown = 0;
+            for (size_t i = ad->current; i < ad->sprints.size() && shown < 2; ++i, ++shown) {
+                const Sprint& sp = ad->sprints[i];
+                const bool cur = (i == ad->current);
+                pm.push_back(text(std::string(cur ? "➤ " : "□ ") + sp.name) |
+                             color(cur ? Color::Yellow : Color::GrayDark));
+                for (const Goal& g : sp.goals) {
+                    std::string mark = g.done() ? "✓ " : (cur ? "➤ " : "□ ");
+                    pm.push_back(text("   " + mark + g.describe()) |
+                                 color(g.done() ? Color::Green : (cur ? Color::Yellow : Color::GrayDark)));
+                }
+            }
+            pm.push_back(separator());
+            pm.push_back(text("Project Progress: Sprint " +
+                              std::to_string(std::min(ad->current + 1, ad->sprints.size())) + " of " +
+                              std::to_string(ad->sprints.size())) | bold);
+        }
+        Element plot_dev = vbox(std::move(pm)) | border | size(HEIGHT, EQUAL, 20);
 
         // equipment: same row format as original (slot | bonus | name), live from engine.
         // original had Pants/Shoes rows - no matching engine slot, so 8 real slots only.
@@ -211,9 +244,22 @@ Component CreateStatsPage(int* selected_page, GameEngine* engine,
 
         // bottom bar: progress of current activity. text above it = latest battle log line
         // (or save confirmation for 4s after pressing Save).
-        std::string activity = "Idle";
-        const auto& lines = engine->getLog().lines();
-        if (!lines.empty()) activity = lines.back();
+        // paced activity text: newest log lines are queued and shown one at a time
+        const auto now = std::chrono::steady_clock::now();
+        const BattleLog& blog = engine->getLog();
+        if (blog.totalAdded() < pacer->seen) { pacer->seen = blog.totalAdded(); pacer->pending.clear(); }
+        size_t fresh = std::min(blog.totalAdded() - pacer->seen, blog.lines().size());
+        for (size_t i = blog.lines().size() - fresh; i < blog.lines().size(); ++i)
+            pacer->pending.push_back(blog.lines()[i]);
+        pacer->seen = blog.totalAdded();
+        while (pacer->pending.size() > TEXT_BACKLOG_MAX) pacer->pending.pop_front();
+        auto dwell = pacer->pending.size() > TEXT_BACKLOG_FAST ? TEXT_FAST_DWELL : TEXT_MIN_DWELL;
+        if (!pacer->pending.empty() && now - pacer->since >= dwell) {
+            pacer->shown = pacer->pending.front();
+            pacer->pending.pop_front();
+            pacer->since = now;
+        }
+        std::string activity = pacer->shown;
         if (!save_msg->empty() &&
             std::chrono::steady_clock::now() - *save_time < std::chrono::seconds(4))
             activity = *save_msg;
@@ -233,7 +279,8 @@ Component CreateStatsPage(int* selected_page, GameEngine* engine,
                           }),
                           progress_gauge,
                           separator(),
-                          hbox({back_button->Render(), save_button->Render(), quit_button->Render()}) | center,
+                          hbox({back_button->Render(), save_button->Render(), log_button->Render(),
+                                quit_button->Render()}) | center,
                       }));
     });
 

@@ -8,7 +8,7 @@
 #include <iostream>
 
 namespace {
-constexpr int32_t SAVE_VERSION = 2; // v2: + employeeNr, position
+constexpr int32_t SAVE_VERSION = 3; // v2: + employeeNr, position. v3: + quest state
 
 template <typename T>
 void w(std::ofstream& f, const T& v) { f.write(reinterpret_cast<const char*>(&v), sizeof(v)); }
@@ -42,6 +42,55 @@ Equipment readEquipment(std::ifstream& f) {
     r(f, eq.ndas); r(f, eq.luck); r(f, eq.synergy); r(f, eq.technicalDebt);
     r(f, eq.busFactor); r(f, eq.inventoryLimit); r(f, eq.equipmentvalue);
     return eq;
+}
+void writeQuest(std::ofstream& f, const Quest& q) {
+    writeStr(f, q.title); writeStr(f, q.story);
+    w(f, q.index); w(f, q.hustlesRequired); w(f, q.current);
+    w(f, q.devs.size());
+    for (const auto& d : q.devs) {
+        writeStr(f, d.name); w(f, d.current); w(f, d.sprints.size());
+        for (const auto& s : d.sprints) {
+            writeStr(f, s.name); w(f, s.goals.size());
+            for (const auto& g : s.goals) { w(f, g.type); writeStr(f, g.keyword); w(f, g.target); w(f, g.progress); }
+        }
+    }
+}
+Quest readQuest(std::ifstream& f) {
+    Quest q;
+    q.title = readStr(f); q.story = readStr(f);
+    r(f, q.index); r(f, q.hustlesRequired); r(f, q.current);
+    size_t nd; r(f, nd);
+    for (size_t i = 0; i < nd; ++i) {
+        Dev d; d.name = readStr(f); r(f, d.current);
+        size_t ns; r(f, ns);
+        for (size_t j = 0; j < ns; ++j) {
+            Sprint s; s.name = readStr(f);
+            size_t ng; r(f, ng);
+            for (size_t k = 0; k < ng; ++k) {
+                Goal g; r(f, g.type); g.keyword = readStr(f); r(f, g.target); r(f, g.progress);
+                s.goals.push_back(g);
+            }
+            d.sprints.push_back(s);
+        }
+        q.devs.push_back(d);
+    }
+    return q;
+}
+void writeQuestState(std::ofstream& f, const QuestState& s) {
+    writeQuest(f, s.main);
+    w(f, s.mainActive); w(f, s.mainIndex); w(f, s.hustlesDone); w(f, s.hustleBudget);
+    w(f, s.track); w(f, s.completedQuests); w(f, s.finalPending); w(f, s.finalStarted);
+    w(f, s.hustles.size());
+    for (const auto& h : s.hustles) writeQuest(f, h);
+}
+QuestState readQuestState(std::ifstream& f) {
+    QuestState s;
+    s.main = readQuest(f);
+    r(f, s.mainActive); r(f, s.mainIndex); r(f, s.hustlesDone); r(f, s.hustleBudget);
+    r(f, s.track); r(f, s.completedQuests); r(f, s.finalPending); r(f, s.finalStarted);
+    size_t n; r(f, n);
+    for (size_t i = 0; i < n; ++i) s.hustles.push_back(readQuest(f));
+    return s;
 }
 } // namespace
 
@@ -126,6 +175,8 @@ bool SaveGame::save(const GameEngine& engine, const std::string& filename) {
     // counters
     w(f, engine.getCounters());
 
+    writeQuestState(f, engine.getQuestSystem()->state());
+
     f.close();
     std::cout << "saved: " << filename << "\n";
     return true;
@@ -137,7 +188,7 @@ bool SaveGame::load(GameEngine& engine, const std::string& filename) {
     if (!f) { std::cerr << "SaveGame: cannot open " << filename << "\n"; return false; }
 
     int32_t version; r(f, version);
-    if (version != SAVE_VERSION) { std::cerr << "SaveGame: version mismatch (" << version << ")\n"; return false; }
+    if (version != 2 && version != SAVE_VERSION) { std::cerr << "SaveGame: version mismatch (" << version << ")\n"; return false; }
 
     std::string name = readStr(f);
     std::string startup = readStr(f);
@@ -204,6 +255,9 @@ bool SaveGame::load(GameEngine& engine, const std::string& filename) {
 
     GameEngine::Counters counters{};
     r(f, counters);
+    QuestState qs;
+    const bool haveQs = version >= 3; // v2 saves: keep fresh quest 1
+    if (haveQs) qs = readQuestState(f);
     f.close();
 
     // --- apply ---
@@ -249,6 +303,9 @@ bool SaveGame::load(GameEngine& engine, const std::string& filename) {
         drop.isEquipped = d.equipped; drop.loreText = d.lore;
         engine.getSpecialDropsLibrary().addSpecialDrop(drop); // reassigns sequential uniqueID, order preserved
     }
+
+    if (haveQs) engine.getQuestSystem()->state() = std::move(qs);
+    engine.getQuestSystem()->restored();
 
     engine.mutableCounters() = counters;
     engine.onStateRestored();

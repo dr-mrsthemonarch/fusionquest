@@ -59,6 +59,9 @@ public:
     // Check if generator is ready
     bool isLoaded() const { return loadedSuccessfully_; }
 
+    // quest bias: with chance p a mob name uses one of these keywords as its noun
+    void setKillBias(const std::vector<std::string>& kws, double chance) { killKeywords_ = kws; killBias_ = chance; }
+
 private:
     // Word lists for name generation
     std::vector<std::string> bossNames_;
@@ -70,6 +73,8 @@ private:
     // Internal state
     bool loadedSuccessfully_;
     std::mt19937 rng_;
+    std::vector<std::string> killKeywords_;
+    double killBias_ = 0.0;
 
     // Helper functions for loading
     bool loadWordList(const std::string& filename, std::vector<std::string>& wordList);

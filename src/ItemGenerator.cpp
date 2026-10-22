@@ -92,6 +92,11 @@ GeneratedItem ItemGenerator::generateRandomItem() {
 
     int totalValue = calculateItemValue(itemName, nameStyle);
 
+    if (!collectKeywords_.empty() && !techAdjectives.empty() && (rand() % 10000) < collectBias_ * 10000) {
+        itemName = techAdjectives[rand() % techAdjectives.size()] + " " + collectKeywords_[rand() % collectKeywords_.size()];
+        totalValue = calculateItemValue(itemName, 0);
+    }
+
     result.name = itemName;
     result.value = totalValue;
 

@@ -1,5 +1,6 @@
 // SPG Engine made by drmrsthemonarch
 #include "../include/SpecialDropsLibrary.h"
+#include <cstdlib>
 #include <iostream>
 #include <iomanip>
 #include <algorithm>
@@ -16,6 +17,7 @@ std::string SpecialDropsLibrary::getDropTypeString(SpecialDropType type) const {
         case SpecialDropType::PAPER_WRITING_DROP: return "Paper Writing";
         case SpecialDropType::MONTHLY_REVIEW_DROP: return "Monthly Boss";
         case SpecialDropType::NAMED_MONSTER_DROP: return "Named Monster";
+        case SpecialDropType::QUEST_DROP: return "Quest";
         default: return "Unknown";
     }
 }
@@ -29,6 +31,7 @@ std::string SpecialDropsLibrary::getDropTypeIcon(SpecialDropType type) const {
         case SpecialDropType::PAPER_WRITING_DROP: return "📄";
         case SpecialDropType::MONTHLY_REVIEW_DROP: return "📅";
         case SpecialDropType::NAMED_MONSTER_DROP: return "📜";
+        case SpecialDropType::QUEST_DROP: return "🏆";
         default: return "🎁";
     }
 }
@@ -407,4 +410,32 @@ Equipment SpecialDropsLibrary::generateNamedMonsterCertificate(
     }
 
     return cert;
+}
+Equipment SpecialDropsLibrary::generateQuestEquipment(int playerSeries, EquipmentRarity rarity, const std::string& questTitle) {
+    Equipment eq;
+    eq.type = static_cast<EquipmentType>(rand() % 8);
+    eq.rarity = rarity;
+    eq.equipmentclass = "Quest";
+    eq.name = questTitle + " Trophy";
+
+    float m = 1.0f;
+    switch (rarity) {
+        case EquipmentRarity::UNCOMMON: m = 1.2f; break;
+        case EquipmentRarity::RARE: m = 1.5f; break;
+        case EquipmentRarity::EPIC: m = 2.0f; break;
+        case EquipmentRarity::LEGENDARY: m = 5.0f; break;
+        default: break;
+    }
+    eq.runway = static_cast<int>((20 + playerSeries * 3) * m);
+    eq.hypeEnergy = static_cast<int>((15 + playerSeries * 2) * m);
+    eq.hustle = static_cast<int>((8 + playerSeries * 1.5) * m);
+    eq.agility = static_cast<int>((8 + playerSeries * 1.5) * m);
+    eq.ndas = static_cast<int>((6 + playerSeries) * m);
+    eq.luck = static_cast<int>((5 + playerSeries) * m);
+    eq.synergy = static_cast<int>((7 + playerSeries * 1.5) * m);
+    eq.technicalDebt = -static_cast<int>((3 + playerSeries * 0.5) * m);
+    eq.busFactor = 1.0f * m;
+    eq.equipmentvalue = static_cast<int>(2000 * m);
+    if (eq.type == EquipmentType::BACKPACK) eq.inventoryLimit = static_cast<int>(25 * m);
+    return eq;
 }

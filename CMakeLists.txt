@@ -26,6 +26,8 @@ set(UI_SOURCES
         src/special_drops_page.cpp
         src/load_page.cpp
         src/functions.cpp
+        src/preamble_page.cpp
+        src/final_warning_page.cpp
 )
 
 # engine (Qt-free, was SPG_Engine game logic)
@@ -47,6 +49,9 @@ set(ENGINE_SOURCES
         src/NamedMonster.cpp
         src/NamedMonsterLibrary.cpp
         src/BattleEncounter.cpp
+        src/Quest.cpp
+        src/QuestGenerator.cpp
+        src/QuestSystem.cpp
 )
 
 set(HEADERS
@@ -75,6 +80,9 @@ set(HEADERS
         include/NamedMonsterLibrary.h
         include/BattleEncounter.h
         include/CombatEntity.h
+        include/Quest.h
+        include/QuestGenerator.h
+        include/QuestSystem.h
 )
 
 add_executable(fusionquest ${UI_SOURCES} ${ENGINE_SOURCES} ${HEADERS})

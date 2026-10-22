@@ -14,7 +14,8 @@ enum class SpecialDropType {
     CONFERENCE_DROP,
     PAPER_WRITING_DROP,
     MONTHLY_REVIEW_DROP,
-    NAMED_MONSTER_DROP
+    NAMED_MONSTER_DROP,
+    QUEST_DROP
 };
 
 struct SpecialDrop {
@@ -74,6 +75,8 @@ public:
     const std::vector<SpecialDrop> &getLibrary() const;
 
     Equipment generateNamedMonsterCertificate(const std::string &monsterName, EquipmentType type, EquipmentRarity rarity, int playerSeries);
+
+    Equipment generateQuestEquipment(int playerSeries, EquipmentRarity rarity, const std::string &questTitle);
 
     // Search and query
     int getTotalDrops() const { return static_cast<int>(library_.size()); }

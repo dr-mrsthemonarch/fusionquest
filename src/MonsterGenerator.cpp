@@ -131,6 +131,12 @@ std::string MonsterGenerator::generateMobName() {
 
     std::string name;
 
+    if (!killKeywords_.empty() && std::uniform_real_distribution<>(0.0, 1.0)(rng_) < killBias_) {
+        std::uniform_int_distribution<size_t> kd(0, killKeywords_.size() - 1);
+        if (chanceDist(rng_) < 70) name += adjectives_[adjDist(rng_)] + " ";
+        return name + killKeywords_[kd(rng_)];
+    }
+
     if (chanceDist(rng_) < 70) {
         name += adjectives_[adjDist(rng_)] + " ";
     }

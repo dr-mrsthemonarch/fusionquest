@@ -11,5 +11,10 @@ Wolfram
 Tungsten Copper
 WCu 90/10
 Carbon Nano Tubes
+Platinum
+Iridium
+Indium
+Silk
+
 
 

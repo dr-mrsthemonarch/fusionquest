@@ -17,6 +17,8 @@ Component CreateUI(int* selected_page, GameEngine* engine,
     auto battle_page = CreateBattlePage(selected_page, engine);
     auto equipment_page = CreateEquipmentPage(selected_page, engine);
     auto special_drops_page = CreateSpecialDropsPage(selected_page, engine);
+    auto preamble_page = CreatePreamblePage(selected_page, engine);
+    auto final_warning_page = CreateFinalWarningPage(selected_page, engine);
 
     auto pages = Container::Tab(
         {
@@ -27,6 +29,8 @@ Component CreateUI(int* selected_page, GameEngine* engine,
             battle_page,
             equipment_page,
             special_drops_page,
+            preamble_page,
+            final_warning_page,
         },
         selected_page
     );

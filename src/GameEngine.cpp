@@ -6,7 +6,10 @@
 #include <cmath>
 
 GameEngine::GameEngine(bool debugInstakill)
-    : debugInstakill_(debugInstakill), rng_(std::random_device{}()) {}
+    : debugInstakill_(debugInstakill), rng_(std::random_device{}()) {
+    log_.setMirror(&detailLog_);
+    StdoutSink::setLineHandler([this](const std::string& line) { detailLog_.add(line); });
+}
 
 bool GameEngine::loadConfig(const std::string& configRoot) {
     StdoutSink silence;
@@ -46,6 +49,7 @@ void GameEngine::initializeCharacter(const std::string& name, const std::string&
     waitingForNextBattle_ = false; waitingForBattleStart_ = false; battleStartTime_ = 0.0;
     roundNumber_ = 0; ticksSinceLastAction_ = 0; ticksSinceBattleEnd_ = 0;
     counters_ = Counters{};
+    selloff_ = SelloffState{};
     shadowPlayerDefeated_ = false;
     lastNemesisTime_ = -3600.0 * 24 * 365;
     lastEquipmentPurchaseSeries_ = 0;
@@ -59,6 +63,7 @@ void GameEngine::initializeCharacter(const std::string& name, const std::string&
     Patent::characterPatents.clear();
     Character::setInventoryMapDirect({});
     log_.clear();
+    detailLog_.clear();
 
     employeeNr_ = employeeNr;
     position_ = position;
@@ -86,6 +91,12 @@ void GameEngine::initializeCharacter(const std::string& name, const std::string&
     Patent::generateStartingPatents(character_.get());
     reviewCalendarSystem_->generateReviewCalendar(character_->getSeries());
 
+    questSystem_ = std::make_unique<QuestSystem>();
+    questSystem_->loadConfig(configRoot_);
+    questSystem_->setCallbacks([this](const std::string& s) { log_.add(s); },
+                               [this](bool isMain, const std::string& t) { grantQuestReward(isMain, t); });
+    questSystem_->start(0.0);
+
     initialized_ = true;
     initGeneration_++;
     log_.add("init complete. goal: series 20");
@@ -96,6 +107,12 @@ void GameEngine::tick(double elapsedSeconds) {
     if (!initialized_) return;
     currentElapsedSeconds_ = elapsedSeconds;
     character_->setElapsedSeconds(elapsedSeconds);
+
+    // selling is a short animated phase: nothing else advances until it finishes
+    if (selloff_.active) { stepSelloff(); return; }
+
+    questSystem_->tick(elapsedSeconds);
+    if (questSystem_->awaitingAck()) return; // final quest popup open
 
     if (isGameWon()) return; // caller checks isGameWon() and stops feeding ticks / shows victory screen
 
@@ -141,6 +158,7 @@ void GameEngine::tick(double elapsedSeconds) {
         checkSpecialEncounters();
         if (!inBattle_) {
             int mobCount = 0, bossCount = 0;
+            syncBias();
             auto enemies = monsterGen_->generateGroupEncounter(character_->getSeries(), mobCount, bossCount, *itemGen_);
             currentEncounter_ = std::make_unique<BattleEncounter>();
             for (auto& e : enemies) currentEncounter_->addEnemy(std::move(e));
@@ -322,10 +340,7 @@ void GameEngine::handleBattle() {
 
         if (character_->getRunway() < character_->getMaxRunway() * 0.3) tryEmergencyHealing();
         if (character_->getRunway() < 10 && character_->getInventoryCount() > 0) {
-            int funds = character_->sellAllInventory();
-            int recovered = funds / 10;
-            character_->setRunway(std::min(character_->getRunway() + recovered, character_->getMaxRunway()));
-            log_.add("EMERGENCY SALE! +" + std::to_string(recovered) + " runway");
+            beginSelloff(true, false); // runway restored when the last item is sold
         }
     }
 
@@ -427,6 +442,7 @@ void GameEngine::handleVictory() {
     character_->setElapsedSeconds(currentElapsedSeconds_);
     character_->addFunding(fundingReward);
     log_.add("earned $" + std::to_string(moneyReward) + " | funding +" + std::to_string(fundingReward));
+    for (auto* e : allEnemies) questSystem_->onKill(e->name, e->type != MonsterType::MOB);
 
     bool hasSpecialDrop = false;
     for (auto* e : allEnemies) {
@@ -441,7 +457,7 @@ void GameEngine::handleVictory() {
     for (const auto& itemName : itemRewards) {
         Monster* dropper = nullptr;
         for (auto* e : allEnemies) if (e->type == MonsterType::MOB && e->itemReward == itemName) { dropper = e; break; }
-        if (dropper) { character_->addInventoryItem(itemName, dropper->itemValue); log_.add("item: " + itemName); }
+        if (dropper) { character_->addInventoryItem(itemName, dropper->itemValue); log_.add("item: " + itemName); questSystem_->onItem(itemName); }
     }
 
     for (auto* e : allEnemies) {
@@ -563,11 +579,68 @@ void GameEngine::tryEmergencyHealing() {
 }
 
 void GameEngine::visitTown() {
-    int a = character_->sellAllInventory();
-    int b = character_->sellAllEquipment();
-    purchaseNewEquipment();
-    log_.add("town: earned $" + std::to_string(a + b));
-    counters_.townVisits++;
+    beginSelloff(false, true); // purchase + visit count happen in finishSelloff()
+}
+
+void GameEngine::beginSelloff(bool emergency, bool includeEquipment) {
+    if (selloff_.active) return;
+    selloff_ = SelloffState{};
+    selloff_.emergency = emergency;
+    selloff_.includeEquipment = includeEquipment;
+    // snapshot in the same order the stats page lists them; sell from the bottom up
+    for (const auto& [name, val] : character_->getInventoryMap()) selloff_.itemNames.push_back(name);
+    selloff_.total = static_cast<int>(selloff_.itemNames.size()) +
+                     (includeEquipment ? static_cast<int>(character_->getEquipmentInventoryVec().size()) : 0);
+    selloff_.active = true;
+    log_.add(emergency ? "EMERGENCY SALE! selling inventory..." : "selling inventory...");
+    if (selloff_.total == 0) finishSelloff();
+}
+
+void GameEngine::stepSelloff() {
+    if (++selloff_.ticks < SELL_STEP_TICKS) return;
+    selloff_.ticks = 0;
+
+    // inventory items first, last one in the list first
+    while (!selloff_.itemNames.empty()) {
+        std::string name = selloff_.itemNames.back();
+        selloff_.itemNames.pop_back();
+        if (!character_->getInventoryMap().count(name)) continue; // already gone, try previous
+        int value = character_->getInventoryValue(name);
+        character_->removeInventoryItem(name);
+        character_->addMoney(value);
+        selloff_.earned += value;
+        log_.add("sold " + name + " for $" + std::to_string(value));
+        return;
+    }
+
+    // then unequipped gear (60% of value, matches Character::sellEquipment)
+    if (selloff_.includeEquipment && !character_->getEquipmentInventoryVec().empty()) {
+        size_t last = character_->getEquipmentInventoryVec().size() - 1;
+        const Equipment& eq = character_->getEquipmentInventoryVec()[last];
+        std::string name = eq.name;
+        int price = static_cast<int>(eq.equipmentvalue * 0.6);
+        character_->sellEquipmentByIndex(last);
+        selloff_.earned += price;
+        log_.add("sold " + name + " for $" + std::to_string(price));
+        return;
+    }
+
+    finishSelloff();
+}
+
+void GameEngine::finishSelloff() {
+    selloff_.active = false;
+    if (selloff_.emergency) {
+        int recovered = selloff_.earned / 10;
+        character_->setRunway(std::min(character_->getRunway() + recovered, character_->getMaxRunway()));
+        log_.add("emergency sale done: +" + std::to_string(recovered) + " runway");
+    } else {
+        purchaseNewEquipment();
+        log_.add("town: earned $" + std::to_string(selloff_.earned));
+        questSystem_->onTownVisit();
+        counters_.townVisits++;
+    }
+    selloff_ = SelloffState{};
 }
 
 void GameEngine::visitTownForRecovery() {
@@ -578,6 +651,12 @@ void GameEngine::visitTownForRecovery() {
 
 float GameEngine::getActivityProgress() const {
     if (!initialized_) return 0.0f;
+    if (selloff_.active) {
+        if (selloff_.total <= 0) return 1.0f;
+        int remaining = static_cast<int>(selloff_.itemNames.size()) +
+                        (selloff_.includeEquipment ? static_cast<int>(character_->getEquipmentInventoryVec().size()) : 0);
+        return 1.0f - std::clamp(static_cast<float>(remaining) / selloff_.total, 0.0f, 1.0f);
+    }
     if (!inBattle_) {
         if (waitingForNextBattle_)
             return std::min(1.0f, static_cast<float>(ticksSinceBattleEnd_) / TICKS_BETWEEN_BATTLES);
@@ -603,4 +682,33 @@ void GameEngine::onStateRestored() {
     cachedRequiredFunding_ = character_->getRequiredFunding();
     lastSeries_ = character_->getSeries();
     purchasedThisCycle_.clear();
+}
+
+void GameEngine::syncBias() {
+    const auto& b = questSystem_->balance();
+    monsterGen_->setKillBias(questSystem_->killKeywords(), b.killBias);
+    itemGen_->setCollectBias(questSystem_->collectKeywords(), b.collectBias);
+}
+
+void GameEngine::grantQuestReward(bool isMain, const std::string& title) {
+    const auto& b = questSystem_->balance();
+    character_->setElapsedSeconds(currentElapsedSeconds_);
+    double funding = character_->getRequiredFunding() * (isMain ? b.rewardMainPct : b.rewardHustlePct) / 100.0;
+    character_->addFunding(funding);
+
+    std::uniform_int_distribution<> d(0, 99);
+    bool hi = d(rng_) < 30;
+    EquipmentRarity r = isMain ? (hi ? EquipmentRarity::LEGENDARY : EquipmentRarity::EPIC)
+                               : (hi ? EquipmentRarity::EPIC : EquipmentRarity::RARE);
+    Equipment eq = specialDropsLibrary_->generateQuestEquipment(character_->getSeries(), r, title);
+
+    if (isMain) {
+        const double SPY = 365.25 * 24 * 60 * 60;
+        const double SPM = SPY / 12.0;
+        int year = static_cast<int>(currentElapsedSeconds_ / SPY) + 1;
+        int month = std::clamp(static_cast<int>((currentElapsedSeconds_ - (year - 1) * SPY) / SPM) + 1, 1, 12);
+        addSpecialDropToLibrary(SpecialDropType::QUEST_DROP, eq, title, year, month);
+    }
+    character_->addEquipmentToInventory(eq);
+    log_.add("quest reward: " + eq.name + " | funding +" + std::to_string(static_cast<int>(funding)));
 }

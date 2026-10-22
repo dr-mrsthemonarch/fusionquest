@@ -8,9 +8,6 @@
 
 using namespace ftxui;
 
-// was inline in stats_page.cpp. moved here so main.cpp's tick loop and stats_page's
-// display share the SAME instance/start_time_ (master clock for GameEngine::tick()).
-// visual output (GetCountdownString/Render) unchanged from original.
 class CountdownComponent : public ComponentBase {
 public:
     CountdownComponent() {

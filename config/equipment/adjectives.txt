@@ -36,3 +36,4 @@ Synergistic
 Ubiquitous
 Web4
 Zero-Knowledge
+Physics Informed

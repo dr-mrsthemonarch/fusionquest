@@ -18,6 +18,8 @@
 #include "NamedMonster.h"
 #include "BattleEncounter.h"
 #include "BattleLog.h"
+#include "StdoutSink.h"
+#include "QuestSystem.h"
 
 // headless. no Qt/ftxui deps. UI polls state each render frame.
 // clock: caller feeds elapsedSeconds (from ftxui CountdownComponent), engine
@@ -25,6 +27,7 @@
 class GameEngine {
 public:
     explicit GameEngine(bool debugInstakill = false);
+    ~GameEngine() { StdoutSink::setLineHandler(nullptr); }
 
     // setup
     bool loadConfig(const std::string& configRoot = "config/");
@@ -51,9 +54,17 @@ public:
     float getActivityProgress() const;
     // 0..1 progress to next series (funding round). uses cached required funding (no rng jitter)
     float getFundingFraction() const;
+    bool isSelling() const { return selloff_.active; }
     // call after SaveGame::load: resync cached funding/series trackers
     void onStateRestored();
-    bool isGameWon() const { return character_ && character_->getSeries() >= 20; }
+    // only real win = clock reaching zero (20y). series can pass 20.
+    bool isGameWon() const { return currentElapsedSeconds_ >= 20.0 * 365 * 86400; }
+
+    // quests
+    QuestSystem* getQuestSystem() { return questSystem_.get(); }
+    const QuestSystem* getQuestSystem() const { return questSystem_.get(); }
+    bool consumeFinalWarning() { return questSystem_->consumeFinalWarning(); }
+    void acknowledgeFinal() { questSystem_->acknowledgeFinal(); }
 
     // accessors for UI (read-only)
     Character* getCharacter() { return character_.get(); }
@@ -63,6 +74,8 @@ public:
     bool isWaitingForBattleStart() const { return waitingForBattleStart_; }
     int getRoundNumber() const { return roundNumber_; }
     const BattleLog& getLog() const { return log_; }
+    // everything: summary lines + captured stdout details (patent effects, level-ups, sales...)
+    const BattleLog& getDetailLog() const { return detailLog_; }
     SpecialDropsLibrary& getSpecialDropsLibrary() { return *specialDropsLibrary_; }
     const SpecialDropsLibrary& getSpecialDropsLibrary() const { return *specialDropsLibrary_; }
 
@@ -111,6 +124,7 @@ private:
     std::unique_ptr<BattleEncounter> currentEncounter_;
 
     BattleLog log_;
+    BattleLog detailLog_{2000};
     Counters counters_;
     std::mt19937 rng_;
 
@@ -134,6 +148,25 @@ private:
     bool shadowPlayerDefeated_ = false;
 
     double currentElapsedSeconds_ = 0.0;
+
+    // --- animated selloff: items leave one at a time, last-in-list first ---
+    struct SelloffState {
+        bool active = false;
+        bool emergency = false;        // true: mid-battle sale, recovers runway from proceeds
+        bool includeEquipment = false; // town visit also sells unequipped gear
+        int ticks = 0;
+        int earned = 0;
+        int total = 0;                 // items+gear at start, for progress
+        std::vector<std::string> itemNames; // snapshot in display order, sold from the back
+    } selloff_;
+    static constexpr int SELL_STEP_TICKS = 3; // 100ms ticks between items
+    void beginSelloff(bool emergency, bool includeEquipment);
+    void stepSelloff();
+    void finishSelloff();
+
+    std::unique_ptr<QuestSystem> questSystem_ = std::make_unique<QuestSystem>();
+    void syncBias();
+    void grantQuestReward(bool isMain, const std::string& title);
 
     // --- extracted from MainWindow, Qt-free ---
     void checkSeriesUpgrade();
