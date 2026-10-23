@@ -2,6 +2,7 @@
 // Created by drmrsthemonarch on 23.11.25.
 //
 
+#include "../include/ConfigStore.h"
 #include "../include/PatentLibrary.h"
 #include "../include/PatentDefinition.h"
 #include "../include/Patent.h"
@@ -13,7 +14,7 @@
 PatentLibrary::PatentLibrary() {}
 
 bool PatentLibrary::loadFromFile(const std::string& filename) {
-    std::ifstream file(filename);
+    ConfigFile file(filename);
     if (!file.is_open()) {
         std::cerr << "Could not open named patents config: " << filename << std::endl;
         return false;
@@ -39,7 +40,7 @@ bool PatentLibrary::loadFromFile(const std::string& filename) {
     return !patents_.empty();
 }
 
-bool PatentLibrary::parsePatentBlock(std::ifstream& file, PatentDefinition& patent) {
+bool PatentLibrary::parsePatentBlock(std::istream& file, PatentDefinition& patent) {
     std::string line;
 
     while (std::getline(file, line)) {

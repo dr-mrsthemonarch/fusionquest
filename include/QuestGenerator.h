@@ -18,6 +18,8 @@ struct QuestBalance {
     double switchChance = 0.35, newHustleWeight = 1.0, maxOpenHustles = 3;
     double rewardMainPct = 25, rewardHustlePct = 10;
     double finalWarningDays = 182.5, finalForceDays = 1.0;
+    double goalScale = 1.0;        // multiplies every goal target
+    double maxSprints = 50000;     // cap per quest
 };
 
 class QuestGenerator {
@@ -33,6 +35,10 @@ public:
 
     Quest generateMain(int index, double elapsed);
     Quest generateHustle(int mainIndex, double budgetSeconds);
+
+    Sprint makeSprint(int tier);               // small goals, scale with tier
+    void refill(Dev& d);                       // keep current + preview sprint generated
+    double estimateSeconds(const Sprint& s) const;
 
 private:
     struct MainDef { std::string title, story; };

@@ -1,0 +1,85 @@
+# 21 main quests. #21 = final, forced near end of clock.
+[QUEST]
+title=Garage Genesis
+story=Two founders, one garage, zero plasma. Time to pitch.
+[END]
+[QUEST]
+title=Seed Round Shenanigans
+story=Angels want equity. You want money. Nobody wants to read the term sheet.
+[END]
+[QUEST]
+title=The Pivot That Was Not
+story=Pivot to blockchain was rejected by physics.
+[END]
+[QUEST]
+title=Prototype Panic
+story=The prototype works. Nobody knows why. Do not touch it.
+[END]
+[QUEST]
+title=Reactor in a Box
+story=Ship a reactor in a shipping container. Legal says no. Ship anyway.
+[END]
+[QUEST]
+title=Series A or Bust
+story=Deck is 80 slides. Investors read 3.
+[END]
+[QUEST]
+title=Regulatory Rodeo
+story=Forms in triplicate. Inspector arrives with a clipboard and a grudge.
+[END]
+[QUEST]
+title=Magnet Madness
+story=Superconducting magnets quench. Quench again. Quench louder.
+[END]
+[QUEST]
+title=Neutron Negotiations
+story=Neutrons refuse to be contained. Offer them equity.
+[END]
+[QUEST]
+title=Halfway to Ignition
+story=Ten years in. The board asks for a timeline. You invent one.
+[END]
+[QUEST]
+title=Hostile Takeover Bid
+story=A rival offers to buy you. Rival is your landlord.
+[END]
+[QUEST]
+title=Supply Chain Sorcery
+story=Lithium shipment lost at sea. Again.
+[END]
+[QUEST]
+title=Plasma Pageant
+story=Investor demo day. Plasma must look pretty on camera.
+[END]
+[QUEST]
+title=Investor Day Inferno
+story=Quarterly update goes badly. Fire alarm helps.
+[END]
+[QUEST]
+title=Net Positive? Maybe.
+story=Energy out exceeds energy in. Accounting disagrees.
+[END]
+[QUEST]
+title=Grid Connection Gauntlet
+story=Utility wants 400 forms and a blood sample.
+[END]
+[QUEST]
+title=Licence To Fuse
+story=Regulator grants licence. Conditions apply. Many conditions.
+[END]
+[QUEST]
+title=Unicorn Fatigue
+story=Valuation soars. Morale does not.
+[END]
+[QUEST]
+title=Final Funding Frenzy
+story=Last cash injection. Sign here, here, here, and also here.
+[END]
+[QUEST]
+title=Dress Rehearsal
+story=Run the plant at full power. Pray at half power.
+[END]
+[QUEST]
+title=Power Plant Commissioning
+story=The clock is nearly out. Flip the switch.
+[END]

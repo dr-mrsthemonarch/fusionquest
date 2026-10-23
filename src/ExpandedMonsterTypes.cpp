@@ -1,4 +1,5 @@
 // SPG Engine made by drmrsthemonarch
+#include "../include/ConfigStore.h"
 #include "../include/ExpandedMonsterTypes.h"
 #include <cmath>
 #include <iostream>
@@ -480,7 +481,7 @@ void SpecializedMonsterGenerator::generatePaperPatents(Monster& paper, int playe
 }
 
 bool SpecializedMonsterGenerator::loadWordList(const std::string &filename, std::vector<std::string> &wordList) {
-    std::ifstream file(filename);
+    ConfigFile file(filename);
     if (!file.is_open()) {
         std::cerr << "Could not open " << filename << std::endl;
         return false;

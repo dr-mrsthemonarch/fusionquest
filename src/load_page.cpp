@@ -23,6 +23,7 @@ Component CreateLoadPage(int* selected_page, GameEngine* engine,
         // best effort, ignore
     }
 
+    auto load_msg = std::make_shared<std::string>();
     auto save_selector = Menu(save_files.get(), selected_index.get());
     auto save_container = Container::Vertical({save_selector});
 
@@ -32,10 +33,14 @@ Component CreateLoadPage(int* selected_page, GameEngine* engine,
 
         // fresh baseline first (starter gear, fresh review calendar), THEN overwrite w/ save.
         // matches spec: clock always restarts at 0, rest of progress restored from file.
+        if (!SaveGame::verify(filename)) { *load_msg = "Save is corrupt or was modified."; return; }
         engine->initializeCharacter("", "1", "", ""); // name/position overwritten by load below
         if (SaveGame::load(*engine, filename)) {
+            load_msg->clear();
             countdown_timer->ResetClock();
             *selected_page = STATS_PAGE;
+        } else {
+            *load_msg = "Load failed (incompatible save version?).";
         }
     });
 
@@ -52,6 +57,7 @@ Component CreateLoadPage(int* selected_page, GameEngine* engine,
             vbox({text("Saved Characters") | bold | center, separator(), list_element}) | flex | border,
             separator(),
             load_button->Render(),
+            text(*load_msg) | color(Color::Red) | center,
             separator(),
             back_button->Render(),
         }));

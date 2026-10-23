@@ -11,6 +11,7 @@
 #include <deque>
 #include <ftxui/component/component.hpp>
 #include <ftxui/dom/elements.hpp>
+#include <ftxui/screen/terminal.hpp>
 
 using namespace ftxui;
 
@@ -36,6 +37,21 @@ int selected_patent_index = 0;
 int selected_inventory_index = 0;
 
 namespace {
+// utf-8 safe shorten to w columns (code points), "..." suffix
+std::string fit(const std::string& s, int w) {
+    if (w < 4) return s;
+    int cnt = 0;
+    size_t i = 0, cut = std::string::npos;
+    while (i < s.size()) {
+        unsigned char c = static_cast<unsigned char>(s[i]);
+        size_t len = c < 0x80 ? 1 : c < 0xE0 ? 2 : c < 0xF0 ? 3 : 4;
+        if (cnt == w - 3) cut = i;
+        ++cnt;
+        i += len;
+    }
+    if (cnt <= w) return s;
+    return s.substr(0, cut) + "...";
+}
 std::string formatMoney(long long v) {
     std::string s = std::to_string(v < 0 ? -v : v);
     for (int i = static_cast<int>(s.size()) - 3; i > 0; i -= 3) s.insert(i, ",");
@@ -96,14 +112,21 @@ Component CreateStatsPage(int* selected_page, GameEngine* engine,
         Character* c = engine->getCharacter();
         if (!c) c = &placeholder;
 
+        // three equal fixed-width columns: long names can no longer stretch the layout
+        const int colw = std::max(36, (Terminal::Size().dimx - 2) / 3);
+        const int tw = colw - 4; // border + scroll indicator
+
         patent_list->clear();
         for (const auto& [name, patent] : Patent::characterPatents)
-            patent_list->push_back(patent.getFullName());
+            patent_list->push_back(fit(patent.getFullName(), tw));
         if (patent_list->empty()) patent_list->push_back("(none)");
 
         inventory_list->clear();
-        for (const auto& [name, val] : c->getInventoryMap())
-            inventory_list->push_back(name + " ($" + std::to_string(val) + ")");
+        for (const auto& [name, val] : c->getInventoryMap()) {
+            int n = c->getInventoryStack(name);
+            std::string suffix = (n > 1 ? " x" + std::to_string(n) : "") + " ($" + std::to_string(val) + ")";
+            inventory_list->push_back(fit(name, std::max(8, tw - static_cast<int>(suffix.size()))) + suffix);
+        }
         if (inventory_list->empty()) inventory_list->push_back("(empty)");
 
         float funding_frac = engine->getFundingFraction();
@@ -119,10 +142,10 @@ Component CreateStatsPage(int* selected_page, GameEngine* engine,
             vbox({
                 text("Character") | bold | center,
                 separator(),
-                hbox({text("Name: ") | bold | size(WIDTH, EQUAL, 16), text(c->getName().empty() ? "Unknown" : c->getName())}),
+                hbox({text("Name: ") | bold | size(WIDTH, EQUAL, 16), text(fit(c->getName().empty() ? "Unknown" : c->getName(), tw - 16))}),
                 hbox({text("Employee nr: ") | bold | size(WIDTH, EQUAL, 16), text(engine->getEmployeeNr())}),
                 hbox({text("Position: ") | bold | size(WIDTH, EQUAL, 16), text(engine->getPosition())}),
-                hbox({text("Startup Name: ") | bold | size(WIDTH, EQUAL, 16), text(c->getStartup())}),
+                hbox({text("Startup Name: ") | bold | size(WIDTH, EQUAL, 16), text(fit(c->getStartup(), tw - 16))}),
                 separator(),
                 hbox({text("Runway: ") | bold | size(WIDTH, EQUAL, 16),
                       text(std::to_string(c->getRunway()) + "/" + std::to_string(c->getMaxRunway()))}),
@@ -156,8 +179,8 @@ Component CreateStatsPage(int* selected_page, GameEngine* engine,
 
         // ---- Column 2: quests (static placeholder, original text) ----
         QuestSystem* qs = engine->getQuestSystem();
-        auto qgauge = [](const std::string& label, const QuestSystem::Gauge& g, Color col) {
-            return vbox({text(label + g.title) | color(col), gauge(g.frac) | color(col)});
+        auto qgauge = [tw](const std::string& label, const QuestSystem::Gauge& g, Color col) {
+            return vbox({text(fit(label + g.title, tw)) | color(col), gauge(g.frac) | color(col)});
         };
         Element quests =
             vbox({text("Quests") | bold | center, separator(),
@@ -189,25 +212,24 @@ Component CreateStatsPage(int* selected_page, GameEngine* engine,
         if (!aq || !ad) {
             pm.push_back(text("No active project") | dim);
         } else {
-            pm.push_back(text(aq->title) | color(Color::Green));
-            pm.push_back(text("Dev: " + ad->name) | color(Color::Yellow));
+            pm.push_back(text(fit(aq->title, tw)) | color(Color::Green));
+            pm.push_back(text(fit("Dev: " + ad->name, tw)) | color(Color::Yellow));
             pm.push_back(separator());
-            size_t shown = 0;
-            for (size_t i = ad->current; i < ad->sprints.size() && shown < 2; ++i, ++shown) {
-                const Sprint& sp = ad->sprints[i];
-                const bool cur = (i == ad->current);
-                pm.push_back(text(std::string(cur ? "➤ " : "□ ") + sp.name) |
+            for (size_t i = 0; i < ad->shown.size() && i < 2; ++i) {
+                const Sprint& sp = ad->shown[i];
+                const bool cur = (i == 0);
+                pm.push_back(text(fit(std::string(cur ? "➤ " : "□ ") + sp.name, tw)) |
                              color(cur ? Color::Yellow : Color::GrayDark));
                 for (const Goal& g : sp.goals) {
                     std::string mark = g.done() ? "✓ " : (cur ? "➤ " : "□ ");
-                    pm.push_back(text("   " + mark + g.describe()) |
+                    pm.push_back(text(fit("   " + mark + g.describe(), tw)) |
                                  color(g.done() ? Color::Green : (cur ? Color::Yellow : Color::GrayDark)));
                 }
             }
             pm.push_back(separator());
             pm.push_back(text("Project Progress: Sprint " +
-                              std::to_string(std::min(ad->current + 1, ad->sprints.size())) + " of " +
-                              std::to_string(ad->sprints.size())) | bold);
+                              std::to_string(std::min(ad->current + 1, ad->sprintCount)) + " of " +
+                              std::to_string(ad->sprintCount)) | bold);
         }
         Element plot_dev = vbox(std::move(pm)) | border | size(HEIGHT, EQUAL, 20);
 
@@ -225,7 +247,7 @@ Component CreateStatsPage(int* selected_page, GameEngine* engine,
                 name = e.name;
             }
             return hbox({text(std::string(label) + ": ") | bold | size(WIDTH, EQUAL, 16),
-                         text(bonus + " ") | size(WIDTH, EQUAL, 8), text(name)});
+                         text(bonus + " ") | size(WIDTH, EQUAL, 8), text(fit(name, std::max(8, tw - 24)))});
         };
         Element equipment =
             vbox({
@@ -266,16 +288,16 @@ Component CreateStatsPage(int* selected_page, GameEngine* engine,
 
         Element progress_gauge =
             window(text("Progress") | bold | center,
-                   vbox({text(activity + " " + std::to_string(int(activity_bar->GetProgress() * 100)) + "%"),
+                   vbox({text(fit(activity, colw * 3 - 12) + " " + std::to_string(int(activity_bar->GetProgress() * 100)) + "%"),
                          gauge(activity_bar->GetProgress()) | color(Color::Blue)})) |
             size(HEIGHT, EQUAL, 4);
 
         return window(countdown_timer->Render(),
                       vbox({
                           hbox({
-                              vbox({character_stats, experience_gauge, equipment | flex}) | flex,
-                              vbox({inventory, patents | flex}) | flex,
-                              vbox({plot_dev, quests}) | flex,
+                              vbox({character_stats, experience_gauge, equipment | flex}) | size(WIDTH, EQUAL, colw),
+                              vbox({inventory, patents | flex}) | size(WIDTH, EQUAL, colw),
+                              vbox({plot_dev, quests}) | size(WIDTH, EQUAL, colw),
                           }),
                           progress_gauge,
                           separator(),

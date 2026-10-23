@@ -1,4 +1,5 @@
 // SPG Engine made by drmrsthemonarch
+#include "../include/ConfigStore.h"
 #include "../include/EquipmentGenerator.h"
 #include <fstream>
 #include <iostream>
@@ -8,7 +9,7 @@ EquipmentGenerator::EquipmentGenerator() : gen_(std::random_device{}()) {}
 
 bool EquipmentGenerator::loadWordLists(const std::string& configPath) {
     // Load adjectives
-    std::ifstream adjectivesFile(configPath + "adjectives.txt");
+    ConfigFile adjectivesFile(configPath + "adjectives.txt");
     if (adjectivesFile.is_open()) {
         std::string line;
         while (std::getline(adjectivesFile, line)) {
@@ -20,7 +21,7 @@ bool EquipmentGenerator::loadWordLists(const std::string& configPath) {
     }
 
     // Load materials
-    std::ifstream materialsFile(configPath + "materials.txt");
+    ConfigFile materialsFile(configPath + "materials.txt");
     if (materialsFile.is_open()) {
         std::string line;
         while (std::getline(materialsFile, line)) {
@@ -32,7 +33,7 @@ bool EquipmentGenerator::loadWordLists(const std::string& configPath) {
     }
 
     // Load suffixes
-    std::ifstream suffixesFile(configPath + "suffixes.txt");
+    ConfigFile suffixesFile(configPath + "suffixes.txt");
     if (suffixesFile.is_open()) {
         std::string line;
         while (std::getline(suffixesFile, line)) {
@@ -294,7 +295,7 @@ std::string EquipmentGenerator::generateEquipmentName(EquipmentType type) {
     // 70% chance to add adjective, 50% chance to add material, 30% chance to add suffix
     std::string name = baseName;
 
-    std::uniform_real_distribution<int> chance(0, 100);
+    std::uniform_int_distribution<int> chance(0, 100);
 
     if (chance(gen_) < 70 && !adjectives_.empty()) {
         name = getRandomAdjective() + " " + name;

@@ -1,5 +1,6 @@
 
 #include "../include/Character.h"
+#include <cmath>
 #include <cstdlib>
 #include <ctime>
 #include <vector>
@@ -44,6 +45,14 @@ Character::Character(const std::string &name, const std::string &employeeNr, con
 }
 
 std::unordered_map<std::string, int> Character::inventory;
+std::unordered_map<std::string, int> Character::inventoryCounts;
+std::function<bool(const std::string&)> Character::sellProtected;
+
+int Character::getSellableEquipmentCount() const {
+    int n = 0;
+    for (const auto& e : equipmentInventory_) if (!isSellProtected(e.name)) ++n;
+    return n;
+}
 
 ItemGenerator g_itemGenerator;
 
@@ -170,6 +179,7 @@ void Character::addInventoryItem(const std::string &itemName, int value) {
     }
 
     inventory[itemName] = value;
+    inventoryCounts[itemName]++;
     std::cout << "Added " << itemName << " to inventory (" << getInventoryCount() << "/" << getInventoryLimit() << ")" << std::endl;
 }
 
@@ -308,7 +318,9 @@ int Character::getInventoryLimit() const {
 }
 
 int Character::getInventoryCount() const {
-    return static_cast<int>(inventory.size());
+    int total = 0;
+    for (const auto &kv: inventoryCounts) total += kv.second;
+    return total;
 }
 
 int Character::getMaxRunway() const {
@@ -529,6 +541,7 @@ double Character::requiredFundingForNextLevel(double elapsedSeconds) const {
 void Character::removeInventoryItem(const std::string &itemName) {
     if (inventory.find(itemName) != inventory.end()) {
         inventory.erase(itemName);
+        inventoryCounts.erase(itemName);
     }
 }
 
@@ -543,7 +556,7 @@ bool Character::spendMoney(int amount) {
 bool Character::sellEquipment(const std::string &equipmentName) {
     // Find the equipment in inventory (not equipped items)
     auto it = std::find_if(equipmentInventory_.begin(), equipmentInventory_.end(), [&equipmentName](const Equipment &item) {
-        return item.name == equipmentName;
+        return item.name == equipmentName && !isSellProtected(item.name);
     });
 
     if (it == equipmentInventory_.end()) {
@@ -577,15 +590,16 @@ int Character::sellAllEquipment() {
     std::cout << "Selling all inventory equipment..." << std::endl;
 
     // Iterate backwards or use while loop to avoid index issues
-    while (!equipmentInventory_.empty()) {
-        const Equipment &item = equipmentInventory_.back();
+    for (size_t i = equipmentInventory_.size(); i-- > 0;) {
+        const Equipment &item = equipmentInventory_[i];
+        if (isSellProtected(item.name)) continue; // special drops never sell
         int sellPrice = static_cast<int>(item.equipmentvalue * 0.6);
 
         std::cout << "- Sold " << item.name << " for $" << sellPrice << std::endl;
 
         totalEarned += sellPrice;
         itemsSold++;
-        equipmentInventory_.pop_back();
+        equipmentInventory_.erase(equipmentInventory_.begin() + i);
     }
 
     money_ += totalEarned;
@@ -602,6 +616,10 @@ bool Character::sellEquipmentByIndex(size_t index) {
         return false;
     }
 
+    if (isSellProtected(equipmentInventory_[index].name)) {
+        std::cout << "Special drops cannot be sold!" << std::endl;
+        return false;
+    }
     const Equipment &item = equipmentInventory_[index];
     int sellPrice = static_cast<int>(item.equipmentvalue * 0.6); // 60% of original value
 
@@ -654,13 +672,16 @@ int Character::sellAllInventoryForBankruptcy() {
     std::cout << "\nLiquidating all inventory items..." << std::endl;
 
     for (const auto &item: inventory) {
-        std::cout << "- Sold " << item.first << " for $" << item.second << std::endl;
-        totalEarned += item.second;
+        auto cit = inventoryCounts.find(item.first);
+        int n = cit == inventoryCounts.end() ? 1 : cit->second;
+        std::cout << "- Sold " << item.first << " x" << n << " for $" << item.second * n << std::endl;
+        totalEarned += item.second * n;
         itemsSold++;
     }
 
     // Clear the inventory
     inventory.clear();
+    inventoryCounts.clear();
 
     std::cout << "Inventory liquidation complete! Sold " << itemsSold << " items for $" << totalEarned << std::endl;
 
@@ -678,13 +699,14 @@ int Character::sellAllEquipmentForBankruptcy() {
 
     std::cout << "\nLiquidating all equipment..." << std::endl;
 
-    while (!equipmentInventory_.empty()) {
-        const Equipment &item = equipmentInventory_.back();
+    for (size_t i = equipmentInventory_.size(); i-- > 0;) {
+        const Equipment &item = equipmentInventory_[i];
+        if (isSellProtected(item.name)) continue; // special drops never sell
         int sellPrice = static_cast<int>(item.equipmentvalue * 0.6);
         std::cout << "- Sold " << item.name << " for $" << sellPrice << std::endl;
         totalEarned += sellPrice;
         itemsSold++;
-        equipmentInventory_.pop_back();
+        equipmentInventory_.erase(equipmentInventory_.begin() + i);
     }
 
     std::cout << "Equipment liquidation complete! Sold " << itemsSold << " items for $" << totalEarned << std::endl;
@@ -767,13 +789,16 @@ int Character::sellAllInventory() {
     std::cout << "\nSelling all inventory items..." << std::endl;
 
     for (const auto &item: inventory) {
-        std::cout << "- Sold " << item.first << " for $" << item.second << std::endl;
-        totalEarned += item.second;
+        auto cit = inventoryCounts.find(item.first);
+        int n = cit == inventoryCounts.end() ? 1 : cit->second;
+        std::cout << "- Sold " << item.first << " x" << n << " for $" << item.second * n << std::endl;
+        totalEarned += item.second * n;
         itemsSold++;
     }
 
     // Clear the inventory
     inventory.clear();
+    inventoryCounts.clear();
 
     std::cout << "Sold " << itemsSold << " items for $" << totalEarned << std::endl;
 

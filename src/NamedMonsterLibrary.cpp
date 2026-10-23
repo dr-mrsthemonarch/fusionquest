@@ -1,6 +1,7 @@
 //
 // Created by drmrsthemonarch on 23.11.25.
 //
+#include "../include/ConfigStore.h"
 #include "../include/NamedMonsterLibrary.h"
 #include <fstream>
 #include <sstream>
@@ -10,7 +11,7 @@
 NamedMonsterLibrary::NamedMonsterLibrary() {}
 
 bool NamedMonsterLibrary::loadFromFile(const std::string& filename) {
-    std::ifstream file(filename);
+    ConfigFile file(filename);
     if (!file.is_open()) {
         std::cerr << "Could not open named monsters config: " << filename << std::endl;
         return false;
@@ -38,7 +39,7 @@ bool NamedMonsterLibrary::loadFromFile(const std::string& filename) {
     return !monsters_.empty();
 }
 
-bool NamedMonsterLibrary::parseMonsterBlock(std::ifstream& file, NamedMonsterDef& monster) {
+bool NamedMonsterLibrary::parseMonsterBlock(std::istream& file, NamedMonsterDef& monster) {
     std::string line;
 
     while (std::getline(file, line)) {
@@ -77,7 +78,7 @@ bool NamedMonsterLibrary::parseMonsterBlock(std::ifstream& file, NamedMonsterDef
     return false;
 }
 
-bool NamedMonsterLibrary::parsePatentBlock(std::ifstream& file, PatentDefinition& patent) {
+bool NamedMonsterLibrary::parsePatentBlock(std::istream& file, PatentDefinition& patent) {
     std::string line;
 
     while (std::getline(file, line)) {

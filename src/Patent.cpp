@@ -1,3 +1,4 @@
+#include "../include/ConfigStore.h"
 #include "../include/Patent.h"
 #include <algorithm>
 #include <cmath>
@@ -528,7 +529,7 @@ std::string Patent::getFullName() const {
 }
 
 void Patent::loadPatentNames(const std::string &filename) {
-    std::ifstream file(filename);
+    ConfigFile file(filename);
     if (!file.is_open()) {
         std::cerr << "Could not open patent names file: " << filename << std::endl;
         return;

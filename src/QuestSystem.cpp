@@ -89,7 +89,8 @@ std::vector<Goal*> QuestSystem::activeGoals() {
     if (!q || q->done()) return out;
     Dev& d = q->devs[q->current];
     if (d.done()) return out;
-    for (auto& g : d.sprints[d.current].goals) if (!g.done()) out.push_back(&g);
+    if (d.shown.empty()) return out;
+    for (auto& g : d.shown[0].goals) if (!g.done()) out.push_back(&g);
     return out;
 }
 
@@ -136,7 +137,8 @@ void QuestSystem::afterProgress() {
     while (!q->done()) {
         Dev& d = q->devs[q->current];
         if (d.done()) { log("dev done: " + d.name); q->current++; devDone = true; continue; }
-        if (d.sprints[d.current].done()) { log("sprint done: " + d.sprints[d.current].name); d.current++; continue; }
+        if (d.shown.empty()) { gen_.refill(d); if (d.shown.empty()) break; }
+        if (d.shown[0].done()) { d.current++; d.shown.erase(d.shown.begin()); gen_.refill(d); continue; } // no log: too many sprints
         break;
     }
     if (q->done()) { finishActive(); return; }

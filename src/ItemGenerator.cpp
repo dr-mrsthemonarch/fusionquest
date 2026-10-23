@@ -1,4 +1,5 @@
 // SPG Engine made by drmrsthemonarch
+#include "../include/ConfigStore.h"
 #include "../include/ItemGenerator.h"
 #include <cstdlib>
 #include <ctime>
@@ -165,7 +166,7 @@ bool ItemGenerator::loadWordLists(const std::string &configPath) {
 }
 
 bool ItemGenerator::loadListFromFile(const std::string &filename, std::vector<std::string> &targetList) {
-    std::ifstream file(filename);
+    ConfigFile file(filename);
     if (!file.is_open()) {
         std::cerr << "Could not open file: " << filename << std::endl;
         return false;
@@ -186,7 +187,7 @@ bool ItemGenerator::loadListFromFile(const std::string &filename, std::vector<st
 }
 
 bool ItemGenerator::loadValueModifiers(const std::string &filename) {
-    std::ifstream file(filename);
+    ConfigFile file(filename);
     if (!file.is_open()) {
         std::cerr << "Could not open value modifiers file: " << filename << std::endl;
         return false;

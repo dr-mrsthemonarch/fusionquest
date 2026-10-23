@@ -1,40 +1,42 @@
 #include "../include/SaveGame.h"
 #include "../include/StdoutSink.h"
 #include "../include/Patent.h"
+#include "../include/SaveCrypto.h"
 #include <map>
 #include <filesystem>
 #include <cctype>
 #include <fstream>
 #include <iostream>
+#include <sstream>
 
 namespace {
-constexpr int32_t SAVE_VERSION = 3; // v2: + employeeNr, position. v3: + quest state
+constexpr int32_t SAVE_VERSION = 5; // v2: + employeeNr, position. v3: + quest state. v4: + inventory stack counts. v5: lazy sprints, counts before quest state (v3/v4 rejected)
 
 template <typename T>
-void w(std::ofstream& f, const T& v) { f.write(reinterpret_cast<const char*>(&v), sizeof(v)); }
+void w(std::ostream& f, const T& v) { f.write(reinterpret_cast<const char*>(&v), sizeof(v)); }
 template <typename T>
-void r(std::ifstream& f, T& v) { f.read(reinterpret_cast<char*>(&v), sizeof(v)); }
+void r(std::istream& f, T& v) { f.read(reinterpret_cast<char*>(&v), sizeof(v)); }
 
-void writeStr(std::ofstream& f, const std::string& s) {
+void writeStr(std::ostream& f, const std::string& s) {
     size_t len = s.size();
     w(f, len);
     f.write(s.data(), len);
 }
-std::string readStr(std::ifstream& f) {
+std::string readStr(std::istream& f) {
     size_t len; r(f, len);
     std::string s(len, '\0');
     f.read(s.data(), len);
     return s;
 }
 
-void writeEquipment(std::ofstream& f, const Equipment& eq) {
+void writeEquipment(std::ostream& f, const Equipment& eq) {
     w(f, eq.type); w(f, eq.rarity);
     writeStr(f, eq.name); writeStr(f, eq.equipmentclass);
     w(f, eq.runway); w(f, eq.hypeEnergy); w(f, eq.hustle); w(f, eq.agility);
     w(f, eq.ndas); w(f, eq.luck); w(f, eq.synergy); w(f, eq.technicalDebt);
     w(f, eq.busFactor); w(f, eq.inventoryLimit); w(f, eq.equipmentvalue);
 }
-Equipment readEquipment(std::ifstream& f) {
+Equipment readEquipment(std::istream& f) {
     Equipment eq;
     r(f, eq.type); r(f, eq.rarity);
     eq.name = readStr(f); eq.equipmentclass = readStr(f);
@@ -43,47 +45,51 @@ Equipment readEquipment(std::ifstream& f) {
     r(f, eq.busFactor); r(f, eq.inventoryLimit); r(f, eq.equipmentvalue);
     return eq;
 }
-void writeQuest(std::ofstream& f, const Quest& q) {
+void writeSprint(std::ostream& f, const Sprint& s) {
+    writeStr(f, s.name); w(f, s.goals.size());
+    for (const auto& g : s.goals) { w(f, g.type); writeStr(f, g.keyword); w(f, g.target); w(f, g.progress); }
+}
+Sprint readSprint(std::istream& f) {
+    Sprint s; s.name = readStr(f);
+    size_t ng; r(f, ng);
+    for (size_t k = 0; k < ng; ++k) {
+        Goal g; r(f, g.type); g.keyword = readStr(f); r(f, g.target); r(f, g.progress);
+        s.goals.push_back(g);
+    }
+    return s;
+}
+void writeQuest(std::ostream& f, const Quest& q) {
     writeStr(f, q.title); writeStr(f, q.story);
     w(f, q.index); w(f, q.hustlesRequired); w(f, q.current);
     w(f, q.devs.size());
     for (const auto& d : q.devs) {
-        writeStr(f, d.name); w(f, d.current); w(f, d.sprints.size());
-        for (const auto& s : d.sprints) {
-            writeStr(f, s.name); w(f, s.goals.size());
-            for (const auto& g : s.goals) { w(f, g.type); writeStr(f, g.keyword); w(f, g.target); w(f, g.progress); }
-        }
+        writeStr(f, d.name); w(f, d.sprintCount); w(f, d.current); w(f, d.tier);
+        w(f, d.shown.size());
+        for (const auto& s : d.shown) writeSprint(f, s);
     }
 }
-Quest readQuest(std::ifstream& f) {
+Quest readQuest(std::istream& f) {
     Quest q;
     q.title = readStr(f); q.story = readStr(f);
     r(f, q.index); r(f, q.hustlesRequired); r(f, q.current);
     size_t nd; r(f, nd);
     for (size_t i = 0; i < nd; ++i) {
-        Dev d; d.name = readStr(f); r(f, d.current);
+        Dev d; d.name = readStr(f);
+        r(f, d.sprintCount); r(f, d.current); r(f, d.tier);
         size_t ns; r(f, ns);
-        for (size_t j = 0; j < ns; ++j) {
-            Sprint s; s.name = readStr(f);
-            size_t ng; r(f, ng);
-            for (size_t k = 0; k < ng; ++k) {
-                Goal g; r(f, g.type); g.keyword = readStr(f); r(f, g.target); r(f, g.progress);
-                s.goals.push_back(g);
-            }
-            d.sprints.push_back(s);
-        }
+        for (size_t j = 0; j < ns; ++j) d.shown.push_back(readSprint(f));
         q.devs.push_back(d);
     }
     return q;
 }
-void writeQuestState(std::ofstream& f, const QuestState& s) {
+void writeQuestState(std::ostream& f, const QuestState& s) {
     writeQuest(f, s.main);
     w(f, s.mainActive); w(f, s.mainIndex); w(f, s.hustlesDone); w(f, s.hustleBudget);
     w(f, s.track); w(f, s.completedQuests); w(f, s.finalPending); w(f, s.finalStarted);
     w(f, s.hustles.size());
     for (const auto& h : s.hustles) writeQuest(f, h);
 }
-QuestState readQuestState(std::ifstream& f) {
+QuestState readQuestState(std::istream& f) {
     QuestState s;
     s.main = readQuest(f);
     r(f, s.mainActive); r(f, s.mainIndex); r(f, s.hustlesDone); r(f, s.hustleBudget);
@@ -92,15 +98,34 @@ QuestState readQuestState(std::ifstream& f) {
     for (size_t i = 0; i < n; ++i) s.hustles.push_back(readQuest(f));
     return s;
 }
+// whole file -> verified plaintext. unsigned files only accepted in dev builds.
+bool readProtected(const std::string& filename, std::string& plain) {
+    std::ifstream in(filename, std::ios::binary);
+    if (!in) { std::cerr << "SaveGame: cannot open " << filename << "\n"; return false; }
+    std::stringstream ss;
+    ss << in.rdbuf();
+    const std::string file = ss.str();
+    if (SaveCrypto::open(file, plain)) return true;
+#ifdef FQ_EXTERNAL_CONFIG
+    if (!SaveCrypto::isSealed(file)) { plain = file; return true; }
+#endif
+    std::cerr << "SaveGame: save is corrupt, unsigned or was modified\n";
+    return false;
+}
 } // namespace
+
+bool SaveGame::verify(const std::string& filename) {
+    StdoutSink silence;
+    std::string plain;
+    return readProtected(filename, plain);
+}
 
 bool SaveGame::save(const GameEngine& engine, const std::string& filename) {
     StdoutSink silence;
     const Character* c = engine.getCharacter();
     if (!c) { std::cerr << "SaveGame: no character\n"; return false; }
 
-    std::ofstream f(filename, std::ios::binary);
-    if (!f) { std::cerr << "SaveGame: cannot open " << filename << "\n"; return false; }
+    std::ostringstream f(std::ios::binary); // sealed + written at the end
 
     w(f, SAVE_VERSION);
     writeStr(f, c->getName());
@@ -175,20 +200,30 @@ bool SaveGame::save(const GameEngine& engine, const std::string& filename) {
     // counters
     w(f, engine.getCounters());
 
+    // inventory stack counts
+    const auto& cnts = Character::getInventoryCountsMap();
+    w(f, cnts.size());
+    for (const auto& [name, n] : cnts) { writeStr(f, name); w(f, n); }
+
     writeQuestState(f, engine.getQuestSystem()->state());
 
-    f.close();
+    std::ofstream out(filename, std::ios::binary);
+    if (!out) { std::cerr << "SaveGame: cannot open " << filename << "\n"; return false; }
+    const std::string sealed = SaveCrypto::seal(f.str());
+    out.write(sealed.data(), static_cast<std::streamsize>(sealed.size()));
+    out.close();
     std::cout << "saved: " << filename << "\n";
     return true;
 }
 
 bool SaveGame::load(GameEngine& engine, const std::string& filename) {
     StdoutSink silence;
-    std::ifstream f(filename, std::ios::binary);
-    if (!f) { std::cerr << "SaveGame: cannot open " << filename << "\n"; return false; }
+    std::string plain;
+    if (!readProtected(filename, plain)) return false;
+    std::istringstream f(plain, std::ios::binary);
 
     int32_t version; r(f, version);
-    if (version != 2 && version != SAVE_VERSION) { std::cerr << "SaveGame: version mismatch (" << version << ")\n"; return false; }
+    if (version < 2 || version > SAVE_VERSION || version == 3 || version == 4) { std::cerr << "SaveGame: version mismatch (" << version << ")\n"; return false; }
 
     std::string name = readStr(f);
     std::string startup = readStr(f);
@@ -255,10 +290,15 @@ bool SaveGame::load(GameEngine& engine, const std::string& filename) {
 
     GameEngine::Counters counters{};
     r(f, counters);
+    const bool haveCounts = version >= 5; // v2 saves: stacks of 1, fresh quest 1
+    std::unordered_map<std::string, int> invCounts;
+    if (haveCounts) {
+        size_t n; r(f, n);
+        for (size_t i = 0; i < n; ++i) { std::string k = readStr(f); int v; r(f, v); invCounts[k] = v; }
+    }
     QuestState qs;
-    const bool haveQs = version >= 3; // v2 saves: keep fresh quest 1
+    const bool haveQs = version >= 5;
     if (haveQs) qs = readQuestState(f);
-    f.close();
 
     // --- apply ---
     // NOTE: initializeCharacter() already ran generic startup (money, funding, starter gear,
@@ -281,6 +321,7 @@ bool SaveGame::load(GameEngine& engine, const std::string& filename) {
     c->setEquippedItemsDirect(equipped); // recalculates profile_ again w/ equipment bonuses
     c->setEquipmentInventoryDirect(eqInv);
     Character::setInventoryMapDirect(inv);
+    if (haveCounts) Character::setInventoryCountsDirect(invCounts);
 
     Patent::characterPatents.clear();
     for (const auto& sp : savedPatents) {

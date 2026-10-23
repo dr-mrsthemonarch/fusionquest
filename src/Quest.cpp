@@ -30,7 +30,7 @@ float Sprint::fraction() const {
 }
 
 float Dev::fraction() const {
-    if (sprints.empty()) return 1.0f;
-    float part = current < sprints.size() ? sprints[current].fraction() : 0.0f;
-    return std::min(1.0f, (static_cast<float>(current) + part) / static_cast<float>(sprints.size()));
+    if (sprintCount <= 0) return 1.0f;
+    float part = shown.empty() ? 0.0f : shown[0].fraction();
+    return std::min(1.0f, (static_cast<float>(current) + part) / static_cast<float>(sprintCount));
 }

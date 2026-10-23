@@ -6,6 +6,7 @@
 #define NAMEDMONSTERLIBRARY_H
 
 #include "NamedMonster.h"
+#include <istream>
 #include <vector>
 #include <memory>
 
@@ -45,8 +46,8 @@ private:
     NamedMonsterSystem monsterSystem_;
 
     // Parsing helpers
-    bool parseMonsterBlock(std::ifstream& file, NamedMonsterDef& monster);
-    bool parsePatentBlock(std::ifstream& file, PatentDefinition& patent);
+    bool parseMonsterBlock(std::istream& file, NamedMonsterDef& monster);
+    bool parsePatentBlock(std::istream& file, PatentDefinition& patent);
 
     std::string trim(const std::string& str);
     PatentType stringToPatentType(const std::string& str);

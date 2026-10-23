@@ -1,6 +1,7 @@
 #ifndef CHARACTER_H
 #define CHARACTER_H
 
+#include <functional>
 #include <iostream>
 #include <map>
 #include <string>
@@ -194,7 +195,21 @@ public:
 
     // inventory_ is STATIC (shared across all Character instances - pre-existing design).
     // setter mutates the shared static map.
-    static void setInventoryMapDirect(const std::unordered_map<std::string, int>& inv) { inventory = inv; }
+    static void setInventoryMapDirect(const std::unordered_map<std::string, int>& inv) {
+        inventory = inv;
+        inventoryCounts.clear();
+        for (const auto& kv : inv) inventoryCounts[kv.first] = 1;
+    }
+    // stack counts (name -> how many held). value map above stays name -> unit value.
+    static void setInventoryCountsDirect(const std::unordered_map<std::string, int>& c) { inventoryCounts = c; }
+    static const std::unordered_map<std::string, int>& getInventoryCountsMap() { return inventoryCounts; }
+    int getInventoryStack(const std::string& n) const {
+        auto it = inventoryCounts.find(n);
+        return it == inventoryCounts.end() ? 0 : it->second;
+    }
+    // engine sets this: true = equipment name is unsellable (special drops)
+    static void setSellProtection(std::function<bool(const std::string&)> fn) { sellProtected = std::move(fn); }
+    int getSellableEquipmentCount() const;
 
 
 private:
@@ -257,6 +272,9 @@ private:
 
     std::string equipmentTypeToString(EquipmentType type) const; // Added const here
     static std::unordered_map<std::string, int> inventory;
+    static std::unordered_map<std::string, int> inventoryCounts;
+    static std::function<bool(const std::string&)> sellProtected;
+    static bool isSellProtected(const std::string& n) { return sellProtected && sellProtected(n); }
 };
 
 #endif  // CHARACTER_H

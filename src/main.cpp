@@ -1,6 +1,7 @@
 #include "../include/ui.h"
 #include "../include/GameEngine.h"
 #include "../include/GameClock.h"
+#include "../include/ConfigStore.h"
 #include <ftxui/component/screen_interactive.hpp>
 #include <ctime>
 #include <cstdlib>
@@ -12,6 +13,14 @@
 
 int main(int argc, char* argv[]) {
     std::srand(std::time(nullptr));
+
+    {
+        std::string cfgError;
+        if (!validateConfig(cfgError)) {
+            std::cerr << "FATAL: " << cfgError << "\nReinstall or rebuild the game.\n";
+            return 1;
+        }
+    }
 
     bool debugInstakill = false;
     for (int i = 1; i < argc; ++i) {

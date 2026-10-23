@@ -1,0 +1,12 @@
+Spike
+Refactor
+Hotfix
+Integration
+Stress Test
+Benchmark
+Code Freeze
+Retro Fire
+Deploy
+Cleanup
+Burndown
+Backlog Grooming

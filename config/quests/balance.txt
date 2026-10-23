@@ -1,0 +1,22 @@
+# pacing: each quest gets a time budget = remaining clock * weight share. goal targets = budget / sec_per_unit.
+# tune sec_per_* to real kill/drop rates. total clock = 20y.
+usable_fraction=0.95
+growth=0.15
+main_share=0.6
+main_quest_count=20
+sec_per_kill=40
+sec_per_collect=60
+sec_per_boss=900
+sec_per_town=3600
+kill_bias=0.15
+collect_bias=0.15
+switch_chance=0.35
+new_hustle_weight=1.0
+max_open_hustles=3
+reward_main_pct=25
+reward_hustle_pct=10
+final_warning_days=182.5
+final_force_days=1
+# goal sizes are tiny (kills 2..3+tier/2, items 1..2+tier/3). sprint COUNT fills the quest budget.
+goal_scale=1.0
+max_sprints=50000

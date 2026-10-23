@@ -27,7 +27,7 @@
 class GameEngine {
 public:
     explicit GameEngine(bool debugInstakill = false);
-    ~GameEngine() { StdoutSink::setLineHandler(nullptr); }
+    ~GameEngine() { StdoutSink::setLineHandler(nullptr); Character::setSellProtection(nullptr); }
 
     // setup
     bool loadConfig(const std::string& configRoot = "config/");
@@ -124,7 +124,7 @@ private:
     std::unique_ptr<BattleEncounter> currentEncounter_;
 
     BattleLog log_;
-    BattleLog detailLog_{2000};
+    BattleLog detailLog_{200}; // battle page shows last 200 lines
     Counters counters_;
     std::mt19937 rng_;
 

@@ -34,6 +34,8 @@ class SaveGame {
 public:
     static bool save(const GameEngine& engine, const std::string& filename);
     static bool load(GameEngine& engine, const std::string& filename);
+    // true if file is a valid sealed save (checks integrity only, applies nothing)
+    static bool verify(const std::string& filename);
     // saves/<sanitized character name>.sav, creates saves/ if missing. outPath optional.
     static bool saveSlot(const GameEngine& engine, std::string* outPath = nullptr);
 };

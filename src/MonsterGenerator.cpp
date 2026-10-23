@@ -1,4 +1,5 @@
 // SPG Engine made by drmrsthemonarch
+#include "../include/ConfigStore.h"
 #include "../include/MonsterGenerator.h"
 #include "../include/PatentStrategy.h"
 #include <cmath>
@@ -337,7 +338,7 @@ MonsterDifficulty MonsterGenerator::getRandomDifficulty() {
 }
 
 bool MonsterGenerator::loadWordList(const std::string &filename, std::vector<std::string> &wordList) {
-    std::ifstream file(filename);
+    ConfigFile file(filename);
     if (!file.is_open()) {
         std::cerr << "Could not open " << filename << std::endl;
         return false;

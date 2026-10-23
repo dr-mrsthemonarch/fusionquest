@@ -1,0 +1,12 @@
+Quantum Dots
+Cooling Loop Redesign
+Firmware Rewrite
+Plasma Diagnostics
+Magnet Controller
+Neutron Shielding
+Data Pipeline
+Simulation Cluster
+Safety Interlocks
+Fuel Handling
+Control Software
+Test Rig Build

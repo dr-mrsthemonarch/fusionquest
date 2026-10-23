@@ -23,11 +23,14 @@ struct Sprint {
     float fraction() const;
 };
 
+// sprints are generated lazily: only shown[0] (current) and shown[1] (preview) exist.
 struct Dev {
     std::string name;
-    std::vector<Sprint> sprints;
-    size_t current = 0;
-    bool done() const { return current >= sprints.size(); }
+    long long sprintCount = 0;  // total sprints in this dev
+    long long current = 0;      // sprints finished
+    int tier = 1;               // goal size scale (quest index)
+    std::vector<Sprint> shown;
+    bool done() const { return current >= sprintCount; }
     float fraction() const;
 };
 

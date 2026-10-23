@@ -91,6 +91,9 @@ void GameEngine::initializeCharacter(const std::string& name, const std::string&
     Patent::generateStartingPatents(character_.get());
     reviewCalendarSystem_->generateReviewCalendar(character_->getSeries());
 
+    Character::setSellProtection([this](const std::string& n) {
+        return specialDropsLibrary_ && specialDropsLibrary_->isSpecialEquipment(n);
+    });
     questSystem_ = std::make_unique<QuestSystem>();
     questSystem_->loadConfig(configRoot_);
     questSystem_->setCallbacks([this](const std::string& s) { log_.add(s); },
@@ -590,7 +593,7 @@ void GameEngine::beginSelloff(bool emergency, bool includeEquipment) {
     // snapshot in the same order the stats page lists them; sell from the bottom up
     for (const auto& [name, val] : character_->getInventoryMap()) selloff_.itemNames.push_back(name);
     selloff_.total = static_cast<int>(selloff_.itemNames.size()) +
-                     (includeEquipment ? static_cast<int>(character_->getEquipmentInventoryVec().size()) : 0);
+                     (includeEquipment ? character_->getSellableEquipmentCount() : 0);
     selloff_.active = true;
     log_.add(emergency ? "EMERGENCY SALE! selling inventory..." : "selling inventory...");
     if (selloff_.total == 0) finishSelloff();
@@ -605,24 +608,27 @@ void GameEngine::stepSelloff() {
         std::string name = selloff_.itemNames.back();
         selloff_.itemNames.pop_back();
         if (!character_->getInventoryMap().count(name)) continue; // already gone, try previous
-        int value = character_->getInventoryValue(name);
+        int n = std::max(1, character_->getInventoryStack(name));
+        int value = character_->getInventoryValue(name) * n; // whole stack per step
         character_->removeInventoryItem(name);
         character_->addMoney(value);
         selloff_.earned += value;
-        log_.add("sold " + name + " for $" + std::to_string(value));
+        log_.add("sold " + name + (n > 1 ? " x" + std::to_string(n) : "") + " for $" + std::to_string(value));
         return;
     }
 
     // then unequipped gear (60% of value, matches Character::sellEquipment)
-    if (selloff_.includeEquipment && !character_->getEquipmentInventoryVec().empty()) {
-        size_t last = character_->getEquipmentInventoryVec().size() - 1;
-        const Equipment& eq = character_->getEquipmentInventoryVec()[last];
-        std::string name = eq.name;
-        int price = static_cast<int>(eq.equipmentvalue * 0.6);
-        character_->sellEquipmentByIndex(last);
-        selloff_.earned += price;
-        log_.add("sold " + name + " for $" + std::to_string(price));
-        return;
+    if (selloff_.includeEquipment) {
+        const auto& inv = character_->getEquipmentInventoryVec();
+        for (size_t i = inv.size(); i-- > 0;) {
+            if (specialDropsLibrary_->isSpecialEquipment(inv[i].name)) continue; // unsellable
+            std::string name = inv[i].name;
+            int price = static_cast<int>(inv[i].equipmentvalue * 0.6);
+            character_->sellEquipmentByIndex(i);
+            selloff_.earned += price;
+            log_.add("sold " + name + " for $" + std::to_string(price));
+            return;
+        }
     }
 
     finishSelloff();
@@ -654,7 +660,7 @@ float GameEngine::getActivityProgress() const {
     if (selloff_.active) {
         if (selloff_.total <= 0) return 1.0f;
         int remaining = static_cast<int>(selloff_.itemNames.size()) +
-                        (selloff_.includeEquipment ? static_cast<int>(character_->getEquipmentInventoryVec().size()) : 0);
+                        (selloff_.includeEquipment ? character_->getSellableEquipmentCount() : 0);
         return 1.0f - std::clamp(static_cast<float>(remaining) / selloff_.total, 0.0f, 1.0f);
     }
     if (!inBattle_) {
