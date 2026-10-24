@@ -42,8 +42,8 @@ ftxui::Component CreateLoadPage(int* selected_page, GameEngine* engine,
                                  std::shared_ptr<CountdownComponent> countdown_timer); // was Character*
 
 // new
-ftxui::Component CreateBattlePage(int* selected_page, GameEngine* engine);
+ftxui::Component CreateBattlePage(int* selected_page, GameEngine* engine, ftxui::Closure exit_closure);
 ftxui::Component CreateEquipmentPage(int* selected_page, GameEngine* engine);
-ftxui::Component CreateSpecialDropsPage(int* selected_page, GameEngine* engine);
+ftxui::Component CreateSpecialDropsPage(int* selected_page, GameEngine* engine, ftxui::Closure exit_closure);
 ftxui::Component CreatePreamblePage(int* selected_page, GameEngine* engine);
 ftxui::Component CreateFinalWarningPage(int* selected_page, GameEngine* engine);

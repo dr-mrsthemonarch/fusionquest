@@ -18,6 +18,7 @@ struct QuestBalance {
     double switchChance = 0.35, newHustleWeight = 1.0, maxOpenHustles = 3;
     double rewardMainPct = 25, rewardHustlePct = 10;
     double finalWarningDays = 182.5, finalForceDays = 1.0;
+    double timeScale = 1.0;        // debug clock: game seconds per real second
     double goalScale = 1.0;        // multiplies every goal target
     double maxSprints = 50000;     // cap per quest
 };
@@ -27,6 +28,7 @@ public:
     QuestGenerator();
     bool loadConfig(const std::string& root); // root = "config/"
     const QuestBalance& balance() const { return bal_; }
+    void setTimeScale(double s) { bal_.timeScale = s > 1e-9 ? s : 1e-9; }
     const std::string& preamble() const { return preamble_; }
 
     double mainBudget(int index, double elapsed) const;    // seconds

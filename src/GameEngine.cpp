@@ -98,6 +98,7 @@ void GameEngine::initializeCharacter(const std::string& name, const std::string&
     questSystem_->loadConfig(configRoot_);
     questSystem_->setCallbacks([this](const std::string& s) { log_.add(s); },
                                [this](bool isMain, const std::string& t) { grantQuestReward(isMain, t); });
+    questSystem_->setTimeScale(timeScale_);
     questSystem_->start(0.0);
 
     initialized_ = true;
@@ -120,7 +121,7 @@ void GameEngine::tick(double elapsedSeconds) {
     if (isGameWon()) return; // caller checks isGameWon() and stops feeding ticks / shows victory screen
 
     checkSeriesUpgrade();
-    Patent::levelUpCharacterPatents(character_.get());
+    // patent level-ups run once per series-up inside Character::addFunding (was every tick -> log spam)
     checkHypeEnergyRecovery();
 
     if (needsRecovery_ && !inBattle_) { checkRecoveryNeeded(); return; }
@@ -503,7 +504,8 @@ void GameEngine::handleSpecialDrop(const Monster& enemy) {
     Equipment eq; SpecialDropType type;
     if (enemy.type == MonsterType::NEMESIS) {
         type = SpecialDropType::NEMESIS_DROP;
-        int power = nemesisSystem_->getNemesisPowerLevel() - 1;
+        nemesisSystem_->recordNemesisDefeat(year, currentElapsedSeconds_, nemesisSystem_->getNemesisType(currentElapsedSeconds_), enemy.name);
+        int power = nemesisSystem_->getNemesisPowerLevel() - 1; // 0 on first kill
         eq = specialDropsLibrary_->generateNemesisEquipment(character_->getSeries(), power, enemy.name);
     } else if (enemy.name.find("Shadow:") != std::string::npos) {
         type = SpecialDropType::SHADOW_PLAYER_DROP;
@@ -553,10 +555,13 @@ void GameEngine::purchaseNewEquipment() {
     std::vector<EquipmentType> types = {EquipmentType::LAPTOP, EquipmentType::PHONE, EquipmentType::BACKPACK,
         EquipmentType::HELMET, EquipmentType::BIKE, EquipmentType::JACKET, EquipmentType::GLOVES, EquipmentType::HEADPHONES};
     std::shuffle(types.begin(), types.end(), rng_);
+    if (purchasedThisCycle_.size() >= types.size()) purchasedThisCycle_.clear(); // all slots bought once: new cycle
 
     for (auto t : types) {
         if (purchasedThisCycle_.count(t)) continue;
         Equipment eq = equipGen_->generateSpecificEquipmentForPlayer(t, character_->getSeries());
+        const Equipment* cur = character_->getEquippedItem(t);
+        if (cur && cur->equipmentvalue >= eq.equipmentvalue) continue; // only buy upgrades
         if (character_->getMoney() >= eq.equipmentvalue && character_->purchaseEquipment(eq)) {
             character_->equipItem(eq);
             purchasedThisCycle_.insert(t);

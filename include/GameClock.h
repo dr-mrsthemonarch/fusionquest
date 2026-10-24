@@ -12,7 +12,7 @@ class CountdownComponent : public ComponentBase {
 public:
     CountdownComponent() {
         start_time_ = std::chrono::system_clock::now();
-        target_time_ = start_time_ + std::chrono::hours(24 * 365 * 20); // 20 years
+        target_time_ = start_time_ + Total();
     }
 
     [[nodiscard]] std::string GetCountdownString() const {
@@ -38,7 +38,13 @@ public:
     // everywhere (stats_page render, main.cpp tick loop) - just rewinds start_time_.
     void ResetClock() {
         start_time_ = std::chrono::system_clock::now();
-        target_time_ = start_time_ + std::chrono::hours(24 * 365 * 20);
+        target_time_ = start_time_ + Total();
+    }
+
+    // debug clock: total game length in real seconds (default 20 years)
+    void SetTotalSeconds(double s) {
+        total_seconds_ = s;
+        target_time_ = start_time_ + Total();
     }
 
     // NEW: feeds GameEngine::tick(). elapsed seconds since this component was constructed.
@@ -53,6 +59,10 @@ public:
     }
 
 private:
+    double total_seconds_ = 20.0 * 365 * 24 * 3600;
+    std::chrono::system_clock::duration Total() const {
+        return std::chrono::duration_cast<std::chrono::system_clock::duration>(std::chrono::duration<double>(total_seconds_));
+    }
     std::chrono::system_clock::time_point start_time_;
     std::chrono::system_clock::time_point target_time_;
     int animation_frame_ = 0;

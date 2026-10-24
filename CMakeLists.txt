@@ -9,7 +9,7 @@ include(FetchContent)
 FetchContent_Declare(
         ftxui
         GIT_REPOSITORY https://github.com/ArthurSonzogni/ftxui
-        GIT_TAG v7.0.3
+        GIT_TAG v7.0.0
 )
 FetchContent_MakeAvailable(ftxui)
 include_directories(${ftxui_SOURCE_DIR}/include)
@@ -28,8 +28,10 @@ set(UI_SOURCES
         src/functions.cpp
         src/preamble_page.cpp
         src/final_warning_page.cpp
+        src/NavBar.cpp
 )
 
+# engine (Qt-free, was SPG_Engine game logic)
 set(ENGINE_SOURCES
         src/GameEngine.cpp
         src/SaveGame.cpp

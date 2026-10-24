@@ -43,10 +43,10 @@ public:
   Monster(Monster&&) noexcept = default;
   Monster& operator=(Monster&&) noexcept = default;
 
-  MonsterType type;
-  MonsterDifficulty difficulty;
+  MonsterType type = MonsterType::MOB;
+  MonsterDifficulty difficulty = MonsterDifficulty::MEDIUM;
   std::string name;
-  int level;
+  int level = 1;
 
   // Core stats (from CombatEntity interface)
   int health;
@@ -56,7 +56,7 @@ public:
   int speed;
   int moneyReward;
   std::string itemReward;
-  int itemValue;
+  int itemValue = 0;
 
   // Patent system for monsters
   // std::vector<std::shared_ptr<Patent>> patents;

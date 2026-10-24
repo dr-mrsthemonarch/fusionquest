@@ -135,10 +135,10 @@ GoalType QuestGenerator::rollType() {
 
 double QuestGenerator::secPer(GoalType t) const {
     switch (t) {
-        case GoalType::KILL: return std::max(1.0, bal_.secPerKill);
-        case GoalType::COLLECT: return std::max(1.0, bal_.secPerCollect);
-        case GoalType::BOSS: return std::max(1.0, bal_.secPerBoss);
-        case GoalType::TOWN: return std::max(1.0, bal_.secPerTown);
+        case GoalType::KILL: return std::max(1.0, bal_.secPerKill) * bal_.timeScale;
+        case GoalType::COLLECT: return std::max(1.0, bal_.secPerCollect) * bal_.timeScale;
+        case GoalType::BOSS: return std::max(1.0, bal_.secPerBoss) * bal_.timeScale;
+        case GoalType::TOWN: return std::max(1.0, bal_.secPerTown) * bal_.timeScale;
     }
     return 60.0;
 }

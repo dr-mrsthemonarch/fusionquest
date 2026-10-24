@@ -256,6 +256,7 @@ Monster SpecializedMonsterGenerator::generateSafetyManager(int playerSeries, dou
     safety.speed = stats.speed;
     safety.moneyReward = stats.moneyReward;
     safety.itemReward = "Safety Certificate";
+    safety.itemValue = 50 + playerSeries * 10;
 
     // Safety Managers have high hype energy
     safety.maxHypeEnergy = 70 + (playerSeries * 12);
@@ -340,6 +341,7 @@ Monster SpecializedMonsterGenerator::generateConference(int playerSeries, double
     conference.speed = stats.speed;
     conference.moneyReward = stats.moneyReward;
     conference.itemReward = "Conference Badge";
+    conference.itemValue = 30 + playerSeries * 6;
 
     // Conferences have medium-high hype energy
     conference.maxHypeEnergy = 50 + (playerSeries * 8);
@@ -424,6 +426,7 @@ Monster SpecializedMonsterGenerator::generatePaperWriting(int playerSeries, doub
     paper.speed = stats.speed;
     paper.moneyReward = stats.moneyReward;
     paper.itemReward = "Published Paper";
+    paper.itemValue = 30 + playerSeries * 6;
 
     // Papers have medium hype energy
     paper.maxHypeEnergy = 45 + (playerSeries * 7);
@@ -568,6 +571,7 @@ Monster SpecializedMonsterGenerator::generateSafetyCrony(int playerSeries, int i
     crony.speed = static_cast<int>(stats.speed * 0.4);
     crony.moneyReward = static_cast<int>(stats.moneyReward * 0.3);
     crony.itemReward = "Safety Memo";
+    crony.itemValue = 10 + playerSeries * 3;
 
     // Limited hype energy
     crony.maxHypeEnergy = 30 + (playerSeries * 5);

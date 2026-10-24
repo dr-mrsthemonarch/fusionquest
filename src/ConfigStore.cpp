@@ -39,7 +39,7 @@ ConfigFile::ConfigFile(const std::string& path) {
 
 bool validateConfig(std::string& error) {
     static const char* required[] = {
-        "equipment/adjectives.txt", "materials.txt",
+        "equipment/adjectives.txt", "equipment/materials.txt", "equipment/suffixes.txt",
         "mobs/bosses.txt", "mobs/mobs.txt", "mobs/titles.txt", "mobs/adjectives.txt", "mobs/mythical_nouns.txt",
         "items/adjectives.txt", "items/office_nouns.txt", "items/science_nouns.txt", "items/fancy_suffix.txt",
         "items/mythical_nouns.txt", "items/it_words.txt", "items/company_suffixes.txt", "items/value_modifiers.txt",

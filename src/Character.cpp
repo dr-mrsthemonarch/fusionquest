@@ -95,7 +95,9 @@ void Character::addEquipmentToInventory(const Equipment &equipment) {
 }
 
 void Character::addMoney(int amount) {
-    money_ += amount;
+    // money never negative, never overflows
+    long long m = static_cast<long long>(money_) + amount;
+    money_ = static_cast<int>(std::clamp<long long>(m, 0, 2000000000LL));
 }
 
 void Character::addFunding(double funding_) {
@@ -166,6 +168,7 @@ void Character::addFunding(double funding_) {
 }
 
 void Character::addInventoryItem(const std::string &itemName, int value) {
+    value = std::clamp(value, 0, 1000000);
     if (isInventoryFull()) {
         std::cout << "\n⚠️  INVENTORY FULL! ⚠️" << std::endl;
         std::cout << "Your backpack is at capacity (" << getInventoryCount() << "/" << getInventoryLimit() << " items)" << std::endl;
@@ -571,7 +574,7 @@ bool Character::sellEquipment(const std::string &equipmentName) {
     std::cout << "Selling " << it->name << " for $" << sellPrice << std::endl;
 
     // Add money and remove item
-    money_ += sellPrice;
+    addMoney(sellPrice);
     equipmentInventory_.erase(it);
 
     std::cout << "Sale complete! Current money: $" << money_ << std::endl;
@@ -602,7 +605,7 @@ int Character::sellAllEquipment() {
         equipmentInventory_.erase(equipmentInventory_.begin() + i);
     }
 
-    money_ += totalEarned;
+    addMoney(totalEarned);
 
     std::cout << "Sale complete! Sold " << itemsSold << " items for $" << totalEarned << std::endl;
     std::cout << "Current money: $" << money_ << std::endl;
@@ -625,7 +628,7 @@ bool Character::sellEquipmentByIndex(size_t index) {
 
     std::cout << "Selling " << item.name << " for $" << sellPrice << std::endl;
 
-    money_ += sellPrice;
+    addMoney(sellPrice);
     equipmentInventory_.erase(equipmentInventory_.begin() + index);
 
     std::cout << "Sale complete! Current money: $" << money_ << std::endl;
@@ -803,7 +806,7 @@ int Character::sellAllInventory() {
     std::cout << "Sold " << itemsSold << " items for $" << totalEarned << std::endl;
 
     // Add money to character
-    money_ += totalEarned;
+    addMoney(totalEarned);
     std::cout << "Current money: $" << money_ << std::endl;
 
     return totalEarned;

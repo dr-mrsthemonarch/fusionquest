@@ -31,6 +31,7 @@ public:
     std::vector<std::string> killKeywords();
     std::vector<std::string> collectKeywords();
     const QuestBalance& balance() const { return gen_.balance(); }
+    void setTimeScale(double s) { gen_.setTimeScale(s); }
 
     // UI
     const std::string& preamble() const { return gen_.preamble(); }

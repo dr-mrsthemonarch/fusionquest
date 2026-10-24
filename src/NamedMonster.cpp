@@ -124,6 +124,7 @@ Monster NamedMonsterSystem::generateNamedMinion(
 
     minion.moneyReward = 100 + (playerSeries * 15);
     minion.itemReward = "EQUIPMENT";
+    minion.itemValue = 40 + playerSeries * 8;
 
     minion.maxHypeEnergy = 40 + (playerSeries * 5);
     minion.hypeEnergy = minion.maxHypeEnergy;

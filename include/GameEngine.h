@@ -50,6 +50,9 @@ public:
 
     void addLog(const std::string& line) { log_.add(line); }
 
+    // debug clock: game seconds per real second (1 = normal). set before initializeCharacter.
+    void setTimeScale(double s) { timeScale_ = s; }
+
     // 0..1 progress of current activity (battle damage dealt / start delay / rest between battles)
     float getActivityProgress() const;
     // 0..1 progress to next series (funding round). uses cached required funding (no rng jitter)
@@ -110,6 +113,7 @@ private:
     // funding awarded per $ of monster reward. was moneyReward/10 in Qt build. tune for pacing.
     static constexpr double FUNDING_PER_MONEY = 0.1;
     bool debugInstakill_ = false;
+    double timeScale_ = 1.0;
 
     std::unique_ptr<Character> character_;
     std::unique_ptr<MonsterGenerator> monsterGen_;

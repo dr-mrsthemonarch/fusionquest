@@ -95,6 +95,8 @@ Component CreateStatsPage(int* selected_page, GameEngine* engine,
         }) | size(HEIGHT, EQUAL, 3);
     auto log_button =
         Button("Battle Log", [selected_page] { *selected_page = BATTLE_PAGE; }) | size(HEIGHT, EQUAL, 3);
+    auto special_button =
+        Button("Special Items", [selected_page] { *selected_page = SPECIAL_DROPS_PAGE; }) | size(HEIGHT, EQUAL, 3);
     auto quit_button = Button("Quit", std::move(exit_closure)) | size(HEIGHT, EQUAL, 3);
 
     // Menu backing vectors: stable pointers, contents refilled each frame
@@ -103,7 +105,7 @@ Component CreateStatsPage(int* selected_page, GameEngine* engine,
     auto patent_items = Menu(patent_list.get(), &selected_patent_index);
     auto inventory_items = Menu(inventory_list.get(), &selected_inventory_index);
 
-    auto container = Container::Vertical({back_button, save_button, log_button, quit_button, patent_items, inventory_items});
+    auto container = Container::Vertical({back_button, save_button, log_button, special_button, quit_button, patent_items, inventory_items});
 
     auto renderer = Renderer(container, [=] {
         // no game started yet (e.g. opened via main menu "Stats Page"): draw the SAME layout
@@ -301,7 +303,7 @@ Component CreateStatsPage(int* selected_page, GameEngine* engine,
                           }),
                           progress_gauge,
                           separator(),
-                          hbox({back_button->Render(), save_button->Render(), log_button->Render(),
+                          hbox({back_button->Render(), save_button->Render(), log_button->Render(), special_button->Render(),
                                 quit_button->Render()}) | center,
                       }));
     });

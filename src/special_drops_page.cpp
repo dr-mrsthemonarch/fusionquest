@@ -1,18 +1,19 @@
 #include "../include/GameEngine.h"
 #include "../include/ui.h"
 #include "../include/globals.h"
+#include "../include/NavBar.h"
 #include <ftxui/component/component.hpp>
 #include <ftxui/dom/elements.hpp>
 
 using namespace ftxui;
 
-Component CreateSpecialDropsPage(int* selected_page, GameEngine* engine) {
+Component CreateSpecialDropsPage(int* selected_page, GameEngine* engine, Closure exit_closure) {
     static int selected_index = 0;
     auto drop_names = std::make_shared<std::vector<std::string>>();
     auto menu = Menu(drop_names.get(), &selected_index);
 
-    auto back_button = Button("Back to Main", [selected_page] { *selected_page = MAIN_MENU; });
-    auto container = Container::Horizontal({menu, back_button});
+    auto nav = CreateNavBar(selected_page, engine, std::move(exit_closure), SPECIAL_DROPS_PAGE);
+    auto container = Container::Vertical({menu, nav});
 
     auto renderer = Renderer(container, [=] {
         const auto& lib = engine->getSpecialDropsLibrary().getLibrary();
@@ -30,6 +31,7 @@ Component CreateSpecialDropsPage(int* selected_page, GameEngine* engine) {
                 text(d.name) | bold,
                 separator(),
                 text("From: " + d.acquiredFrom),
+                text("Class: " + eq.equipmentclass + " | Rarity: " + rarityToString(eq.rarity)),
                 text("Acquired: Year " + std::to_string(d.yearAcquired) + ", Month " + std::to_string(d.monthAcquired)),
                 separator(),
                 text("Runway +" + std::to_string(eq.runway)),
@@ -45,13 +47,13 @@ Component CreateSpecialDropsPage(int* selected_page, GameEngine* engine) {
             });
         }
 
-        return window(text("Special Drops Library") | bold | center, vbox({
+        return window(text("Special Items (" + std::to_string(lib.size()) + ")") | bold | center, vbox({
             hbox({
                 vbox({menu->Render() | vscroll_indicator | frame}) | border | flex,
                 vbox({detail}) | border | flex,
             }) | flex,
             separator(),
-            back_button->Render(),
+            nav->Render(),
         }));
     });
 

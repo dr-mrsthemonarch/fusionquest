@@ -1,6 +1,7 @@
 #include "../include/GameEngine.h"
 #include "../include/ui.h"
 #include "../include/globals.h"
+#include "../include/NavBar.h"
 #include <algorithm>
 #include <ftxui/component/component.hpp>
 #include <ftxui/dom/elements.hpp>
@@ -11,11 +12,11 @@ using namespace ftxui;
 // bottom: FULL scrollable log = summary lines + engine details (patent effects, buffs,
 // level-ups, sales...) that never fit in the stats page progress line.
 // scroll: Up/Down, PgUp/PgDn, Home/End, mouse wheel. pos 1.0 = follow newest.
-Component CreateBattlePage(int* selected_page, GameEngine* engine) {
+Component CreateBattlePage(int* selected_page, GameEngine* engine, Closure exit_closure) {
     auto scroll_pos = std::make_shared<float>(1.0f);
 
-    auto back_button = Button("Back to Stats", [selected_page] { *selected_page = STATS_PAGE; });
-    auto container = Container::Vertical({back_button});
+    auto nav = CreateNavBar(selected_page, engine, std::move(exit_closure), BATTLE_PAGE);
+    auto container = Container::Vertical({nav});
 
     auto renderer = Renderer(container, [=] {
         std::vector<Element> top;
@@ -60,7 +61,7 @@ Component CreateBattlePage(int* selected_page, GameEngine* engine) {
                           vbox(std::move(top)) | border,
                           vbox({text("Log") | bold, separator(), log_view}) | border | flex,
                           text("Up/Down  PgUp/PgDn  Home/End  mouse wheel to scroll") | dim | center,
-                          back_button->Render(),
+                          nav->Render(),
                       }));
     });
 
