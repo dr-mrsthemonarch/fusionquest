@@ -15,6 +15,311 @@ Platinum
 Iridium
 Indium
 Silk
+Iron
+Copper
+Gold
+Silver
+Nickel
+Cobalt
+Chromium
+Vanadium
+Molybdenum
+Niobium
+Zirconium
+Hafnium
+Rhenium
+Osmium
+Palladium
+Rhodium
+Ruthenium
+Bismuth
+Antimony
+Beryllium
+Magnesium
+Lithium
+Sodium
+Potassium
+Calcium
+Gallium
+Germanium
+Arsenic
+Selenium
+Tellurium
+Cadmium
+Tin
+Lead
+Mercury
+Boron
+Phosphorus
+Sulfur
+Oxygen
+Hydrogen
+Helium
+Neon
+Argon
+Krypton
+Xenon
+Uranium
+Thorium
+Plutonium
+Deuterium
+Tritium
+Boron Carbide
+Silicon Carbide
+Tungsten Carbide
+Boron Nitride
+Silicon Nitride
+Aluminum Nitride
+Gallium Nitride
+Titanium Nitride
+Titanium Carbide
+Vanadium Carbide
+Zirconium Carbide
+Hafnium Carbide
+Tantalum Carbide
+Chromium Carbide
+Molybdenum Disulfide
+Tungsten Disulfide
+Tungsten Telluride
+Indium Tin Oxide
+Indium Phosphide
+Gallium Arsenide
+Gallium Oxide
+Silicon Dioxide
+Titanium Dioxide
+Aluminum Oxide
+Magnesium Oxide
+Zirconium Oxide
+Hafnium Oxide
+Yttrium Oxide
+Cerium Oxide
+Uranium Oxide
+Beryllium Oxide
+Perovskite
+Spinel
+Quartz
+Sapphire
+Ruby
+Diamond
+Lonsdaleite
+Fullerene
+Buckminsterfullerene
+Carbon Fiber
+Carbon Foam
+Carbon Aerogel
+Graphite
+Activated Carbon
+Pyrolytic Carbon
+Glassy Carbon
+Amorphous Carbon
+Graphene Oxide
+Reduced Graphene Oxide
+Graphene Aerogel
+Carbon Nanofiber
+Carbon Nanohorn
+Boron Fiber
+Aramid
+Kevlar
+Vectran
+Dyneema
+UHMWPE
+PTFE
+PEEK
+Polyimide
+Polycarbonate
+Polyethylene
+Polypropylene
+Polystyrene
+Polyurethane
+Epoxy
+Phenolic Resin
+Silicone
+Fluoropolymer
+Conductive Polymer
+Hydrogel
+Aerogel
+Metal Foam
+Aluminum Foam
+Titanium Foam
+Nickel Foam
+Metal Glass
+Bulk Metallic Glass
+Shape Memory Alloy
+Nitinol
+Invar
+Kovar
+Elinvar
+Nichrome
+Kanthal
+Constantan
+Manganin
+MuMetal
+Permalloy
+Alnico
+Samarium Cobalt
+Neodymium Iron Boron
+Soft Iron
+Electrical Steel
+Tool Steel
+Stainless Steel
+Maraging Steel
+Spring Steel
+Damascus Steel
+Hadfield Steel
+Hastelloy
+Inconel
+Monel
+Nichrome
+Duralumin
+Magnalium
+Aluminum Lithium
+Titanium Aluminide
+Nickel Aluminide
+Copper Beryllium
+Beryllium Copper
+Brass
+Bronze
+Phosphor Bronze
+Silicon Bronze
+Gunmetal
+Cupronickel
+German Silver
+Sterling Silver
+Electrum
+Rose Gold
+White Gold
+Platinum Iridium
+Platinum Rhodium
+Gold Titanium
+Tungsten Heavy Alloy
+Wolfram Carbide
+Copper Tungsten
+Silver Tungsten
+Molybdenum Copper
+Aluminum Silicon Carbide
+Aluminum Graphite
+Copper Graphite
+Diamond Copper
+Diamond Silicon Carbide
+Metal Matrix Composite
+Ceramic Matrix Composite
+Carbon Carbon Composite
+Glass Fiber
+Fiberglass
+Basalt Fiber
+Quartz Fiber
+Optical Glass
+Borosilicate Glass
+Fused Silica
+Chalcogenide Glass
+Metal Organic Framework
+Covalent Organic Framework
+Zeolite
+Silica Gel
+Molecular Sieve
+Phase Change Material
+Thermoelectric Material
+Piezoelectric Ceramic
+Ferroelectric Ceramic
+Multiferroic
+Superconductor
+YBCO
+BSCCO
+Magnesium Diboride
+Niobium Tin
+Niobium Titanium
+Vanadium Gallium
+Iron Selenide
+Graphene Superconductor
+Quantum Spin Liquid
+Topological Insulator
+Photonic Crystal
+Metamaterial
+Negative Index Material
+Plasmonic Material
+Electrochromic Glass
+Perovskite Solar Cell
+Organic Semiconductor
+Amorphous Silicon
+Polysilicon
+Gallium Nitride
+Silicon Germanium
+Indium Gallium Arsenide
+Indium Antimonide
+Cadmium Telluride
+Copper Indium Gallium Selenide
+Zinc Oxide
+Zinc Selenide
+Zinc Sulfide
+Cadmium Sulfide
+Lead Zirconate Titanate
+Barium Titanate
+Lithium Niobate
+Lithium Tantalate
+Potassium Niobate
+Strontium Titanate
+Yttrium Iron Garnet
+Ferrite
+Magnetite
+Hematite
+Lodestone
+Rare Earth Alloy
+Lanthanum
+Cerium
+Praseodymium
+Neodymium
+Promethium
+Samarium
+Europium
+Gadolinium
+Terbium
+Dysprosium
+Holmium
+Erbium
+Thulium
+Ytterbium
+Lutetium
+Scandium
+Yttrium
+Lanthanum Nickelate
+Lithium Cobalt Oxide
+Lithium Iron Phosphate
+Lithium Manganese Oxide
+Lithium Nickel Manganese Cobalt Oxide
+Sodium Ion Cathode
+Solid Electrolyte
+Lithium Metal
+Lithium Sulfur
+Sodium Metal
+Potassium Metal
+Metal Hydride
+Palladium Hydride
+Metal Organic Framework
+Metallic Hydrogen
+Liquid Metal
+Eutectic Gallium Indium
+Galinstan
+Field's Metal
+Wood's Metal
+Rose's Metal
+Gallium
+Liquid Nitrogen
+Liquid Helium
+Supercritical CO2
+Heavy Water
+Deuterated Polymer
+Tritium Breeder Ceramic
+Lithium Orthosilicate
+Lithium Titanate
+Beryllium Pebble
+Tungsten Armor
+Neutronium
+Quark Matter
+Degenerate Matter
+Antimatter
+Dark Matter
+Exotic Matter
+Vacuum Metamaterial
 
 
 

@@ -10,3 +10,138 @@ Safety Interlocks
 Fuel Handling
 Control Software
 Test Rig Build
+Kubernetes Migration
+Cluster Autoscaling
+Container Runtime
+Service Mesh Rollout
+CI/CD Pipeline
+Deployment Orchestrator
+Secrets Rotation
+Certificate Renewal
+Kernel Upgrade
+Firmware Validation
+Distributed Tracing
+Telemetry Ingestion
+Log Aggregation
+Metrics Collector
+Alert Routing
+Incident Automation
+Disaster Recovery
+Failover Simulation
+Network Segmentation
+Load Balancer Tuning
+DNS Migration
+Firewall Reconfiguration
+Storage Replication
+Database Sharding
+Cache Invalidation
+Queue Backpressure
+Event Bus Migration
+API Gateway
+Identity Federation
+Access Control Audit
+Supply Chain Security
+Artifact Signing
+Image Provenance
+Build Cache Optimization
+Runner Fleet Expansion
+Release Train Automation
+Canary Deployment
+Blue-Green Cutover
+Rollback Automation
+Infrastructure Drift
+Terraform Refactor
+Configuration Management
+Immutable Infrastructure
+Cloud Cost Optimization
+GPU Scheduler
+Compute Fabric
+Bare Metal Provisioning
+Rack Integration
+Power Distribution
+Thermal Management
+Liquid Cooling Retrofit
+Optical Network Upgrade
+High-Speed Interconnect
+FPGA Integration
+Accelerator Firmware
+Sensor Calibration
+Timing Synchronization
+Clock Distribution
+Real-Time Telemetry
+Hardware-in-the-Loop
+Digital Twin
+Simulation Harness
+Model Validation
+Data Acquisition
+Signal Conditioning
+Control Plane Rewrite
+Flight Software
+Fault Injection
+Watchdog Recovery
+Redundant Controller
+Emergency Shutdown
+Safety System Validation
+Environmental Stress Test
+Thermal Vacuum Test
+Radiation Hardening
+EMI Compliance
+Power Budget Analysis
+Battery Management
+Cryogenic Instrumentation
+Vacuum Chamber Retrofit
+Pressure Vessel Monitoring
+Vibration Analysis
+Structural Load Test
+Materials Characterization
+Optical Bench Alignment
+Laser Interlock
+Spectrometer Calibration
+Plasma Containment
+Magnetic Field Mapping
+Beamline Diagnostics
+Neutron Flux Monitoring
+Reactor Control Interface
+Fuel Cycle Simulation
+Shielding Analysis
+Remote Handling System
+Robotic Maintenance
+Autonomous Inspection
+Teleoperation Stack
+Sensor Fusion
+Edge Compute Deployment
+Gateway Firmware
+Industrial Protocol Bridge
+SCADA Integration
+PLC Logic Migration
+Digital Control System
+Process Historian
+Alarm Rationalization
+Safety Case Review
+Test Stand Commissioning
+Qualification Campaign
+Acceptance Test Suite
+Reliability Growth
+Failure Mode Analysis
+Root Cause Investigation
+Production Readiness
+Site Integration
+Commissioning Run
+Operational Handover
+Maintenance Window
+Infrastructure Recovery
+Platform Hardening
+Fleet-Wide Rollout
+Zero-Downtime Migration
+Global Configuration Push
+Production Cutover
+Capacity Expansion
+Observability Overhaul
+Platform Consolidation
+Legacy Stack Retirement
+Mission Control Upgrade
+Ground Systems Integration
+Telemetry Replay
+Command Sequence Validation
+Autonomous Recovery
+End-to-End Qualification

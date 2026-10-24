@@ -24,4 +24,242 @@ Technical Co-Founder
 Technical Lead
 VP Engineering
 Rocket Biologists
+Head of Nates
+Head of Engineer
+Head of Lasers
+Head of Corporate Affairs
+Systems Engineer
+Controller
+Accountant
+Account Executive
+Account Manager
+Administrative Assistant
+Administrator
+Advisor
+Analyst
+Animator
+Application Engineer
+Art Director
+Assistant
+Associate
+Auditor
+Automation Engineer
+Backend Developer
+Backend Engineer
+Brand Manager
+Business Analyst
+Business Developer
+Business Development Manager
+Business Intelligence Analyst
+Business Operations Manager
+Business Strategist
+Chairperson
+Chief AI Officer
+Chief Commercial Officer
+Chief Communications Officer
+Chief Data Officer
+Chief Design Officer
+Chief Information Officer
+Chief Innovation Officer
+Chief Investment Officer
+Chief Legal Officer
+Chief People Officer
+Chief Science Officer
+Chief Security Officer
+Chief Strategy Officer
+Chief Sustainability Officer
+Chief of Staff
+Civil Engineer
+Cloud Architect
+Cloud Engineer
+Communications Manager
+Compliance Officer
+Consultant
+Content Creator
+Content Designer
+Content Manager
+Contractor
+Copywriter
+Corporate Counsel
+Customer Experience Manager
+Customer Success Manager
+Cybersecurity Analyst
+Cybersecurity Engineer
+Data Analyst
+Data Architect
+Data Engineer
+Data Scientist
+Database Administrator
+Delivery Manager
+DevOps Engineer
+Digital Marketing Manager
+Director
+Director of Engineering
+Director of Finance
+Director of Operations
+Director of Research
+Economist
+Electrical Engineer
+Embedded Engineer
+Entrepreneur
+Environmental Engineer
+Executive Assistant
+Facilities Manager
+Field Engineer
+Finance Manager
+Financial Analyst
+Frontend Developer
+Frontend Engineer
+Full-Stack Developer
+Game Designer
+Game Developer
+General Counsel
+General Manager
+Geologist
+Hardware Engineer
+Hardware Technician
+Head of AI
+Head of Business Development
+Head of Communications
+Head of Data
+Head of Design
+Head of Finance
+Head of Growth
+Head of Hardware
+Head of Legal
+Head of Marketing
+Head of Operations
+Head of People
+Head of Research
+Head of Sales
+Head of Security
+Head of Strategy
+Head of Talent
+Help Desk Technician
+Human Resources Manager
+Industrial Designer
+Industrial Engineer
+Information Architect
+Information Security Officer
+Information Technology Manager
+Infrastructure Engineer
+Innovation Manager
+Intern
+Investment Analyst
+IT Administrator
+IT Consultant
+IT Director
+Laboratory Technician
+Legal Advisor
+Legal Assistant
+Legal Counsel
+Logistics Manager
+Machine Learning Engineer
+Machine Operator
+Maintenance Engineer
+Manufacturing Engineer
+Market Researcher
+Marketing Analyst
+Marketing Associate
+Marketing Director
+Marketing Manager
+Mechanical Engineer
+Media Manager
+Network Administrator
+Network Engineer
+Nuclear Engineer
+Office Administrator
+Office Manager
+Operations Analyst
+Operations Associate
+Operations Director
+Operations Engineer
+Operations Manager
+Partnerships Manager
+Payroll Specialist
+People Operations Manager
+Performance Engineer
+Personal Assistant
+Physicist
+Policy Analyst
+Principal Engineer
+Principal Scientist
+Privacy Officer
+Process Engineer
+Procurement Manager
+Product Analyst
+Product Designer
+Product Marketing Manager
+Production Manager
+Professor
+Quality Assurance Engineer
+Quality Control Inspector
+Quality Engineer
+Receptionist
+Recruiter
+Recruitment Manager
+Regulatory Affairs Manager
+Reliability Engineer
+Renewable Energy Engineer
+Research Assistant
+Research Director
+Research Engineer
+Research Manager
+Research Scientist
+Risk Analyst
+Robotics Engineer
+Safety Engineer
+Sales Associate
+Sales Director
+Sales Engineer
+Sales Executive
+Sales Manager
+Scientist
+Scrum Master
+Security Analyst
+Security Engineer
+Semiconductor Engineer
+Service Designer
+Site Reliability Engineer
+Software Architect
+Software Developer
+Software Engineer
+Software Tester
+Solutions Architect
+Solutions Engineer
+Startup Advisor
+Statistician
+Strategy Analyst
+Strategy Consultant
+Supply Chain Analyst
+Supply Chain Manager
+Support Engineer
+Support Specialist
+Talent Acquisition Manager
+Talent Manager
+Technical Account Manager
+Technical Consultant
+Technical Program Manager
+Technical Writer
+Test Engineer
+Thermal Engineer
+UI Designer
+UX Designer
+UX Researcher
+Validation Engineer
+Vice President
+VP Business Development
+VP Finance
+VP Marketing
+VP Operations
+VP Product
+VP Research
+VP Sales
+VP Strategy
+VP Technology
+Visual Designer
+Warehouse Manager
+Web Designer
+Web Developer
+Workplace Manager
 

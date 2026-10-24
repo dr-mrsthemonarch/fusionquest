@@ -18,3 +18,194 @@ Three-Hole Punch
 USB Hub
 Webcam
 Whiteboard
+Biometric Scanner
+Cable Tester
+Circuit Probe
+Debugging Console
+Docking Cradle
+Electronic Kiosk
+Environmental Sensor
+Fingerprint Reader
+Floppy Disk Drive
+Haptic Controller
+Infrared Receiver
+Kensington Lock
+Logic Analyzer
+Magnetic Card Reader
+Matrix Switcher
+Optical Drive
+Oscilloscope
+Patch Panel
+PCB Printer
+Port Replicator
+Rack Server
+RFID Reader
+Serial Adapter
+Signal Generator
+Smart Badge
+Smart Card Reader
+Spectrum Analyzer
+Terminal Emulator
+USB Oscilloscope
+Voltage Tester
+Award Plaque
+Beanbag Chair
+Bell
+Breakroom Kettle
+Bulletin Board
+Business Card
+Business Card Holder
+Cake Knife
+Coat Rack
+Conference Badge
+Corkboard
+Cubicle Divider
+Desk Calendar
+Desk Mat
+Desk Nameplate
+Desk Plant
+Doorstop
+Ergonomic Cushion
+Extension Cord
+Fake Plant
+Filing Box
+Foam Finger
+Foot Hammock
+Fridge Magnet
+Gift Basket
+Hand Sanitizer
+Lanyard
+Motivational Poster
+Mug
+Name Badge
+Novelty Clock
+Office Chair
+Paperweight
+Party Hat
+Pen Chain
+Plastic Trophy
+Reception Bell
+Stress Ball
+Swivel Chair
+Tissue Box
+Trophy
+Water Cooler
+Weighted Blanket
+Addressograph
+Binding Comb
+Barcode Scanner
+Braille Embosser
+Check Writer
+Collator
+Creasing Machine
+Currency Counter
+Date Stamp
+Desktop CNC
+Digital Signage
+Envelope Sealer
+Fax Machine
+Folding Machine
+Franking Machine
+Hot Glue Gun
+ID Card Printer
+Imprinter
+Microfiche Reader
+Mimeograph
+Paper Jogger
+Paper Trimmer
+Pencil Cup
+Phototypesetter
+ postage Meter
+Proofing Press
+Rotary Cutter
+Signature Pad
+Spiral Binder
+Stamp Dispenser
+Thermal Binder
+Typewriter
+Typewriter Ribbon
+Vertical File
+Abacus
+Accordion Folder
+Air Purifier
+Badge Reader
+Ballpoint Pen
+Battery Charger
+Bookend
+Calculator
+Calendar
+Card Reader
+Clipboard
+Coaster
+Coffee Machine
+Conference Phone
+Desk Clock
+Desk Fan
+Desk Organizer
+Dictaphone
+Digital Recorder
+Document Camera
+Drawing Tablet
+Dry-Erase Marker
+Envelope Opener
+Ethernet Switch
+External Hard Drive
+File Cabinet
+File Sorter
+Fingerprint Scanner
+Flash Drive
+Floor Lamp
+Footrest
+Fountain Pen
+Gel Pen
+Graphics Tablet
+Headset
+Hole Punch
+Ink Cartridge
+Inkjet Printer
+KVM Switch
+Key Cabinet
+Keycard Encoder
+Laser Pointer
+Laser Printer
+Mail Sorter
+Microphone
+Mobile Hotspot
+Modem
+Network Router
+Notebook
+Paper Cutter
+Paper Folder
+Paper Tray
+Pen Holder
+Pencil Sharpener
+Phone Charger
+Photocopier
+Portable SSD
+Receipt Printer
+Router
+Safe
+Scanner Stand
+Shredder Bin
+Smart Speaker
+Smartphone Stand
+Speakerphone
+Standing Desk
+Surge Protector
+Switchboard
+Tablet
+Telephone
+Thermal Printer
+Ticket Dispenser
+Time Clock
+Trackball
+Transcription Pedal
+UPS Battery
+Video Conferencing Bar
+Voice Recorder
+Wall Clock
+Wastebasket
+Wi-Fi Extender
+Wireless Charger
+Wireless Presenter
+Writing Desk

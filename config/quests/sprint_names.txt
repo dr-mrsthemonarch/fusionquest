@@ -10,3 +10,206 @@ Deploy
 Cleanup
 Burndown
 Backlog Grooming
+Spike
+Refactor
+Hotfix
+Integration
+Stress Test
+Benchmark
+Code Freeze
+Retro Fire
+Deploy
+Cleanup
+Burndown
+Backlog Grooming
+Refactoring
+Feature Flag
+Tech Debt
+Code Review
+Pull Request
+Merge Conflict
+Branching
+Pair Programming
+Rubber Ducking
+Regression
+Rollback
+Patch
+Dependency Hell
+Build Failure
+Legacy Code
+Dead Code
+Code Smell
+Unit Test
+Smoke Test
+Canary Release
+Trunk-Based Development
+API Contract
+Sprint Planning
+Daily Standup
+Sprint Review
+Sprint Retrospective
+Story Points
+Velocity
+Burndown Chart
+Backlog Refinement
+User Story
+Acceptance Criteria
+Definition of Done
+Sprint Goal
+Timebox
+Capacity Planning
+Task Breakdown
+Epic
+Milestone
+Swimlane
+Kanbananaing
+WIP Limit
+Scope Creep
+Sprint Zero
+Spike Investigation
+Grooming Session
+Release Candidate
+Continuous Integration
+Continuous Delivery
+Continuous Deployment
+Blue-Green Deployment
+Rolling Update
+Rollback Plan
+Feature Freeze
+Release Train
+Production Push
+Deployment Window
+Change Request
+Version Bump
+Semantic Versioning
+Artifact Build
+Environment Parity
+Staging
+Production Readiness
+Go-Live
+Postmortem
+Bug Bash
+Sev-One
+Incident Response
+Root Cause Analysis
+Blameless Postmortem
+Firefighting
+Pager Duty
+On-Call
+Zombie Bug
+Edge Case
+Race Condition
+Memory Leak
+Deadlock
+Flaky Test
+Test Pyramid
+Failure Injection
+Chaos Engineering
+Blast Radius
+Incident Commander
+War Room
+Rollback Roulette
+Load Test
+Soak Test
+Spike Test
+Latency
+Throughput
+Scalability
+Profiling
+Flame Graph
+Bottleneck
+Cache Miss
+Cold Start
+Query Optimization
+Benchmark Suite
+Synthetic Monitoring
+End-to-End Test
+Contract Testing
+Fuzz Testing
+Mutation Testing
+Test Coverage
+Parking Lot
+Action Items
+Alignment Meeting
+Deep Dive
+Knowledge Transfer
+Scope Negotiation
+Blocker
+Dependency Mapping
+Quick Win
+Low-Hanging Fruit
+Moving the Needle
+Circle Back
+Take It Offline
+Push Back
+Hard Stop
+North Star
+Single Source of Truth
+Two-Way Door
+Bike Shedding
+Boil the Ocean
+Herding Cats
+Friday Deploy
+Meeting That Could Be an Email
+Merge Party
+Bug Safari
+Scope Tsunami
+Sprintocalypse
+Deadline Chicken
+Deploy and Pray
+YOLO Release
+Friday Hotfix
+Infinite Loop
+Flaky Friday
+Ticket Tennis
+Jira Archaeology
+Agile Theater
+Velocity Theater
+Backlog Black Hole
+Technical Ballast
+The Great Rewrite
+Feature Factory
+Sprint Hangover
+Merge Conflict Resolution
+Production Gremlins
+Unplanned Work
+Scope Avalanche
+Retrospective Amnesia
+The Bus Factor
+It Works on My Machine
+Ship It
+Dark Launch
+Technical Spelunking
+Code Archaeology
+Rollback
+Regression
+Triage
+Velocity
+Blocker
+Merge
+Release
+Canary
+Hot Path
+Incident
+Sprint Zero
+Tech Debt
+Bug Bash
+Spike Test
+Ship It
+Scope Creep
+Code Review
+War Room
+Patch
+Staging
+Go-Live
+Postmortem
+Grooming
+Timebox
+Bottleneck
+Flaky Test
+Build Break
+Feature Flag
+Deadlock
+Smoke Test
+Chaos Engineering
+Sprintocalypse
