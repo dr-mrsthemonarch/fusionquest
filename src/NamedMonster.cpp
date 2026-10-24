@@ -2,6 +2,7 @@
 // Created by drmrsthemonarch on 23.11.25.
 //
 
+#include "../include/Tuning.h"
 #include "../include/NamedMonster.h"
 #include "../include/PatentStrategy.h"
 #include <algorithm>
@@ -25,11 +26,11 @@ Monster NamedMonsterSystem::generateNamedMonster(const NamedMonsterDef& def, int
     monster.speed = scaleStatToSeries(def.baseSpeed, playerSeries);
 
     // Rewards (will be overridden by special drop system)
-    monster.moneyReward = 500 + (playerSeries * 50);
+    monster.moneyReward = static_cast<int>(T("named.money_base") + playerSeries * T("named.money_per"));
     monster.itemReward = "NAMED_EQUIPMENT";
 
     // Hype energy for patents
-    monster.maxHypeEnergy = 100 + (playerSeries * 10);
+    monster.maxHypeEnergy = static_cast<int>(T("named.hype_base") + playerSeries * T("named.hype_per"));
     monster.hypeEnergy = monster.maxHypeEnergy;
 
     // Add patents
@@ -46,7 +47,7 @@ Monster NamedMonsterSystem::generateNamedMonster(const NamedMonsterDef& def, int
 
 std::shared_ptr<Patent> NamedMonsterSystem::createNamedPatent(const PatentDefinition& patentDef, int playerSeries) {
     // Scale power with player series
-    int scaledPower = patentDef.basePower + (playerSeries * 5);
+    int scaledPower = static_cast<int>(patentDef.basePower + playerSeries * T("named.patent_pow_per"));
 
     auto patent = std::make_shared<Patent>(
         patentDef.name,
@@ -83,8 +84,8 @@ std::shared_ptr<Patent> NamedMonsterSystem::createNamedPatent(const PatentDefini
 int NamedMonsterSystem::scaleStatToSeries(int baseStat, int playerSeries) const {
     // Linear scaling: baseStat + (playerSeries * growthRate)
     // Growth rate is 10% of base per series
-    double growthRate = baseStat * 0.1;
-    return static_cast<int>(baseStat + (playerSeries * growthRate));
+    double growthRate = baseStat * T("named.growth_per_series");
+    return static_cast<int>((baseStat + (playerSeries * growthRate)) * T("named.power_mult"));
 }
 
 std::unique_ptr<PatentStrategy> NamedMonsterSystem::createStrategy(const std::string& strategyType) {
@@ -116,11 +117,11 @@ Monster NamedMonsterSystem::generateNamedMinion(
     minion.level = playerSeries;
 
     // 50% of named monster power
-    minion.maxHealth = scaleStatToSeries(80, playerSeries);
+    minion.maxHealth = scaleStatToSeries(static_cast<int>(T("named.minion_hp")), playerSeries);
     minion.health = minion.maxHealth;
-    minion.attack = scaleStatToSeries(30, playerSeries);
-    minion.defense = scaleStatToSeries(20, playerSeries);
-    minion.speed = scaleStatToSeries(25, playerSeries);
+    minion.attack = scaleStatToSeries(static_cast<int>(T("named.minion_atk")), playerSeries);
+    minion.defense = scaleStatToSeries(static_cast<int>(T("named.minion_def")), playerSeries);
+    minion.speed = scaleStatToSeries(static_cast<int>(T("named.minion_spd")), playerSeries);
 
     minion.moneyReward = 100 + (playerSeries * 15);
     minion.itemReward = "EQUIPMENT";

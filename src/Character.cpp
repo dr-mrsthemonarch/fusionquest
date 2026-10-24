@@ -1,4 +1,6 @@
 
+#include "../include/Tuning.h"
+#include "../include/Balance.h"
 #include "../include/Character.h"
 #include <cmath>
 #include <cstdlib>
@@ -18,15 +20,16 @@ Character::Character(const std::string &name, const std::string &employeeNr, con
 : name_(name), employeeNr_(employeeNr), position_(position), startupName_(startupName) {
 
     // Initialize base profile
-    baseProfile_.runway = 80;
-    baseProfile_.hypeEnergy = 10;
-    baseProfile_.hustle = 20;
-    baseProfile_.agility = 10;
-    baseProfile_.ndas = 9;
-    baseProfile_.luck = 5;
-    baseProfile_.synergy = 5;
-    baseProfile_.technicalDebt = -10;
-    baseProfile_.busFactor = 1.0f;
+    const Balance::PlayerStats start = Balance::player(0);
+    baseProfile_.runway = static_cast<int>(start.runway);
+    baseProfile_.hypeEnergy = static_cast<int>(start.hype);
+    baseProfile_.hustle = static_cast<int>(start.hustle);
+    baseProfile_.agility = static_cast<int>(start.agility);
+    baseProfile_.ndas = static_cast<int>(start.ndas);
+    baseProfile_.luck = static_cast<int>(start.luck);
+    baseProfile_.synergy = static_cast<int>(start.synergy);
+    baseProfile_.technicalDebt = static_cast<int>(start.techDebt);
+    baseProfile_.busFactor = static_cast<float>(start.bus);
 
     profile_ = baseProfile_;
 
@@ -122,15 +125,16 @@ void Character::addFunding(double funding_) {
             series_++;
 
             // Update BASE stats
-            baseProfile_.runway += 20 + (series_ - 1) * 5;
-            baseProfile_.hypeEnergy += 15 + (series_ - 1) * 3;
-            baseProfile_.hustle += 3 + (series_ - 1);
-            baseProfile_.agility += 4 + (series_ - 1) * 0.5;
-            baseProfile_.ndas += 2 + (series_ - 1);
-            baseProfile_.luck += 1 + (series_ - 1) * 0.3;
-            baseProfile_.synergy += 3 + (series_ - 1) * 0.5;
-            baseProfile_.technicalDebt -= 4 - (series_ - 1) / 2;
-            baseProfile_.busFactor += 0.2f + (series_ - 1) * 0.05f;
+            const Balance::PlayerStats gain = Balance::levelGain(series_);
+            baseProfile_.runway += static_cast<int>(gain.runway);
+            baseProfile_.hypeEnergy += static_cast<int>(gain.hype);
+            baseProfile_.hustle += static_cast<int>(gain.hustle);
+            baseProfile_.agility = static_cast<int>(baseProfile_.agility + gain.agility);
+            baseProfile_.ndas += static_cast<int>(gain.ndas);
+            baseProfile_.luck = static_cast<int>(baseProfile_.luck + gain.luck);
+            baseProfile_.synergy = static_cast<int>(baseProfile_.synergy + gain.synergy);
+            baseProfile_.technicalDebt -= static_cast<int>(gain.techDebt);
+            baseProfile_.busFactor += static_cast<float>(gain.bus);
 
             // Recalculate stats with equipment bonuses
             recalculateStats();
@@ -317,7 +321,7 @@ int Character::getInventoryLimit() const {
     if (backpack != equippedItems_.end()) {
         return backpack->second.inventoryLimit;
     }
-    return 5; // Default minimum inventory without backpack
+    return static_cast<int>(T("econ.default_inventory"));
 }
 
 int Character::getInventoryCount() const {
@@ -520,25 +524,9 @@ void Character::restoreToFull() {
 }
 
 double Character::requiredFundingForNextLevel(double elapsedSeconds) const {
-    constexpr double TOTAL_GAME_TIME = 20.0 * 365 * 24 * 60 * 60; // 20 years
-    constexpr double FUNDING_BASE = FUNDING_PER_LEVEL;
-    constexpr double EXPONENT = 2.8970554778884745; // polynomial scaling
-    constexpr double K = 1.0; // sigmoid steepness
-    constexpr double C = 0.5; // midpoint
-    constexpr double MIN_SLOWDOWN = 0.05;
-
-    // Convert elapsed time into normalized progression (0 → 1)
-    double p = std::clamp(elapsedSeconds / TOTAL_GAME_TIME, 0.0, 1.0);
-
-    // Logistic slowdown to simulate plateau
-    double slowdown = 1.0 / (1.0 + std::exp(K * (p - C)));
-    slowdown = std::max(slowdown, MIN_SLOWDOWN);
-
-    // Add small randomness to hide deterministic feel
+    // small randomness hides the deterministic feel; tuner shows the noise-free value
     double noise = 0.95 + ((rand() % 11) / 100.0);
-
-    // Funding cost increases with time and prime progression pressure
-    return FUNDING_BASE * std::pow(series_, EXPONENT) / (slowdown * noise);
+    return Balance::fundingRequired(series_, elapsedSeconds, noise);
 }
 
 void Character::removeInventoryItem(const std::string &itemName) {
@@ -569,7 +557,7 @@ bool Character::sellEquipment(const std::string &equipmentName) {
     }
 
     // Calculate sell price (typically 50-75% of original value)
-    int sellPrice = static_cast<int>(it->equipmentvalue * 0.6); // 60% of original value
+    int sellPrice = static_cast<int>(it->equipmentvalue * T("econ.sell_ratio")); // 60% of original value
 
     std::cout << "Selling " << it->name << " for $" << sellPrice << std::endl;
 
@@ -596,7 +584,7 @@ int Character::sellAllEquipment() {
     for (size_t i = equipmentInventory_.size(); i-- > 0;) {
         const Equipment &item = equipmentInventory_[i];
         if (isSellProtected(item.name)) continue; // special drops never sell
-        int sellPrice = static_cast<int>(item.equipmentvalue * 0.6);
+        int sellPrice = static_cast<int>(item.equipmentvalue * T("econ.sell_ratio"));
 
         std::cout << "- Sold " << item.name << " for $" << sellPrice << std::endl;
 
@@ -624,7 +612,7 @@ bool Character::sellEquipmentByIndex(size_t index) {
         return false;
     }
     const Equipment &item = equipmentInventory_[index];
-    int sellPrice = static_cast<int>(item.equipmentvalue * 0.6); // 60% of original value
+    int sellPrice = static_cast<int>(item.equipmentvalue * T("econ.sell_ratio")); // 60% of original value
 
     std::cout << "Selling " << item.name << " for $" << sellPrice << std::endl;
 
@@ -648,7 +636,7 @@ int Character::sellAllEquippedItems() {
 
     for (const auto &slot: equippedItems_) {
         const Equipment &item = slot.second;
-        int sellPrice = static_cast<int>(item.equipmentvalue * 0.6);
+        int sellPrice = static_cast<int>(item.equipmentvalue * T("econ.sell_ratio"));
         std::cout << "- Unequipped and sold " << item.name << " from " << equipmentTypeToString(slot.first) << " slot for $" << sellPrice << std::endl;
         totalEarned += sellPrice;
         itemsSold++;
@@ -705,7 +693,7 @@ int Character::sellAllEquipmentForBankruptcy() {
     for (size_t i = equipmentInventory_.size(); i-- > 0;) {
         const Equipment &item = equipmentInventory_[i];
         if (isSellProtected(item.name)) continue; // special drops never sell
-        int sellPrice = static_cast<int>(item.equipmentvalue * 0.6);
+        int sellPrice = static_cast<int>(item.equipmentvalue * T("econ.sell_ratio"));
         std::cout << "- Sold " << item.name << " for $" << sellPrice << std::endl;
         totalEarned += sellPrice;
         itemsSold++;
@@ -731,7 +719,7 @@ int Character::sellAllEquippedItemsForBankruptcy() {
 
     for (const auto &slot: equippedItems_) {
         const Equipment &item = slot.second;
-        int sellPrice = static_cast<int>(item.equipmentvalue * 0.6);
+        int sellPrice = static_cast<int>(item.equipmentvalue * T("econ.sell_ratio"));
         std::cout << "- Unequipped and sold " << item.name << " from " << equipmentTypeToString(slot.first) << " slot for $" << sellPrice << std::endl;
         totalEarned += sellPrice;
         itemsSold++;

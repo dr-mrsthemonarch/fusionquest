@@ -2,6 +2,7 @@
 #include "../include/GameEngine.h"
 #include "../include/SaveGame.h"
 #include "../include/ui.h"
+#include "../include/Tuning.h"
 #include <chrono>
 #include <ftxui/dom/elements.hpp>
 
@@ -27,6 +28,8 @@ Component CreateNavBar(int* selected_page, GameEngine* engine, Closure exit_clos
     if (current_page != BATTLE_PAGE) buttons.push_back(mk("Battle Log", [selected_page] { *selected_page = BATTLE_PAGE; }));
     if (current_page != SPECIAL_DROPS_PAGE)
         buttons.push_back(mk("Special Items", [selected_page] { *selected_page = SPECIAL_DROPS_PAGE; }));
+    if (Tuning::I().enabled() && current_page != TUNER_PAGE)
+        buttons.push_back(mk("Tuner", [selected_page] { *selected_page = TUNER_PAGE; }));
     buttons.push_back(Button("Quit", std::move(exit_closure)) | size(HEIGHT, EQUAL, 3));
 
     auto container = Container::Horizontal(buttons);

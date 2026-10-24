@@ -1,3 +1,4 @@
+#include "../include/Tuning.h"
 #include "../include/ConfigStore.h"
 #include "../include/QuestGenerator.h"
 #include <algorithm>
@@ -59,24 +60,7 @@ bool QuestGenerator::loadConfig(const std::string& root) {
         else preamble_ = "Your fusion startup begins.";
     }
 
-    // balance
-    std::map<std::string, double*> keys = {
-        {"usable_fraction", &bal_.usableFraction}, {"growth", &bal_.growth}, {"main_share", &bal_.mainShare},
-        {"main_quest_count", &bal_.mainQuestCount}, {"sec_per_kill", &bal_.secPerKill},
-        {"sec_per_collect", &bal_.secPerCollect}, {"sec_per_boss", &bal_.secPerBoss},
-        {"sec_per_town", &bal_.secPerTown}, {"kill_bias", &bal_.killBias}, {"collect_bias", &bal_.collectBias},
-        {"switch_chance", &bal_.switchChance}, {"new_hustle_weight", &bal_.newHustleWeight},
-        {"max_open_hustles", &bal_.maxOpenHustles}, {"reward_main_pct", &bal_.rewardMainPct},
-        {"reward_hustle_pct", &bal_.rewardHustlePct}, {"final_warning_days", &bal_.finalWarningDays},
-        {"final_force_days", &bal_.finalForceDays}, {"goal_scale", &bal_.goalScale},
-        {"max_sprints", &bal_.maxSprints}};
-    for (const auto& line : readLines(q + "balance.txt")) {
-        size_t p = line.find('=');
-        if (p == std::string::npos) continue;
-        auto it = keys.find(trim(line.substr(0, p)));
-        if (it == keys.end()) continue;
-        try { *it->second = std::stod(trim(line.substr(p + 1))); } catch (...) {}
-    }
+    refresh();
 
     // main quest defs
     mainDefs_.clear();
@@ -100,7 +84,7 @@ bool QuestGenerator::loadConfig(const std::string& root) {
 }
 
 int QuestGenerator::hustlesRequired(int index) const {
-    return index > static_cast<int>(bal_.mainQuestCount) ? 0 : 1 + index;
+    return index > static_cast<int>(bal_.mainQuestCount) ? 0 : static_cast<int>(T("quest.hustles_base") + index * T("quest.hustles_per_index"));
 }
 
 double QuestGenerator::mainBudget(int index, double elapsed) const {
@@ -125,11 +109,12 @@ std::string QuestGenerator::pick(const std::vector<std::string>& v) {
 }
 
 GoalType QuestGenerator::rollType() {
-    std::uniform_int_distribution<int> d(0, 99);
-    int r = d(rng_);
-    if (r < 55) return GoalType::KILL;
-    if (r < 85) return GoalType::COLLECT;
-    if (r < 90) return GoalType::BOSS;
+    const double wk = T("quest.w_kill"), wc = T("quest.w_collect"), wb = T("quest.w_boss"), wt = T("quest.w_town");
+    std::uniform_real_distribution<double> d(0.0, std::max(1e-9, wk + wc + wb + wt));
+    double r = d(rng_);
+    if ((r -= wk) < 0) return GoalType::KILL;
+    if ((r -= wc) < 0) return GoalType::COLLECT;
+    if ((r -= wb) < 0) return GoalType::BOSS;
     return GoalType::TOWN;
 }
 
@@ -148,16 +133,17 @@ Sprint QuestGenerator::makeSprint(int tier) {
     sp.name = pick(sprintNames_);
     std::uniform_int_distribution<int> pct(0, 99);
     int roll = pct(rng_);
-    int ng = roll < 60 ? 1 : roll < 90 ? 2 : 3;
+    const double one = T("quest.goals_one_pct"), two = T("quest.goals_two_pct");
+    int ng = roll < one ? 1 : roll < one + two ? 2 : 3;
     for (int i = 0; i < ng; ++i) {
         Goal g;
         g.type = rollType();
         int lo = 1, hi = 1;
         switch (g.type) {
-            case GoalType::KILL: g.keyword = pick(killKw_); lo = 2; hi = 3 + tier / 2; break;
-            case GoalType::COLLECT: g.keyword = pick(collectKw_); lo = 1; hi = 2 + tier / 3; break;
-            case GoalType::BOSS: lo = 1; hi = 1 + tier / 10; break;
-            case GoalType::TOWN: lo = 1; hi = 1 + tier / 10; break;
+            case GoalType::KILL: g.keyword = pick(killKw_); lo = (int)T("quest.kill_lo"); hi = (int)T("quest.kill_hi_base") + tier / std::max(1, (int)T("quest.kill_hi_div")); break;
+            case GoalType::COLLECT: g.keyword = pick(collectKw_); lo = (int)T("quest.collect_lo"); hi = (int)T("quest.collect_hi_base") + tier / std::max(1, (int)T("quest.collect_hi_div")); break;
+            case GoalType::BOSS: lo = (int)T("quest.boss_lo"); hi = (int)T("quest.boss_hi_base") + tier / std::max(1, (int)T("quest.boss_hi_div")); break;
+            case GoalType::TOWN: lo = (int)T("quest.town_lo"); hi = (int)T("quest.town_hi_base") + tier / std::max(1, (int)T("quest.town_hi_div")); break;
         }
         std::uniform_int_distribution<int> td(lo, std::max(lo, hi));
         g.target = std::max(1LL, std::llround(td(rng_) * bal_.goalScale));
@@ -184,7 +170,7 @@ void QuestGenerator::refill(Dev& d) {
 Quest QuestGenerator::build(int index, double budget) {
     Quest q;
     q.index = index;
-    const int devCount = 1 + index / 2;
+    const int devCount = (int)T("quest.devs_base") + index / std::max(1, (int)T("quest.devs_div"));
 
     double avg = 0.0;
     const int samples = 64;
@@ -192,7 +178,7 @@ Quest QuestGenerator::build(int index, double budget) {
     avg = std::max(avg / samples, 1.0);
 
     long long total = std::llround(budget / avg);
-    total = std::clamp<long long>(total, devCount * 3LL, static_cast<long long>(bal_.maxSprints));
+    total = std::clamp<long long>(total, devCount * static_cast<long long>(T("quest.min_sprints_per_dev")), static_cast<long long>(bal_.maxSprints));
 
     for (int d = 0; d < devCount; ++d) {
         Dev dev;
@@ -223,4 +209,43 @@ Quest QuestGenerator::generateHustle(int mainIndex, double budgetSeconds) {
     Quest q = build(std::max(1, mainIndex), std::max(budgetSeconds, 86400.0));
     q.title = pick(hustleNames_);
     return q;
+}
+
+// pull every quest factor from the live Tuning registry (timeScale is debug-clock state, untouched)
+void QuestGenerator::refresh() {
+    bal_.usableFraction = T("quest.usable_fraction");
+    bal_.growth = T("quest.growth");
+    bal_.mainShare = T("quest.main_share");
+    bal_.mainQuestCount = T("quest.main_count");
+    bal_.secPerKill = T("quest.sec_per_kill");
+    bal_.secPerCollect = T("quest.sec_per_collect");
+    bal_.secPerBoss = T("quest.sec_per_boss");
+    bal_.secPerTown = T("quest.sec_per_town");
+    bal_.killBias = T("quest.kill_bias");
+    bal_.collectBias = T("quest.collect_bias");
+    bal_.switchChance = T("quest.switch_chance");
+    bal_.newHustleWeight = T("quest.new_hustle_weight");
+    bal_.maxOpenHustles = T("quest.max_hustles");
+    bal_.rewardMainPct = T("quest.reward_main_pct");
+    bal_.rewardHustlePct = T("quest.reward_hustle_pct");
+    bal_.finalWarningDays = T("quest.final_warning_days");
+    bal_.finalForceDays = T("quest.final_force_days");
+    bal_.goalScale = T("quest.goal_scale");
+    bal_.maxSprints = T("quest.max_sprints");
+}
+
+QuestGenerator::QuestPreview QuestGenerator::preview(int index, double elapsed) {
+    QuestPreview p;
+    const double b = mainBudget(index, elapsed);
+    const bool fin = index > static_cast<int>(bal_.mainQuestCount);
+    const double mb = fin ? b : b * bal_.mainShare;
+    p.budget = b;
+    p.hustleBudget = hustleBudget(index, elapsed);
+    p.hustlesRequired = hustlesRequired(index);
+    p.devs = (int)T("quest.devs_base") + index / std::max(1, (int)T("quest.devs_div"));
+    double avg = 0.0;
+    for (int i = 0; i < 32; ++i) avg += estimateSeconds(makeSprint(index));
+    p.avgSprintSeconds = std::max(avg / 32, 1.0);
+    p.sprints = std::clamp<long long>(std::llround(mb / p.avgSprintSeconds), p.devs * static_cast<long long>(T("quest.min_sprints_per_dev")), static_cast<long long>(bal_.maxSprints));
+    return p;
 }

@@ -38,6 +38,10 @@ public:
     Quest generateMain(int index, double elapsed);
     Quest generateHustle(int mainIndex, double budgetSeconds);
 
+    void refresh();                            // reload factors from Tuning (call every tick)
+    struct QuestPreview { double budget = 0, hustleBudget = 0, avgSprintSeconds = 0; int devs = 0, hustlesRequired = 0; long long sprints = 0; };
+    QuestPreview preview(int index, double elapsed);   // for the tuner
+
     Sprint makeSprint(int tier);               // small goals, scale with tier
     void refill(Dev& d);                       // keep current + preview sprint generated
     double estimateSeconds(const Sprint& s) const;

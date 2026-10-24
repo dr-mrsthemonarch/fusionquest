@@ -1,4 +1,6 @@
 // SPG Engine made by drmrsthemonarch
+#include "../include/Balance.h"
+#include "../include/Tuning.h"
 #include "../include/ConfigStore.h"
 #include "../include/ExpandedMonsterTypes.h"
 #include <cmath>
@@ -13,49 +15,39 @@ constexpr double SECONDS_PER_MONTH = SECONDS_PER_YEAR / 12.0;
 SpecializedMonsterGenerator::SpecializedStats SpecializedMonsterGenerator::calculateSpecializedStats(int playerSeries, double elapsedSeconds, ExtendedMonsterType type, MonsterDifficulty difficulty) {
     SpecializedStats stats;
 
-    double diffMult = 1.0;
-    switch (difficulty) {
-        case MonsterDifficulty::EASY: diffMult = 0.75;
-            break;
-        case MonsterDifficulty::MEDIUM: diffMult = 1.0;
-            break;
-        case MonsterDifficulty::HARD: diffMult = 1.35;
-            break;
-        case MonsterDifficulty::LEGENDARY: diffMult = 1.8;
-            break;
-    }
+    double diffMult = Balance::difficultyMult(static_cast<int>(difficulty));
 
-    double baseHealth = 50.0 + (playerSeries * 22.0);
-    double baseAttack = 8.0 + (playerSeries * 3.5);
-    double baseDefense = 5.0 + (playerSeries * 3.0);
-    double baseSpeed = 5.0 + (playerSeries * 2.5);
-    double baseMoney = 30.0 + (playerSeries * 15.0);
+    double baseHealth = T("special.hp_base") + playerSeries * T("special.hp_per");
+    double baseAttack = T("special.atk_base") + playerSeries * T("special.atk_per");
+    double baseDefense = T("special.def_base") + playerSeries * T("special.def_per");
+    double baseSpeed = T("special.spd_base") + playerSeries * T("special.spd_per");
+    double baseMoney = T("special.money_base") + playerSeries * T("special.money_per");
 
     switch (type) {
         case ExtendedMonsterType::SAFETY_MANAGER:
-            stats.maxHealth = static_cast<int>(baseHealth * 1.8);
-            stats.attack = static_cast<int>(baseAttack * 0.5);
-            stats.defense = static_cast<int>(baseDefense * 10);
-            stats.speed = static_cast<int>(baseSpeed * 1);
-            stats.moneyReward = static_cast<int>(baseMoney * 2);
+            stats.maxHealth = static_cast<int>(baseHealth * T("special.safety_hp"));
+            stats.attack = static_cast<int>(baseAttack * T("special.safety_atk"));
+            stats.defense = static_cast<int>(baseDefense * T("special.safety_def"));
+            stats.speed = static_cast<int>(baseSpeed * T("special.safety_spd"));
+            stats.moneyReward = static_cast<int>(baseMoney * T("special.safety_money"));
             stats.specialMechanic = "SAFETY_AUDIT";
             break;
 
         case ExtendedMonsterType::CONFERENCE:
-            stats.maxHealth = static_cast<int>(baseHealth * 0.9 * diffMult);
-            stats.attack = static_cast<int>(baseAttack * 0.8 * diffMult);
-            stats.defense = static_cast<int>(baseDefense * 0.9 * diffMult);
-            stats.speed = static_cast<int>(baseSpeed * 1.2 * diffMult);
-            stats.moneyReward = static_cast<int>(baseMoney * 1.5 * diffMult);
+            stats.maxHealth = static_cast<int>(baseHealth * T("special.conf_hp") * diffMult);
+            stats.attack = static_cast<int>(baseAttack * T("special.conf_atk") * diffMult);
+            stats.defense = static_cast<int>(baseDefense * T("special.conf_def") * diffMult);
+            stats.speed = static_cast<int>(baseSpeed * T("special.conf_spd") * diffMult);
+            stats.moneyReward = static_cast<int>(baseMoney * T("special.conf_money") * diffMult);
             stats.specialMechanic = "NETWORKING_CHECK";
             break;
 
         case ExtendedMonsterType::PAPER_WRITING:
-            stats.maxHealth = static_cast<int>(baseHealth * 110 * diffMult);
-            stats.attack = static_cast<int>(baseAttack * 0.7 * diffMult);
-            stats.defense = static_cast<int>(baseDefense * 1.2 * diffMult);
-            stats.speed = static_cast<int>(baseSpeed * 0.8 * diffMult);
-            stats.moneyReward = static_cast<int>(baseMoney * 1.3 * diffMult);
+            stats.maxHealth = static_cast<int>(baseHealth * T("special.paper_hp") * diffMult);
+            stats.attack = static_cast<int>(baseAttack * T("special.paper_atk") * diffMult);
+            stats.defense = static_cast<int>(baseDefense * T("special.paper_def") * diffMult);
+            stats.speed = static_cast<int>(baseSpeed * T("special.paper_spd") * diffMult);
+            stats.moneyReward = static_cast<int>(baseMoney * T("special.paper_money") * diffMult);
             stats.specialMechanic = "PEER_REVIEW";
             break;
 
@@ -135,23 +127,17 @@ BossData ReviewCalendarSystem::generateMonthlyReviewData(int year, int month, in
     int estimatedPlayerSeries = playerSeries + (year - 1);
     double monthProgression = month / 12.0;
 
-    double diffMult = 1.0;
-    switch (difficulty) {
-        case MonsterDifficulty::EASY: diffMult = 0.75; break;
-        case MonsterDifficulty::MEDIUM: diffMult = 1.0; break;
-        case MonsterDifficulty::HARD: diffMult = 1.35; break;
-        case MonsterDifficulty::LEGENDARY: diffMult = 1.8; break;
-    }
+    double diffMult = Balance::difficultyMult(static_cast<int>(difficulty));
 
-    double yearScale = 1.0 + (year * 0.5);
-    double monthScale = 1.0 + (monthProgression * 0.2);
+    double yearScale = 1.0 + (year * T("review.year_growth"));
+    double monthScale = 1.0 + (monthProgression * T("review.month_growth"));
 
     data.level = estimatedPlayerSeries + year;
-    data.maxHealth = static_cast<int>(150 * yearScale * monthScale * diffMult);
-    data.attack = static_cast<int>(20 * yearScale * monthScale * diffMult);
-    data.defense = static_cast<int>(15 * yearScale * monthScale * diffMult);
-    data.speed = static_cast<int>(12 * yearScale * monthScale * diffMult);
-    data.moneyReward = static_cast<int>(100 * yearScale * monthScale * diffMult);
+    data.maxHealth = static_cast<int>(T("review.hp") * yearScale * monthScale * diffMult);
+    data.attack = static_cast<int>(T("review.atk") * yearScale * monthScale * diffMult);
+    data.defense = static_cast<int>(T("review.def") * yearScale * monthScale * diffMult);
+    data.speed = static_cast<int>(T("review.spd") * yearScale * monthScale * diffMult);
+    data.moneyReward = static_cast<int>(T("review.money") * yearScale * monthScale * diffMult);
     data.maxHypeEnergy = 50 + (estimatedPlayerSeries * 10);
     data.itemReward = "EQUIPMENT";
 
@@ -171,13 +157,13 @@ Monster ShadowPlayerSystem::generateShadowPlayer(const Character &player, double
     shadow.level = player.getSeries();
 
     // EXACT REPLICA of player stats (slightly buffed)
-    shadow.maxHealth = player.getMaxRunway() * 1.1;
-    shadow.maxHypeEnergy = player.getMaxHypeEnergy() * 1.2; // More energy
+    shadow.maxHealth = player.getMaxRunway() * T("shadow.hp_mult");
+    shadow.maxHypeEnergy = player.getMaxHypeEnergy() * T("shadow.hype_mult"); // More energy
     shadow.health = shadow.maxHealth;
     shadow.hypeEnergy = shadow.maxHypeEnergy;
-    shadow.attack = player.getHustle() * 1.1;
-    shadow.defense = player.getNDAs() * 1.1;
-    shadow.speed = player.getLuck() * 1.05;
+    shadow.attack = player.getHustle() * T("shadow.atk_mult");
+    shadow.defense = player.getNDAs() * T("shadow.def_mult");
+    shadow.speed = player.getLuck() * T("shadow.spd_mult");
 
     // Shadow uses MIRROR strategy (copies player behavior intelligently)
     shadow.setStrategy(std::make_unique<MirrorStrategy>());
@@ -189,7 +175,7 @@ Monster ShadowPlayerSystem::generateShadowPlayer(const Character &player, double
 
         // Create shadow version with slightly more power
         std::string shadowName = "Shadow " + playerPatent.getName();
-        int shadowPower = static_cast<int>(playerPatent.getCurrentPower() * 1.15); // 15% stronger
+        int shadowPower = static_cast<int>(playerPatent.getCurrentPower() * T("shadow.patent_mult")); // 15% stronger
         int shadowCost = playerPatent.getCost();
 
         auto shadowPatent = std::make_shared<Patent>(
@@ -206,7 +192,7 @@ Monster ShadowPlayerSystem::generateShadowPlayer(const Character &player, double
                   << playerPatent.getTypeName() << ", Power: " << shadowPower << ")\n";
     }
 
-    shadow.moneyReward = player.getMoney() * 2 + 1000000000; // Billion dollar reward
+    shadow.moneyReward = static_cast<int>(std::min(T("shadow.reward_flat") + player.getMoney() * T("shadow.reward_money_mult"), 2.0e9)); // Billion dollar reward
     shadow.itemReward = "SHADOW_EQUIPMENT";
 
     return shadow;
@@ -535,7 +521,7 @@ ShadowPlayerSystem::ShadowPlayerSystem() : rng_(std::random_device{}()) {
 
 bool ShadowPlayerSystem::shouldShadowPlayerAppear(double elapsedSeconds, bool alreadyAppeared) {
     // Only appears after 10 years
-    if (elapsedSeconds < SHADOW_APPEARANCE_TIME) {
+    if (elapsedSeconds < T("shadow.appear_years") * 365.25 * 24 * 3600) {
         return false;
     }
 
@@ -545,7 +531,7 @@ bool ShadowPlayerSystem::shouldShadowPlayerAppear(double elapsedSeconds, bool al
     }
 
     // 1 in 1 billion chance each check
-    std::uniform_int_distribution<long long> dist(1, SHADOW_CHANCE);
+    std::uniform_int_distribution<long long> dist(1, std::max(1LL, static_cast<long long>(T("shadow.odds"))));
     return dist(rng_) == 1;
 }
 

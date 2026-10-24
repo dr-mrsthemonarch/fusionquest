@@ -1,9 +1,22 @@
+#include "../include/Tuning.h"
 #include "../include/GameEngine.h"
 #include "../include/StdoutSink.h"
 #include "../include/Patent.h"
 #include "../include/PatentStrategy.h"
 #include <algorithm>
 #include <cmath>
+
+namespace {
+// global tuner multiplier on special / quest / named equipment stats
+void scaleSpecial(Equipment& e) {
+    const double m = T("drop.special_mult");
+    if (m == 1.0) return;
+    e.runway = static_cast<int>(e.runway * m); e.hypeEnergy = static_cast<int>(e.hypeEnergy * m);
+    e.hustle = static_cast<int>(e.hustle * m); e.agility = static_cast<int>(e.agility * m);
+    e.ndas = static_cast<int>(e.ndas * m); e.luck = static_cast<int>(e.luck * m);
+    e.synergy = static_cast<int>(e.synergy * m); e.busFactor = static_cast<float>(e.busFactor * m);
+}
+}  // namespace
 
 GameEngine::GameEngine(bool debugInstakill)
     : debugInstakill_(debugInstakill), rng_(std::random_device{}()) {
@@ -51,7 +64,7 @@ void GameEngine::initializeCharacter(const std::string& name, const std::string&
     counters_ = Counters{};
     selloff_ = SelloffState{};
     shadowPlayerDefeated_ = false;
-    lastNemesisTime_ = -3600.0 * 24 * 365;
+    lastNemesisTime_ = (-T("nemesis.interval_days") + T("nemesis.first_delay_days")) * 86400.0;
     lastEquipmentPurchaseSeries_ = 0;
     purchasedThisCycle_.clear();
     nemesisSystem_ = std::make_unique<NemesisSystem>();
@@ -70,7 +83,7 @@ void GameEngine::initializeCharacter(const std::string& name, const std::string&
     character_ = std::make_unique<Character>(name, employeeNr, position, startup);
     log_.add("character created: " + name);
 
-    character_->addMoney(5000);
+    character_->addMoney(static_cast<int>(T("init.money")));
     character_->addFunding(10);
 
     cachedRequiredFunding_ = character_->getRequiredFunding();
@@ -154,7 +167,7 @@ void GameEngine::tick(double elapsedSeconds) {
     if (!inBattle_) {
         if (waitingForNextBattle_) {
             ticksSinceBattleEnd_++;
-            if (ticksSinceBattleEnd_ >= TICKS_BETWEEN_BATTLES) {
+            if (ticksSinceBattleEnd_ >= static_cast<int>(T("time.ticks_between_battles"))) {
                 waitingForNextBattle_ = false; ticksSinceBattleEnd_ = 0;
             } else return;
         }
@@ -178,11 +191,11 @@ void GameEngine::tick(double elapsedSeconds) {
     } else {
         if (waitingForBattleStart_) {
             battleStartTime_ += 0.1;
-            if (battleStartTime_ >= 2.0) { waitingForBattleStart_ = false; log_.add("battle begins!"); }
+            if (battleStartTime_ >= T("time.battle_start_delay")) { waitingForBattleStart_ = false; log_.add("battle begins!"); }
             return;
         }
         ticksSinceLastAction_++;
-        if (ticksSinceLastAction_ >= TICKS_PER_ACTION) { handleBattle(); ticksSinceLastAction_ = 0; }
+        if (ticksSinceLastAction_ >= static_cast<int>(T("time.ticks_per_action"))) { handleBattle(); ticksSinceLastAction_ = 0; }
     }
 }
 
@@ -199,9 +212,9 @@ void GameEngine::checkSeriesUpgrade() {
 void GameEngine::checkHypeEnergyRecovery() {
     int maxHype = character_->getMaxHypeEnergy();
     int cur = character_->getHypeEnergy();
-    if (cur < maxHype * 0.1) {
-        int cost = static_cast<int>(character_->getMoney() * 0.2);
-        int recover = maxHype / 2;
+    if (cur < maxHype * T("hype.low_threshold")) {
+        int cost = static_cast<int>(character_->getMoney() * T("hype.cost_pct"));
+        int recover = static_cast<int>(maxHype * T("hype.recover_frac"));
         if (character_->getMoney() >= cost && cost > 0) {
             character_->spendMoney(cost);
             character_->setHypeEnergy(std::min(maxHype, cur + recover));
@@ -211,7 +224,7 @@ void GameEngine::checkHypeEnergyRecovery() {
 }
 
 void GameEngine::checkSpecialEncounters() {
-    int chance = 1000;
+    int chance = std::max(1, static_cast<int>(T("special.spawn_odds")));
     std::uniform_int_distribution<> d(1, chance);
 
     if (d(rng_) <= 1) {
@@ -312,7 +325,7 @@ void GameEngine::checkRecoveryNeeded() {
 
 void GameEngine::checkDefensivePatents() {
     std::uniform_int_distribution<> d(0, 99);
-    if (d(rng_) < 15) {
+    if (d(rng_) < T("patent.defensive_pct")) {
         auto defense = Patent::getPatentsByType(PatentType::DEFENSE);
         for (const auto& name : defense) {
             auto it = Patent::characterPatents.find(name);
@@ -342,8 +355,8 @@ void GameEngine::handleBattle() {
         }
         if (!currentEncounter_->hasAliveEnemies()) { handleVictory(); return; }
 
-        if (character_->getRunway() < character_->getMaxRunway() * 0.3) tryEmergencyHealing();
-        if (character_->getRunway() < 10 && character_->getInventoryCount() > 0) {
+        if (character_->getRunway() < character_->getMaxRunway() * T("emerg.heal_frac")) tryEmergencyHealing();
+        if (character_->getRunway() < T("emerg.sale_runway") && character_->getInventoryCount() > 0) {
             beginSelloff(true, false); // runway restored when the last item is sold
         }
     }
@@ -364,11 +377,12 @@ bool GameEngine::playerAttack() {
     float healthPct = static_cast<float>(character_->getRunway()) / character_->getMaxRunway();
     float hypePct = static_cast<float>(character_->getHypeEnergy()) / character_->getMaxHypeEnergy();
 
-    if (character_->canUsePatents() && hypePct > 0.2f) {
+    if (character_->canUsePatents() && hypePct > T("patent.min_hype_frac")) {
         std::uniform_int_distribution<> roll(0, 99);
-        int threshold = 30;
-        if (healthPct < 0.3f) threshold = 70; else if (healthPct < 0.5f) threshold = 50;
-        if (hypePct < 0.3f) threshold = 15;
+        int threshold = static_cast<int>(T("patent.use_base_pct"));
+        if (healthPct < T("patent.low_hp_frac")) threshold = static_cast<int>(T("patent.low_hp_pct"));
+        else if (healthPct < T("patent.mid_hp_frac")) threshold = static_cast<int>(T("patent.mid_hp_pct"));
+        if (hypePct < T("patent.low_hype_frac")) threshold = static_cast<int>(T("patent.low_hype_pct"));
 
         if (roll(rng_) < threshold) {
             std::vector<std::pair<std::string, Patent*>> affordable;
@@ -380,7 +394,7 @@ bool GameEngine::playerAttack() {
                 if (currentEncounter_->getAliveCount() > 2) {
                     for (auto& [n, p] : affordable) if (p->getType() == PatentType::AOE) { chosen = n; break; }
                 }
-                if (chosen.empty() && healthPct < 0.35f) {
+                if (chosen.empty() && healthPct < T("patent.heal_choice_frac")) {
                     for (const auto& hn : Patent::getPatentsByType(PatentType::HEAL))
                         for (auto& [n, p] : affordable) if (n == hn) { chosen = n; break; }
                 }
@@ -408,8 +422,9 @@ bool GameEngine::playerAttack() {
     if (!usedPatent) {
         Monster* target = currentEncounter_->getLowestHPEnemy();
         if (!target) return false;
-        std::uniform_int_distribution<> variance(-4, 4);
-        int dmg = std::max(1, character_->getModifiedHustle() - target->getModifiedNDAs() + variance(rng_));
+        const int varianceRange = static_cast<int>(T("combat.variance"));
+        std::uniform_int_distribution<> variance(-varianceRange, varianceRange);
+        int dmg = std::max(1, static_cast<int>((character_->getModifiedHustle() - target->getModifiedNDAs()) * T("combat.player_dmg_mult")) + variance(rng_));
         target->takeDamage(dmg);
         log_.add("dealt " + std::to_string(dmg) + " dmg to " + target->getName());
     }
@@ -426,8 +441,9 @@ void GameEngine::monsterAttack(Monster* enemy) {
         if (usedPatent) log_.add(enemy->getName() + " used strategic magic!");
     }
     if (!usedPatent) {
-        std::uniform_int_distribution<> variance(-4, 4);
-        int dmg = std::max(1, enemy->getModifiedHustle() - character_->getModifiedNDAs() + variance(rng_));
+        const int varianceRange = static_cast<int>(T("combat.variance"));
+        std::uniform_int_distribution<> variance(-varianceRange, varianceRange);
+        int dmg = std::max(1, static_cast<int>((enemy->getModifiedHustle() - character_->getModifiedNDAs()) * T("combat.enemy_dmg_mult")) + variance(rng_));
         character_->takeDamage(dmg);
         log_.add(enemy->getName() + " dealt " + std::to_string(dmg) + " dmg");
     }
@@ -441,7 +457,7 @@ void GameEngine::handleVictory() {
               + " in " + std::to_string(roundNumber_) + " rounds");
 
     int moneyReward = currentEncounter_->getTotalMoneyReward();
-    int fundingReward = static_cast<int>(moneyReward * FUNDING_PER_MONEY);
+    int fundingReward = static_cast<int>(moneyReward * T("funding.per_money"));
     character_->addMoney(moneyReward);
     character_->setElapsedSeconds(currentElapsedSeconds_);
     character_->addFunding(fundingReward);
@@ -454,6 +470,28 @@ void GameEngine::handleVictory() {
             e->name.find("Shadow:") != std::string::npos || e->name.find("Safety Manager") != std::string::npos) {
             hasSpecialDrop = true;
             handleSpecialDrop(*e);
+        }
+    }
+
+    // named monster killed: record defeat so it stops blocking (this was missing -> same fight forever)
+    if (namedMonsterLibrary_ && namedMonsterLibrary_->hasBlockingEncounter()) {
+        NamedMonsterDef* def = namedMonsterLibrary_->getBlockingMonster();
+        const std::string defName = def->name;
+        const EquipmentType defType = def->equipmentType;
+        const EquipmentRarity defRarity = def->equipmentRarity;
+        bool wasNamed = false;
+        for (auto* e : allEnemies) if (e->name == defName) wasNamed = true;
+        if (wasNamed) {
+            const double SPY = 365.25 * 24 * 60 * 60, SPM = SPY / 12.0;
+            int year = static_cast<int>(currentElapsedSeconds_ / SPY) + 1;
+            int month = std::clamp(static_cast<int>((currentElapsedSeconds_ - (year - 1) * SPY) / SPM) + 1, 1, 12);
+            Equipment cert = specialDropsLibrary_->generateNamedMonsterCertificate(defName, defType, defRarity, character_->getSeries());
+            scaleSpecial(cert);
+            addSpecialDropToLibrary(SpecialDropType::NAMED_MONSTER_DROP, cert, defName, year, month);
+            character_->addEquipmentToInventory(cert);
+            namedMonsterLibrary_->recordDefeat(defName);
+            hasSpecialDrop = true; // no extra boss equipment drop
+            log_.add("NAMED MONSTER DEFEATED: " + defName);
         }
     }
 
@@ -525,6 +563,7 @@ void GameEngine::handleSpecialDrop(const Monster& enemy) {
         eq = specialDropsLibrary_->generateMonthlyReviewEquipment(year, month, character_->getSeries());
     } else return;
 
+    scaleSpecial(eq);
     addSpecialDropToLibrary(type, eq, enemy.name, year, month);
     character_->addEquipmentToInventory(eq);
     log_.add("SPECIAL DROP: " + eq.name);
@@ -605,7 +644,7 @@ void GameEngine::beginSelloff(bool emergency, bool includeEquipment) {
 }
 
 void GameEngine::stepSelloff() {
-    if (++selloff_.ticks < SELL_STEP_TICKS) return;
+    if (++selloff_.ticks < static_cast<int>(T("time.sell_step_ticks"))) return;
     selloff_.ticks = 0;
 
     // inventory items first, last one in the list first
@@ -628,7 +667,7 @@ void GameEngine::stepSelloff() {
         for (size_t i = inv.size(); i-- > 0;) {
             if (specialDropsLibrary_->isSpecialEquipment(inv[i].name)) continue; // unsellable
             std::string name = inv[i].name;
-            int price = static_cast<int>(inv[i].equipmentvalue * 0.6);
+            int price = static_cast<int>(inv[i].equipmentvalue * T("econ.sell_ratio"));
             character_->sellEquipmentByIndex(i);
             selloff_.earned += price;
             log_.add("sold " + name + " for $" + std::to_string(price));
@@ -642,7 +681,7 @@ void GameEngine::stepSelloff() {
 void GameEngine::finishSelloff() {
     selloff_.active = false;
     if (selloff_.emergency) {
-        int recovered = selloff_.earned / 10;
+        int recovered = static_cast<int>(selloff_.earned / std::max(1.0, T("emerg.runway_money_div")));
         character_->setRunway(std::min(character_->getRunway() + recovered, character_->getMaxRunway()));
         log_.add("emergency sale done: +" + std::to_string(recovered) + " runway");
     } else {
@@ -670,10 +709,10 @@ float GameEngine::getActivityProgress() const {
     }
     if (!inBattle_) {
         if (waitingForNextBattle_)
-            return std::min(1.0f, static_cast<float>(ticksSinceBattleEnd_) / TICKS_BETWEEN_BATTLES);
+            return std::min(1.0f, static_cast<float>(ticksSinceBattleEnd_) / static_cast<int>(T("time.ticks_between_battles")));
         return 0.0f;
     }
-    if (waitingForBattleStart_) return std::min(1.0f, static_cast<float>(battleStartTime_ / 2.0));
+    if (waitingForBattleStart_) return std::min(1.0f, static_cast<float>(battleStartTime_ / std::max(0.1, T("time.battle_start_delay"))));
     if (!currentEncounter_) return 0.0f;
 
     double hp = 0, maxHp = 0;
@@ -712,6 +751,7 @@ void GameEngine::grantQuestReward(bool isMain, const std::string& title) {
     EquipmentRarity r = isMain ? (hi ? EquipmentRarity::LEGENDARY : EquipmentRarity::EPIC)
                                : (hi ? EquipmentRarity::EPIC : EquipmentRarity::RARE);
     Equipment eq = specialDropsLibrary_->generateQuestEquipment(character_->getSeries(), r, title);
+    scaleSpecial(eq);
 
     if (isMain) {
         const double SPY = 365.25 * 24 * 60 * 60;

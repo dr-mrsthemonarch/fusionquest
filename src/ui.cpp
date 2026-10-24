@@ -17,6 +17,7 @@ Component CreateUI(int* selected_page, GameEngine* engine,
     auto battle_page = CreateBattlePage(selected_page, engine, exit_closure);
     auto equipment_page = CreateEquipmentPage(selected_page, engine);
     auto special_drops_page = CreateSpecialDropsPage(selected_page, engine, exit_closure);
+    auto tuner_page = CreateTunerPage(selected_page, engine, exit_closure);
     auto preamble_page = CreatePreamblePage(selected_page, engine);
     auto final_warning_page = CreateFinalWarningPage(selected_page, engine);
 
@@ -31,6 +32,7 @@ Component CreateUI(int* selected_page, GameEngine* engine,
             special_drops_page,
             preamble_page,
             final_warning_page,
+            tuner_page,
         },
         selected_page
     );

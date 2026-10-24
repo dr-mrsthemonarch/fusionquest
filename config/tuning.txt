@@ -1,0 +1,2 @@
+# balance overrides (key=value). empty = all defaults from src/Tuning.cpp.
+# generate with: run --debug-tune, edit in Tuner page, Save Tuning -> ./tuning.txt, copy here, rebuild.

@@ -27,7 +27,7 @@ private:
     mutable std::mt19937 gen_;
 
     // Base stat calculation methods
-    float calculateBaseStat(int playerSeries, int statMultiplier) const;
+    float calculateBaseStat(int playerSeries, double statMultiplier) const;
     int calculateInventoryLimit(int playerSeries) const;
     double calculateEquipmentValue(const Equipment& equipment) const;
 

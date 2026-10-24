@@ -29,6 +29,7 @@ set(UI_SOURCES
         src/preamble_page.cpp
         src/final_warning_page.cpp
         src/NavBar.cpp
+        src/tuner_page.cpp
 )
 
 # engine (Qt-free, was SPG_Engine game logic)
@@ -56,6 +57,8 @@ set(ENGINE_SOURCES
         src/ConfigStore.cpp
         src/Sha256.cpp
         src/SaveCrypto.cpp
+        src/Tuning.cpp
+        src/Balance.cpp
 )
 
 set(HEADERS
@@ -91,6 +94,8 @@ set(HEADERS
         include/ConfigCipher.h
         include/Sha256.h
         include/SaveCrypto.h
+        include/Tuning.h
+        include/Balance.h
 )
 
 # ---- config compiled into the executable (players can't edit it) ----

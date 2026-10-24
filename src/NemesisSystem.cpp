@@ -1,3 +1,5 @@
+#include "../include/Tuning.h"
+#include "../include/Balance.h"
 #include "../include/NemesisSystem.h"
 #include <cmath>
 #include <algorithm>
@@ -18,61 +20,15 @@ NemesisSystem::NemesisSystem() : nemesisPowerLevel_(0) {
 }
 
 NemesisSystem::NemesisStats NemesisSystem::calculateNemesisStats(int playerSeries, double elapsedSeconds, NemesisType type, int powerLevel) {
-    NemesisStats stats;
-
-    // Normalize time progression (0.0 to 1.0 over 20 years)
-    double timeProgression = std::clamp(elapsedSeconds / TOTAL_GAME_TIME, 0.0, 1.0);
-
-    constexpr double K = 12.0; // Sigmoid steepness
-    constexpr double C = 0.5; // Midpoint
-
-    double timePressure = 1.0 / (1.0 + std::exp(-K * (timeProgression - C)));
-    double scalingFactor = 1.0 + (timePressure * 8.0); // 1.0x to 9.0x scaling
-
-    // Nemesis type multipliers
-    double typeMultiplier = 1.0;
-    switch (type) {
-        case NemesisType::ALPHA: typeMultiplier = 1.0;
-            break; // Years 1-5
-        case NemesisType::BETA: typeMultiplier = 1.5;
-            break; // Years 6-10
-        case NemesisType::OMEGA: typeMultiplier = 2.2;
-            break; // Years 11-15
-        case NemesisType::PRIME: typeMultiplier = 3.5;
-            break; // Years 16-20
-    }
-
-    // Power level multiplier: 1.1x per defeat (stacks multiplicatively)
-    double powerMultiplier = std::pow(1.1, powerLevel);
-
-    // Base stats that scale with player series
-    double baseHealth = 100.0 + (playerSeries * 30.0);
-    double baseAttack = 15.0 + (playerSeries * 4.0);
-    double baseDefense = 10.0 + (playerSeries * 3.5);
-    double baseSpeed = 12.0 + (playerSeries * 2.5);
-    double baseMoney = 200.0 + (playerSeries * 50.0);
-
-    // Apply overwhelming nemesis multipliers
-    // Nemesis should be 3-5x stronger than a normal boss
-    constexpr double NEMESIS_HEALTH_MULT = 4.0;
-    constexpr double NEMESIS_ATTACK_MULT = 2.0; // High but not instant-death
-    constexpr double NEMESIS_DEFENSE_MULT = 2.5;
-    constexpr double NEMESIS_SPEED_MULT = 1.8;
-    constexpr double NEMESIS_MONEY_MULT = 10.0;
-
-    // Calculate final stats (including power level boost!)
-    stats.maxHealth = static_cast<int>(baseHealth * scalingFactor * typeMultiplier * powerMultiplier * NEMESIS_HEALTH_MULT);
-    stats.health = stats.maxHealth;
-
-    stats.attack = static_cast<int>(baseAttack * scalingFactor * typeMultiplier * powerMultiplier * NEMESIS_ATTACK_MULT);
-
-    stats.defense = static_cast<int>(baseDefense * scalingFactor * typeMultiplier * powerMultiplier * NEMESIS_DEFENSE_MULT);
-
-    stats.speed = static_cast<int>(baseSpeed * scalingFactor * typeMultiplier * powerMultiplier * NEMESIS_SPEED_MULT);
-
-    stats.moneyReward = static_cast<int>(baseMoney * scalingFactor * typeMultiplier * powerMultiplier * NEMESIS_MONEY_MULT);
-
-    return stats;
+    Balance::EnemyStats e = Balance::nemesis(playerSeries, elapsedSeconds, static_cast<int>(type), powerLevel);
+    NemesisStats s;
+    s.maxHealth = static_cast<int>(e.hp);
+    s.health = s.maxHealth;
+    s.attack = static_cast<int>(e.atk);
+    s.defense = static_cast<int>(e.def);
+    s.speed = static_cast<int>(e.spd);
+    s.moneyReward = static_cast<int>(e.money);
+    return s;
 }
 
 Monster NemesisSystem::debugGenerateNemesis(int playerSeries, double debugTimeSeconds, const std::string &playerName) {
@@ -120,7 +76,7 @@ Monster NemesisSystem::generateNemesis(int playerSeries, double elapsedSeconds, 
     nemesis.moneyReward = stats.moneyReward;
 
     // Nemesis gets MASSIVE hype energy
-    nemesis.maxHypeEnergy = 120 + (playerSeries * 20) + (nemesisPowerLevel_ * 30);
+    nemesis.maxHypeEnergy = static_cast<int>(T("nemesis.hype_base") + playerSeries * T("nemesis.hype_per") + nemesisPowerLevel_ * T("nemesis.hype_pow"));
     nemesis.hypeEnergy = nemesis.maxHypeEnergy;
 
     // Nemesis uses TACTICAL strategy (smart and deadly)
@@ -231,7 +187,7 @@ std::string NemesisSystem::scramblePlayerName(const std::string &playerName) {
 bool NemesisSystem::shouldNemesisAppear(double elapsedSeconds, double lastNemesisTime) {
     // Check if at least one year has passed since last nemesis
     double timeSinceLastNemesis = elapsedSeconds - lastNemesisTime;
-    return timeSinceLastNemesis >= NEMESIS_INTERVAL;
+    return timeSinceLastNemesis >= T("nemesis.interval_days") * 86400.0;
 }
 
 void NemesisSystem::generateNemesisPatents(Monster& nemesis, int count, int playerSeries, NemesisType type) {
@@ -329,8 +285,8 @@ void NemesisSystem::generateNemesisPatents(Monster& nemesis, int count, int play
 
     // Create the patents with power scaling
     for (const auto& [name, type] : selected) {
-        int basePower = 35 + (playerSeries * 5) + (nemesisPowerLevel_ * 15);
-        int cost = 15 + (playerSeries * 2);
+        int basePower = static_cast<int>(T("nemesis.patent_pow_base") + playerSeries * T("nemesis.patent_pow_per") + nemesisPowerLevel_ * T("nemesis.patent_pow_pow"));
+        int cost = static_cast<int>(T("nemesis.patent_cost_base") + playerSeries * T("nemesis.patent_cost_per"));
 
         // Debuffs and attacks are extra powerful for Nemesis
         if (type == PatentType::DEBUFF) {

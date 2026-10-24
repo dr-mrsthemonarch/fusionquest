@@ -1,4 +1,5 @@
 // SPG Engine made by drmrsthemonarch
+#include "../include/Tuning.h"
 #include "../include/ConfigStore.h"
 #include "../include/ItemGenerator.h"
 #include <cstdlib>
@@ -15,13 +16,13 @@ ItemGenerator::ItemGenerator() : loadedSuccessfully(false) {
 }
 
 int ItemGenerator::calculateItemValue(const std::string &itemName, int nameStyle) {
-    int baseValue = rand() % 15 + 1; // Base value 1-15
+    int baseValue = rand() % std::max(1, static_cast<int>(T("item.base_range"))) + 1;
     int bonusValue = 0;
 
     // Style-based bonuses
-    if (nameStyle >= 50) bonusValue += 10; // Fancy names
-    if (nameStyle >= 80) bonusValue += 15; // Epic names
-    if (nameStyle >= 95) bonusValue += 20; // Corporate names
+    if (nameStyle >= 50) bonusValue += static_cast<int>(T("item.bonus_fancy"));
+    if (nameStyle >= 80) bonusValue += static_cast<int>(T("item.bonus_epic"));
+    if (nameStyle >= 95) bonusValue += static_cast<int>(T("item.bonus_corporate"));
 
     // Keyword-based value modifiers
     for (const auto &modifier: valueModifiers) {

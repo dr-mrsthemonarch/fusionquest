@@ -4,6 +4,7 @@
 #include "../include/Patent.h"
 #include "../include/progress_bar.h"
 #include "../include/ui.h"
+#include "../include/Tuning.h"
 #include "../include/globals.h"
 #include <algorithm>
 #include <chrono>
@@ -95,6 +96,7 @@ Component CreateStatsPage(int* selected_page, GameEngine* engine,
         }) | size(HEIGHT, EQUAL, 3);
     auto log_button =
         Button("Battle Log", [selected_page] { *selected_page = BATTLE_PAGE; }) | size(HEIGHT, EQUAL, 3);
+    auto tuner_button = Button("Tuner", [selected_page] { *selected_page = TUNER_PAGE; }) | size(HEIGHT, EQUAL, 3);
     auto special_button =
         Button("Special Items", [selected_page] { *selected_page = SPECIAL_DROPS_PAGE; }) | size(HEIGHT, EQUAL, 3);
     auto quit_button = Button("Quit", std::move(exit_closure)) | size(HEIGHT, EQUAL, 3);
@@ -105,7 +107,12 @@ Component CreateStatsPage(int* selected_page, GameEngine* engine,
     auto patent_items = Menu(patent_list.get(), &selected_patent_index);
     auto inventory_items = Menu(inventory_list.get(), &selected_inventory_index);
 
-    auto container = Container::Vertical({back_button, save_button, log_button, special_button, quit_button, patent_items, inventory_items});
+    Components items = {back_button, save_button, log_button, special_button};
+    if (Tuning::I().enabled()) items.push_back(tuner_button);
+    items.push_back(quit_button);
+    items.push_back(patent_items);
+    items.push_back(inventory_items);
+    auto container = Container::Vertical(items);
 
     auto renderer = Renderer(container, [=] {
         // no game started yet (e.g. opened via main menu "Stats Page"): draw the SAME layout
@@ -294,6 +301,10 @@ Component CreateStatsPage(int* selected_page, GameEngine* engine,
                          gauge(activity_bar->GetProgress()) | color(Color::Blue)})) |
             size(HEIGHT, EQUAL, 4);
 
+        Elements nav_row = {back_button->Render(), save_button->Render(), log_button->Render(), special_button->Render()};
+        if (Tuning::I().enabled()) nav_row.push_back(tuner_button->Render());
+        nav_row.push_back(quit_button->Render());
+
         return window(countdown_timer->Render(),
                       vbox({
                           hbox({
@@ -303,8 +314,7 @@ Component CreateStatsPage(int* selected_page, GameEngine* engine,
                           }),
                           progress_gauge,
                           separator(),
-                          hbox({back_button->Render(), save_button->Render(), log_button->Render(), special_button->Render(),
-                                quit_button->Render()}) | center,
+                          hbox(nav_row) | center,
                       }));
     });
 

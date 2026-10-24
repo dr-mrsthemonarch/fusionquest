@@ -2,6 +2,7 @@
 #include "../include/GameEngine.h"
 #include "../include/GameClock.h"
 #include "../include/ConfigStore.h"
+#include "../include/Tuning.h"
 #include <ftxui/component/screen_interactive.hpp>
 #include <ctime>
 #include <cstdlib>
@@ -23,16 +24,19 @@ int main(int argc, char* argv[]) {
     }
 
     bool debugInstakill = false;
+    bool debugTune = false;   // --debug-tune: Tuner page (live balance factors)
     double debugClock = 0.0; // --debug-clock <s>: whole game lasts s real seconds instead of 20 years
     for (int i = 1; i < argc; ++i) {
         const std::string a = argv[i];
         if (a == "--debug-instakill") debugInstakill = true;
+        else if (a == "--debug-tune") debugTune = true;
         else if (a == "--debug-clock") {
             try { debugClock = (i + 1 < argc) ? std::stod(argv[++i]) : -1.0; } catch (...) { debugClock = -1.0; }
             if (debugClock <= 0.0) { std::cerr << "usage: --debug-clock <seconds>  (seconds > 0)\n"; return 1; }
         }
         // strip these branches entirely before shipping a release build
     }
+    Tuning::I().init(debugTune);
     const double kRealTotal = 20.0 * 365 * 24 * 3600;
     const double timeScale = debugClock > 0.0 ? kRealTotal / debugClock : 1.0;
 

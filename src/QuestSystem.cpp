@@ -47,6 +47,7 @@ void QuestSystem::startFinal() {
 }
 
 void QuestSystem::tick(double elapsed) {
+    gen_.refresh();
     elapsed_ = elapsed;
     const auto& b = gen_.balance();
     const double warnAt = b.totalSeconds - b.finalWarningDays * 86400.0;

@@ -17,7 +17,8 @@ enum Pages {
     EQUIPMENT_PAGE,
     SPECIAL_DROPS_PAGE,
     PREAMBLE_PAGE,
-    FINAL_WARNING_PAGE
+    FINAL_WARNING_PAGE,
+    TUNER_PAGE
 };
 
 // Function prototypes for individual page creators
@@ -45,5 +46,6 @@ ftxui::Component CreateLoadPage(int* selected_page, GameEngine* engine,
 ftxui::Component CreateBattlePage(int* selected_page, GameEngine* engine, ftxui::Closure exit_closure);
 ftxui::Component CreateEquipmentPage(int* selected_page, GameEngine* engine);
 ftxui::Component CreateSpecialDropsPage(int* selected_page, GameEngine* engine, ftxui::Closure exit_closure);
+ftxui::Component CreateTunerPage(int* selected_page, GameEngine* engine, ftxui::Closure exit_closure);
 ftxui::Component CreatePreamblePage(int* selected_page, GameEngine* engine);
 ftxui::Component CreateFinalWarningPage(int* selected_page, GameEngine* engine);
