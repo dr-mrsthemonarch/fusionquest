@@ -133,8 +133,8 @@ PlayerStats player(int series) {
     return p;
 }
 
-double fundingRequired(int series, double elapsed, double noise) {
-    const double p = std::clamp(elapsed / kTotalGameSeconds, 0.0, 1.0);
+double fundingRequired(int series, double elapsed_gametime, double noise) {
+    const double p = std::clamp(elapsed_gametime / kTotalGameSeconds, 0.0, 1.0);
     double slowdown = 1.0 / (1.0 + std::exp(T("funding.k") * (p - T("funding.c"))));
     slowdown = std::max(slowdown, T("funding.min_slowdown"));
     return T("funding.base") * std::pow(static_cast<double>(series), T("funding.exponent")) / (slowdown * noise);

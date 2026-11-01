@@ -321,6 +321,9 @@ const Def kDefs[] = {
     {"shadow.reward_flat", "Shadow", "Reward flat money", 1000000000, 100000000},
     {"shadow.reward_money_mult", "Shadow", "Reward + money x this", 2, 0.5},
     // ---- nemesis extras ----
+    {"nemesis.intro_delay_sec", "Nemesis", "New game: intro + first nemesis this many REAL seconds after play starts", 60, 5},
+    {"nemesis.intro_timeout_sec", "Nemesis", "Intro popup auto-closes after N real seconds", 30, 1},
+    {"nemesis.intro_fight_delay_sec", "Nemesis", "Seconds from closing the intro to fight start", 3, 1},
     {"nemesis.interval_days", "Nemesis", "Days between nemesis appearances", 365, 10},
     {"nemesis.first_delay_days", "Nemesis", "First nemesis after N days (0 = immediately!)", 0, 30},
     {"nemesis.hype_base", "Nemesis", "Hype base", 120, 10},

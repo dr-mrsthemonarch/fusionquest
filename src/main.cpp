@@ -68,6 +68,7 @@ int main(int argc, char* argv[]) {
                     }
                     engine.tick(countdown_timer->GetElapsedSeconds() * timeScale); // game seconds
                     if (engine.consumeFinalWarning()) current_page = FINAL_WARNING_PAGE;
+                    if (engine.consumeNemesisIntro()) { countdown_timer->Pause(); current_page = NEMESIS_INTRO_PAGE; }
                 });
                 screen.PostEvent(ftxui::Event::Custom);
             }

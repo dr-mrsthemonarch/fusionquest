@@ -8,6 +8,7 @@
 #include <ftxui/component/component.hpp>
 #include <ftxui/dom/elements.hpp>
 #include <random>
+#include <ftxui/screen/terminal.hpp>
 
 using namespace ftxui;
 
@@ -87,6 +88,7 @@ Component CreateCharacterCreationPage(int* selected_page, GameEngine* engine) {
         c->setMaxRunwayDirect(c->getProfile().runway); c->setRunway(c->getProfile().runway);
         c->setMaxHypeEnergyDirect(c->getProfile().hypeEnergy); c->setHypeEnergy(c->getProfile().hypeEnergy);
 
+        engine->armNemesisIntro();   // holds first nemesis until the preamble ends
         SaveGame::saveSlot(*engine);  // original chargen also saved on create
         *selected_page = PREAMBLE_PAGE;
     });
@@ -99,19 +101,19 @@ Component CreateCharacterCreationPage(int* selected_page, GameEngine* engine) {
     auto race_renderer = Renderer(race_container, [race_selector] {
         return vbox({text("Race") | bold | center, separator(),
                      race_selector->Render() | vscroll_indicator | frame}) |
-               border | size(HEIGHT, LESS_THAN, 30);
+               border | size(HEIGHT, EQUAL, 26);
     });
 
     auto fusion_renderer = Renderer(fusion_container, [fusion_selector] {
         return vbox({text("Fusion Company") | bold | center, separator(),
                      fusion_selector->Render() | flex | vscroll_indicator | frame}) |
-               border | size(HEIGHT, LESS_THAN, 30);
+               border | size(HEIGHT, EQUAL, 26);
     });
 
     auto class_container = Container::Vertical({class_selector});
     auto class_renderer = Renderer(class_container, [class_selector] {
         return vbox({text("Class") | bold | center, separator(), class_selector->Render() | vscroll_indicator | frame}) |
-               border | size(HEIGHT, LESS_THAN, 30);
+               border | size(HEIGHT, EQUAL, 26);
     });
 
     auto container = Container::Vertical({
@@ -128,30 +130,35 @@ Component CreateCharacterCreationPage(int* selected_page, GameEngine* engine) {
         Element race_column = race_renderer->Render();
         Element fusion_column = fusion_renderer->Render();
 
-        float total = rolled.ndas + rolled.luck + rolled.hustle + rolled.synergy + rolled.agility +
-                      rolled.busfactor + rolled.techdebt;
+        const int total = rolled.ndas + rolled.luck + rolled.hustle + rolled.synergy + rolled.agility + rolled.techdebt;
+        const int cw = std::max(24, (Terminal::Size().dimx - 4) / 4);   // fixed column width: rolls never reflow
+        auto stat = [](const std::string& label, const std::string& v) {
+            return hbox({text(label) | size(WIDTH, EQUAL, 17), text(v)}) | bold;
+        };
 
         Element stats_column = vbox({
             text("Stats") | bold | center,
             separator(),
-            text("NDAs: " + std::to_string(rolled.ndas)) | bold,
-            text("Luck: " + std::to_string(rolled.luck)) | bold,
-            text("Hustle: " + std::to_string(rolled.hustle)) | bold,
-            text("Patents: " + std::to_string(rolled.synergy)) | bold,
-            text("Agile-ity: " + std::to_string(rolled.agility)) | bold,
-            text("Bus Factor: 1/1") | bold,
-            text("Technical Debt: " + std::to_string(rolled.techdebt)) | bold,
+            stat("NDAs:", std::to_string(rolled.ndas)),
+            stat("Luck:", std::to_string(rolled.luck)),
+            stat("Hustle:", std::to_string(rolled.hustle)),
+            stat("Patents:", std::to_string(rolled.synergy)),
+            stat("Agile-ity:", std::to_string(rolled.agility)),
+            stat("Bus Factor:", "1/1"),
+            stat("Technical Debt:", std::to_string(rolled.techdebt)),
             separator(),
-            text("Total: " + std::to_string(static_cast<int>(total))) | bold | center,
+            stat("Total:", std::to_string(total)),
             separator(),
             roll_button->Render(),
             lets_do_it_button->Render(),
-        }) | border;
+            filler(),
+        }) | border | size(HEIGHT, EQUAL, 26);
 
         return window(text("Fusion Quest") | bold | center, vbox({
             hbox({text("Name: ") | bold, name_input->Render()}),
             separator(),
-            hbox({race_column | flex, fusion_column | flex, class_renderer->Render() | flex, stats_column | flex}),
+            hbox({race_column | size(WIDTH, EQUAL, cw), fusion_column | size(WIDTH, EQUAL, cw),
+                  class_renderer->Render() | size(WIDTH, EQUAL, cw), stats_column | size(WIDTH, EQUAL, cw)}) | center,
             separator(),
             back_button->Render(),
         }));

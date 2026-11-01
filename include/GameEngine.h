@@ -66,6 +66,13 @@ public:
     // quests
     QuestSystem* getQuestSystem() { return questSystem_.get(); }
     const QuestSystem* getQuestSystem() const { return questSystem_.get(); }
+    // first-nemesis story popup (new game only)
+    void armNemesisIntro();                 // new game: hold first nemesis
+    void beginNemesisIntroTimer();          // preamble done: nemesis in nemesis.intro_delay_sec
+    bool consumeNemesisIntro() { bool w = introWarn_; introWarn_ = false; return w; }
+    bool nemesisIntroOpen() const { return introOpen_; }
+    const std::string& getNemesisIntroText() const { return introText_; }
+    void acknowledgeNemesisIntro();         // OK or timeout: engine resumes, fight starts shortly
     bool consumeFinalWarning() { return questSystem_->consumeFinalWarning(); }
     void acknowledgeFinal() { questSystem_->acknowledgeFinal(); }
 
@@ -170,6 +177,9 @@ private:
 
     std::unique_ptr<QuestSystem> questSystem_ = std::make_unique<QuestSystem>();
     void syncBias();
+    bool introPending_ = false, introWarn_ = false, introOpen_ = false;
+    std::string introTemplate_, introText_;
+    std::unique_ptr<Monster> pendingNemesis_;
     bool playerFirst();
     void rollBreakage();
     void grantQuestReward(bool isMain, const std::string& title);

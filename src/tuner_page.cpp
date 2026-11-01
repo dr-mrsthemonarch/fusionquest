@@ -289,9 +289,9 @@ Component CreateTunerPage(int* selected_page, GameEngine* engine, Closure exit_c
                     d.pts.push_back(makePoint(m, m.series, nullptr, qp.budget / 86400.0, static_cast<double>(qp.sprints),
                                               Balance::fundingRequired(m.series + 1, y * 365.0 * 86400.0)));
                 }
-            } else if (mode == 1) {     // series 1..60 at the selected year
-                d.xlabel = "series (at year " + num(st->year) + ")"; d.xlo = 1; d.xhi = 60; d.marker = st->series;
-                for (int s = 1; s <= 60; ++s) { d.xs.push_back(s); d.pts.push_back(pointAt(s, s, st->quest)); }
+            } else if (mode == 1) {     // series 1..100 at the selected year
+                d.xlabel = "series (at year " + num(st->year) + ")"; d.xlo = 1; d.xhi = 100; d.marker = st->series;
+                for (int s = 1; s <= 100; ++s) { d.xs.push_back(s); d.pts.push_back(pointAt(s, s, st->quest)); }
             } else if (mode == 2) {     // quest index 1..21
                 const auto pj = Balance::project();
                 d.xlabel = "quest index (series " + std::to_string(st->series) + ", year " + num(st->year) + ")"; d.xlo = 1; d.xhi = 21; d.marker = st->quest;

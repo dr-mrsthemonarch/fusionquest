@@ -1,0 +1,16 @@
+# shown once on a new game, ~1 min in. {nemesis} = nemesis name. blank line = paragraph break.
+ONBOARDING
+
+First day. Department kickoff. You file into a conference room with a fresh lanyard and a stale pastry.
+
+Across the table sits {nemesis}. Also new. Also holding a lanyard. Also, somehow, already sweating.
+
+You are from different divisions. Different floors. Different org charts. After this meeting your paths will never cross again.
+
+{nemesis} looks at you. Narrows their eyes. Leans in.
+
+"Have you done this work before?"
+
+You have no idea what they mean. You have no idea what you did. They have decided you are a threat anyway.
+
+Whatever happens next, it has already begun.

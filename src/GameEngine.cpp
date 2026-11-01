@@ -1,5 +1,6 @@
 #include "../include/Tuning.h"
 #include "../include/Balance.h"
+#include "../include/ConfigStore.h"
 #include "../include/Archetype.h"
 #include "../include/PlayerStrategy.h"
 #include "../include/GameEngine.h"
@@ -31,6 +32,17 @@ bool GameEngine::loadConfig(const std::string& configRoot) {
     StdoutSink silence;
     configRoot_ = configRoot;
     Archetypes::I().load(configRoot);
+    {
+        ConfigFile nf(configRoot + "quests/nemesis_intro.txt");
+        introTemplate_.clear();
+        if (nf.is_open()) {
+            std::string l;
+            while (std::getline(nf, l)) {
+                if (!l.empty() && l[0] == '#') continue;
+                introTemplate_ += l + "\n";
+            }
+        }
+    }
     equipGen_ = std::make_unique<EquipmentGenerator>();
     monsterGen_ = std::make_unique<MonsterGenerator>();
     itemGen_ = std::make_unique<ItemGenerator>();
@@ -68,6 +80,8 @@ void GameEngine::initializeCharacter(const std::string& name, const std::string&
     counters_ = Counters{};
     selloff_ = SelloffState{};
     shadowPlayerDefeated_ = false;
+    introPending_ = introWarn_ = introOpen_ = false;
+    pendingNemesis_.reset();
     lastNemesisTime_ = (-T("nemesis.interval_days") + T("nemesis.first_delay_days")) * 86400.0;
     lastEquipmentPurchaseSeries_ = 0;
     purchasedThisCycle_.clear();
@@ -136,6 +150,7 @@ void GameEngine::tick(double elapsedSeconds) {
 
     questSystem_->tick(elapsedSeconds);
     if (questSystem_->awaitingAck()) return; // final quest popup open
+    if (introOpen_) return;                  // nemesis intro popup open
 
     if (isGameWon()) return; // caller checks isGameWon() and stops feeding ticks / shows victory screen
 
@@ -164,7 +179,7 @@ void GameEngine::tick(double elapsedSeconds) {
         checkMonthlyReview();
         if (inBattle_) return;
         checkNemesisEncounter();
-        if (inBattle_) return;
+        if (inBattle_ || introOpen_) return;
         checkShadowPlayer();
         if (inBattle_) return;
         if (character_->isInventoryFull()) { checkInventoryFull(); return; }
@@ -265,17 +280,56 @@ void GameEngine::checkSpecialEncounters() {
 }
 
 void GameEngine::checkNemesisEncounter() {
-    if (nemesisSystem_->shouldNemesisAppear(currentElapsedSeconds_, lastNemesisTime_)) {
-        log_.add("NEMESIS ENCOUNTER!");
-        currentEncounter_ = std::make_unique<BattleEncounter>();
-        currentEncounter_->addEnemy(std::make_unique<Monster>(
-            nemesisSystem_->generateNemesis(character_->getSeries(), currentElapsedSeconds_, character_->getName())));
-        log_.add(currentEncounter_->getEnemy(0)->name + " appears!");
-        inBattle_ = true; roundNumber_ = 1;
-        playerTurn_ = playerFirst();
-        counters_.totalBattles++; ticksSinceLastAction_ = 0;
-        lastNemesisTime_ = currentElapsedSeconds_;
+    if (!nemesisSystem_->shouldNemesisAppear(currentElapsedSeconds_, lastNemesisTime_)) return;
+    lastNemesisTime_ = currentElapsedSeconds_;
+    auto nemesis = std::make_unique<Monster>(
+        nemesisSystem_->generateNemesis(character_->getSeries(), currentElapsedSeconds_, character_->getName()));
+
+    if (introPending_) {   // first nemesis of a new game: story popup first, clock paused
+        introPending_ = false;
+        std::string base = nemesis->name;
+        const size_t p = base.find(" (Year");
+        if (p != std::string::npos) base.erase(p);
+        introText_ = introTemplate_;
+        for (size_t at; (at = introText_.find("{nemesis}")) != std::string::npos;) introText_.replace(at, 9, base);
+        if (introText_.empty()) introText_ = base + " glares at you.";
+        pendingNemesis_ = std::move(nemesis);
+        introOpen_ = introWarn_ = true;
+        return;
     }
+
+    log_.add("NEMESIS ENCOUNTER!");
+    currentEncounter_ = std::make_unique<BattleEncounter>();
+    currentEncounter_->addEnemy(std::move(nemesis));
+    log_.add(currentEncounter_->getEnemy(0)->name + " appears!");
+    inBattle_ = true; roundNumber_ = 1;
+    playerTurn_ = playerFirst();
+    counters_.totalBattles++; ticksSinceLastAction_ = 0;
+}
+
+void GameEngine::armNemesisIntro() {
+    introPending_ = true;
+    lastNemesisTime_ = 1e15;   // held until beginNemesisIntroTimer()
+}
+
+void GameEngine::beginNemesisIntroTimer() {
+    if (!introPending_) return;
+    lastNemesisTime_ = currentElapsedSeconds_ + T("nemesis.intro_delay_sec") * timeScale_ - T("nemesis.interval_days") * 86400.0;
+}
+
+void GameEngine::acknowledgeNemesisIntro() {
+    if (!introOpen_) return;
+    introOpen_ = false;
+    if (!pendingNemesis_) return;
+    log_.add("NEMESIS ENCOUNTER!");
+    currentEncounter_ = std::make_unique<BattleEncounter>();
+    currentEncounter_->addEnemy(std::move(pendingNemesis_));
+    log_.add(currentEncounter_->getEnemy(0)->name + " appears!");
+    inBattle_ = true; roundNumber_ = 1;
+    playerTurn_ = playerFirst();
+    counters_.totalBattles++; ticksSinceLastAction_ = 0;
+    waitingForBattleStart_ = true;
+    battleStartTime_ = T("time.battle_start_delay") - T("nemesis.intro_fight_delay_sec");   // battle begins in N s
 }
 
 void GameEngine::checkMonthlyReview() {

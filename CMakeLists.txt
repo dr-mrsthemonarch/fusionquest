@@ -61,6 +61,7 @@ set(ENGINE_SOURCES
         src/Balance.cpp
         src/Archetype.cpp
         src/PlayerStrategy.cpp
+        src/nemesis_intro_page.cpp
 )
 
 set(HEADERS

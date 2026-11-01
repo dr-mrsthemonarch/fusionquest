@@ -18,7 +18,8 @@ enum Pages {
     SPECIAL_DROPS_PAGE,
     PREAMBLE_PAGE,
     FINAL_WARNING_PAGE,
-    TUNER_PAGE
+    TUNER_PAGE,
+    NEMESIS_INTRO_PAGE
 };
 
 // Function prototypes for individual page creators
@@ -49,3 +50,5 @@ ftxui::Component CreateSpecialDropsPage(int* selected_page, GameEngine* engine, 
 ftxui::Component CreateTunerPage(int* selected_page, GameEngine* engine, ftxui::Closure exit_closure);
 ftxui::Component CreatePreamblePage(int* selected_page, GameEngine* engine);
 ftxui::Component CreateFinalWarningPage(int* selected_page, GameEngine* engine);
+ftxui::Component CreateNemesisIntroPage(int* selected_page, GameEngine* engine,
+                                         std::shared_ptr<CountdownComponent> countdown_timer);

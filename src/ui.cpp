@@ -20,6 +20,7 @@ Component CreateUI(int* selected_page, GameEngine* engine,
     auto tuner_page = CreateTunerPage(selected_page, engine, exit_closure);
     auto preamble_page = CreatePreamblePage(selected_page, engine);
     auto final_warning_page = CreateFinalWarningPage(selected_page, engine);
+    auto nemesis_intro_page = CreateNemesisIntroPage(selected_page, engine, countdown_timer);
 
     auto pages = Container::Tab(
         {
@@ -33,6 +34,7 @@ Component CreateUI(int* selected_page, GameEngine* engine,
             preamble_page,
             final_warning_page,
             tuner_page,
+            nemesis_intro_page,
         },
         selected_page
     );

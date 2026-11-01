@@ -16,7 +16,7 @@ public:
     }
 
     [[nodiscard]] std::string GetCountdownString() const {
-        auto now = std::chrono::system_clock::now();
+        auto now = Now();
         auto remaining = std::chrono::duration_cast<std::chrono::seconds>(target_time_ - now);
 
         if (remaining.count() <= 0) return "Fusion Quest - LAUNCH TIME!";
@@ -36,7 +36,18 @@ public:
 
     // NEW: called on new-game / load-game so clock restarts at 0. same instance kept alive
     // everywhere (stats_page render, main.cpp tick loop) - just rewinds start_time_.
+    // freeze / unfreeze (popups). elapsed + countdown stand still while paused.
+    void Pause() { if (!paused_) { paused_ = true; pause_at_ = std::chrono::system_clock::now(); } }
+    void Resume() {
+        if (!paused_) return;
+        const auto d = std::chrono::system_clock::now() - pause_at_;
+        start_time_ += d;
+        target_time_ += d;
+        paused_ = false;
+    }
+
     void ResetClock() {
+        paused_ = false;
         start_time_ = std::chrono::system_clock::now();
         target_time_ = start_time_ + Total();
     }
@@ -49,7 +60,7 @@ public:
 
     // NEW: feeds GameEngine::tick(). elapsed seconds since this component was constructed.
     [[nodiscard]] double GetElapsedSeconds() const {
-        auto now = std::chrono::system_clock::now();
+        auto now = Now();
         return std::chrono::duration_cast<std::chrono::duration<double>>(now - start_time_).count();
     }
 
@@ -66,6 +77,9 @@ private:
     std::chrono::system_clock::time_point start_time_;
     std::chrono::system_clock::time_point target_time_;
     int animation_frame_ = 0;
+    bool paused_ = false;
+    std::chrono::system_clock::time_point pause_at_;
+    std::chrono::system_clock::time_point Now() const { return paused_ ? pause_at_ : std::chrono::system_clock::now(); }
 };
 
 #endif

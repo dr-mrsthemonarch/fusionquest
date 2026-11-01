@@ -21,20 +21,20 @@ passive=extra_action
 
 [CLASS]
 name=Dirt Class
-goal_mult=0.8
-cash_mult=0.9
-repair_mult=1.2
-mod_hustle=3
-mod_ndas=2
-mod_runway=10
-grow_hustle=0.08
-grow_ndas=0.08
-grow_runway=0.6
-w_attack=1.4
-w_defense=1.0
-w_heal=0.9
-w_buff=0.6
-w_debuff=0.7
+goal_mult=1
+cash_mult=1
+repair_mult=1
+mod_hustle=1
+mod_ndas=1
+mod_runway=1
+grow_hustle=1
+grow_ndas=1
+grow_runway=1
+w_attack=1
+w_defense=1
+w_heal=1
+w_buff=1
+w_debuff=1
 passive=luck_drop
 [END]
 

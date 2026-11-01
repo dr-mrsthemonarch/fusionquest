@@ -10,7 +10,11 @@ using namespace ftxui;
 // shown once after character creation. any key -> stats page. Up/Down/PgUp/PgDn scroll.
 Component CreatePreamblePage(int* selected_page, GameEngine* engine) {
     auto scroll_pos = std::make_shared<float>(0.0f);
-    auto begin_button = Button("Begin", [selected_page] { *selected_page = STATS_PAGE; });
+    auto begin = [selected_page, engine] {
+        engine->beginNemesisIntroTimer();   // nemesis intro fires ~1 min after play starts
+        *selected_page = STATS_PAGE;
+    };
+    auto begin_button = Button("Begin", begin);
 
     auto renderer = Renderer(begin_button, [=] {
         Elements lines;
@@ -36,7 +40,7 @@ Component CreatePreamblePage(int* selected_page, GameEngine* engine) {
         // ignore mouse + the 100ms Custom refresh event
         if (e.is_character() || e == Event::Return || e == Event::Escape || e == Event::Tab ||
             e == Event::Backspace || e == Event::ArrowLeft || e == Event::ArrowRight) {
-            *selected_page = STATS_PAGE;
+            begin();
             return true;
         }
         return false;
