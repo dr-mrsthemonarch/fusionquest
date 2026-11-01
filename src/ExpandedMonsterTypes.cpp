@@ -15,51 +15,20 @@ constexpr double SECONDS_PER_MONTH = SECONDS_PER_YEAR / 12.0;
 SpecializedMonsterGenerator::SpecializedStats SpecializedMonsterGenerator::calculateSpecializedStats(int playerSeries, double elapsedSeconds, ExtendedMonsterType type, MonsterDifficulty difficulty) {
     SpecializedStats stats;
 
-    double diffMult = Balance::difficultyMult(static_cast<int>(difficulty));
-
-    double baseHealth = T("special.hp_base") + playerSeries * T("special.hp_per");
-    double baseAttack = T("special.atk_base") + playerSeries * T("special.atk_per");
-    double baseDefense = T("special.def_base") + playerSeries * T("special.def_per");
-    double baseSpeed = T("special.spd_base") + playerSeries * T("special.spd_per");
-    double baseMoney = T("special.money_base") + playerSeries * T("special.money_per");
-
+    const double diffMult = Balance::difficultyMult(static_cast<int>(difficulty));
+    int kind = -1;
     switch (type) {
-        case ExtendedMonsterType::SAFETY_MANAGER:
-            stats.maxHealth = static_cast<int>(baseHealth * T("special.safety_hp"));
-            stats.attack = static_cast<int>(baseAttack * T("special.safety_atk"));
-            stats.defense = static_cast<int>(baseDefense * T("special.safety_def"));
-            stats.speed = static_cast<int>(baseSpeed * T("special.safety_spd"));
-            stats.moneyReward = static_cast<int>(baseMoney * T("special.safety_money"));
-            stats.specialMechanic = "SAFETY_AUDIT";
-            break;
-
-        case ExtendedMonsterType::CONFERENCE:
-            stats.maxHealth = static_cast<int>(baseHealth * T("special.conf_hp") * diffMult);
-            stats.attack = static_cast<int>(baseAttack * T("special.conf_atk") * diffMult);
-            stats.defense = static_cast<int>(baseDefense * T("special.conf_def") * diffMult);
-            stats.speed = static_cast<int>(baseSpeed * T("special.conf_spd") * diffMult);
-            stats.moneyReward = static_cast<int>(baseMoney * T("special.conf_money") * diffMult);
-            stats.specialMechanic = "NETWORKING_CHECK";
-            break;
-
-        case ExtendedMonsterType::PAPER_WRITING:
-            stats.maxHealth = static_cast<int>(baseHealth * T("special.paper_hp") * diffMult);
-            stats.attack = static_cast<int>(baseAttack * T("special.paper_atk") * diffMult);
-            stats.defense = static_cast<int>(baseDefense * T("special.paper_def") * diffMult);
-            stats.speed = static_cast<int>(baseSpeed * T("special.paper_spd") * diffMult);
-            stats.moneyReward = static_cast<int>(baseMoney * T("special.paper_money") * diffMult);
-            stats.specialMechanic = "PEER_REVIEW";
-            break;
-
-        default:
-            stats.maxHealth = static_cast<int>(baseHealth);
-            stats.attack = static_cast<int>(baseAttack);
-            stats.defense = static_cast<int>(baseDefense);
-            stats.speed = static_cast<int>(baseSpeed);
-            stats.moneyReward = static_cast<int>(baseMoney);
-            stats.specialMechanic = "NONE";
-            break;
+        case ExtendedMonsterType::SAFETY_MANAGER: kind = 0; stats.specialMechanic = "SAFETY_AUDIT"; break;
+        case ExtendedMonsterType::CONFERENCE: kind = 1; stats.specialMechanic = "NETWORKING_CHECK"; break;
+        case ExtendedMonsterType::PAPER_WRITING: kind = 2; stats.specialMechanic = "PEER_REVIEW"; break;
+        default: stats.specialMechanic = "NONE"; break;
     }
+    const Balance::EnemyStats e = Balance::special(kind, playerSeries, diffMult);
+    stats.maxHealth = static_cast<int>(e.hp);
+    stats.attack = static_cast<int>(e.atk);
+    stats.defense = static_cast<int>(e.def);
+    stats.speed = static_cast<int>(e.spd);
+    stats.moneyReward = static_cast<int>(e.money);
 
     stats.health = stats.maxHealth;
     return stats;
@@ -129,15 +98,13 @@ BossData ReviewCalendarSystem::generateMonthlyReviewData(int year, int month, in
 
     double diffMult = Balance::difficultyMult(static_cast<int>(difficulty));
 
-    double yearScale = 1.0 + (year * T("review.year_growth"));
-    double monthScale = 1.0 + (monthProgression * T("review.month_growth"));
-
+    const Balance::EnemyStats rb = Balance::review(year, month, diffMult);
     data.level = estimatedPlayerSeries + year;
-    data.maxHealth = static_cast<int>(T("review.hp") * yearScale * monthScale * diffMult);
-    data.attack = static_cast<int>(T("review.atk") * yearScale * monthScale * diffMult);
-    data.defense = static_cast<int>(T("review.def") * yearScale * monthScale * diffMult);
-    data.speed = static_cast<int>(T("review.spd") * yearScale * monthScale * diffMult);
-    data.moneyReward = static_cast<int>(T("review.money") * yearScale * monthScale * diffMult);
+    data.maxHealth = static_cast<int>(rb.hp);
+    data.attack = static_cast<int>(rb.atk);
+    data.defense = static_cast<int>(rb.def);
+    data.speed = static_cast<int>(rb.spd);
+    data.moneyReward = static_cast<int>(rb.money);
     data.maxHypeEnergy = 50 + (estimatedPlayerSeries * 10);
     data.itemReward = "EQUIPMENT";
 
@@ -412,7 +379,7 @@ Monster SpecializedMonsterGenerator::generatePaperWriting(int playerSeries, doub
     paper.speed = stats.speed;
     paper.moneyReward = stats.moneyReward;
     paper.itemReward = "Published Paper";
-    paper.itemValue = 30 + playerSeries * 6;
+    paper.itemValue = -static_cast<int>(T("special.paper_item_base") + playerSeries * T("special.paper_item_per")); // costs money when sold
 
     // Papers have medium hype energy
     paper.maxHypeEnergy = 45 + (playerSeries * 7);

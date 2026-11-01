@@ -172,7 +172,7 @@ void Character::addFunding(double funding_) {
 }
 
 void Character::addInventoryItem(const std::string &itemName, int value) {
-    value = std::clamp(value, 0, 1000000);
+    value = std::clamp(value, -1000000, 1000000); // negative = junk that costs money to dump
     if (isInventoryFull()) {
         std::cout << "\n⚠️  INVENTORY FULL! ⚠️" << std::endl;
         std::cout << "Your backpack is at capacity (" << getInventoryCount() << "/" << getInventoryLimit() << " items)" << std::endl;

@@ -18,6 +18,8 @@ double difficultyMult(int difficulty);                    // 0 easy,1 medium,2 h
 EnemyStats mob(int series, double diffMult);
 EnemyStats boss(int series, double diffMult);
 EnemyStats nemesis(int series, double elapsedSeconds, int type, int power);  // type 0..3
+EnemyStats special(int kind, int series, double diffMult);   // 0 safety manager, 1 conference, 2 paper (else base)
+EnemyStats review(int year, int month, double diffMult);     // monthly performance review boss
 
 PlayerStats levelGain(int series);                        // gain applied when reaching `series`
 PlayerStats player(int series);                           // base stats at series (0 = start), no gear

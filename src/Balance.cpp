@@ -53,6 +53,36 @@ EnemyStats nemesis(int s, double elapsed, int type, int power) {
     return e;
 }
 
+EnemyStats special(int kind, int s, double diff) {
+    const double hp = T("special.hp_base") + s * T("special.hp_per");
+    const double atk = T("special.atk_base") + s * T("special.atk_per");
+    const double def = T("special.def_base") + s * T("special.def_per");
+    const double spd = T("special.spd_base") + s * T("special.spd_per");
+    const double mon = T("special.money_base") + s * T("special.money_per");
+    EnemyStats e;
+    switch (kind) {
+        case 0:  // safety manager ignores difficulty
+            e = {hp * T("special.safety_hp"), atk * T("special.safety_atk"), def * T("special.safety_def"),
+                 spd * T("special.safety_spd"), mon * T("special.safety_money")};
+            break;
+        case 1:
+            e = {hp * T("special.conf_hp") * diff, atk * T("special.conf_atk") * diff, def * T("special.conf_def") * diff,
+                 spd * T("special.conf_spd") * diff, mon * T("special.conf_money") * diff};
+            break;
+        case 2:
+            e = {hp * T("special.paper_hp") * diff, atk * T("special.paper_atk") * diff, def * T("special.paper_def") * diff,
+                 spd * T("special.paper_spd") * diff, mon * T("special.paper_money") * diff};
+            break;
+        default: e = {hp, atk, def, spd, mon};
+    }
+    return e;
+}
+
+EnemyStats review(int year, int month, double diff) {
+    const double k = (1.0 + year * T("review.year_growth")) * (1.0 + (month / 12.0) * T("review.month_growth")) * diff;
+    return {T("review.hp") * k, T("review.atk") * k, T("review.def") * k, T("review.spd") * k, T("review.money") * k};
+}
+
 PlayerStats levelGain(int s) {
     const double n = s - 1;
     PlayerStats g;

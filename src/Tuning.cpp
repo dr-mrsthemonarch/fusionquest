@@ -284,6 +284,8 @@ const Def kDefs[] = {
     {"special.spd_per", "Special mobs", "Speed per series", 2.5, 0.1},
     {"special.money_base", "Special mobs", "Base money", 30, 5},
     {"special.money_per", "Special mobs", "Money per series", 15, 1},
+    {"special.paper_item_base", "Special mobs", "Published Paper item COST when sold (base)", 30, 5},
+    {"special.paper_item_per", "Special mobs", "Published Paper item cost per series", 6, 1},
     {"special.safety_hp", "Special mobs", "Safety Manager HP mult", 1.8, 0.1},
     {"special.safety_atk", "Special mobs", "Safety Manager attack mult", 0.5, 0.05},
     {"special.safety_def", "Special mobs", "Safety Manager defense mult", 10, 0.5},

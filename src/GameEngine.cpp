@@ -681,7 +681,7 @@ void GameEngine::stepSelloff() {
 void GameEngine::finishSelloff() {
     selloff_.active = false;
     if (selloff_.emergency) {
-        int recovered = static_cast<int>(selloff_.earned / std::max(1.0, T("emerg.runway_money_div")));
+        int recovered = std::max(0, static_cast<int>(selloff_.earned / std::max(1.0, T("emerg.runway_money_div"))));
         character_->setRunway(std::min(character_->getRunway() + recovered, character_->getMaxRunway()));
         log_.add("emergency sale done: +" + std::to_string(recovered) + " runway");
     } else {

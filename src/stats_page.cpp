@@ -133,7 +133,7 @@ Component CreateStatsPage(int* selected_page, GameEngine* engine,
         inventory_list->clear();
         for (const auto& [name, val] : c->getInventoryMap()) {
             int n = c->getInventoryStack(name);
-            std::string suffix = (n > 1 ? " x" + std::to_string(n) : "") + " ($" + std::to_string(val) + ")";
+            std::string suffix = (n > 1 ? " x" + std::to_string(n) : "") + (val < 0 ? " (-$" + std::to_string(-val) + ")" : " ($" + std::to_string(val) + ")");
             inventory_list->push_back(fit(name, std::max(8, tw - static_cast<int>(suffix.size()))) + suffix);
         }
         if (inventory_list->empty()) inventory_list->push_back("(empty)");
