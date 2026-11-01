@@ -32,7 +32,7 @@ public:
     // setup
     bool loadConfig(const std::string& configRoot = "config/");
     void initializeCharacter(const std::string& name, const std::string& employeeNr,
-                              const std::string& position, const std::string& startup);
+                              const std::string& position, const std::string& startup, int classId = 0);
 
     // main update, call every render frame with current run elapsed seconds
     void tick(double elapsedSeconds);
@@ -170,6 +170,8 @@ private:
 
     std::unique_ptr<QuestSystem> questSystem_ = std::make_unique<QuestSystem>();
     void syncBias();
+    bool playerFirst();
+    void rollBreakage();
     void grantQuestReward(bool isMain, const std::string& title);
 
     // --- extracted from MainWindow, Qt-free ---

@@ -3,6 +3,8 @@
 #include "../include/GameEngine.h"
 #include "../include/SaveGame.h"
 #include "../include/globals.h"
+#include "../include/Archetype.h"
+#include "../include/Tuning.h"
 #include <ftxui/component/component.hpp>
 #include <ftxui/dom/elements.hpp>
 #include <random>
@@ -40,6 +42,10 @@ Component CreateCharacterCreationPage(int* selected_page, GameEngine* engine) {
     static int race_index = 0;
     static int fusion_index = 0;
     static Rolled rolled;
+    static int class_index = 0;
+    static std::vector<std::string> class_names;
+    class_names = Archetypes::I().names();
+    auto class_selector = Radiobox(&class_names, &class_index);
 
     auto name_input = Input(&name, "Enter character name");
     auto race_selector = Radiobox(&RACES, &race_index);
@@ -58,7 +64,7 @@ Component CreateCharacterCreationPage(int* selected_page, GameEngine* engine) {
     auto lets_do_it_button = Button("Let's Do It", [selected_page, engine] {
         if (name.empty()) name = "Unnamed Founder";
         std::string employeeNr = std::to_string(1 + rng()() % 9999);
-        engine->initializeCharacter(name, employeeNr, RACES[race_index], FUSION_STARTUPS[fusion_index]);
+        engine->initializeCharacter(name, employeeNr, RACES[race_index], FUSION_STARTUPS[fusion_index], class_index);
 
         // apply rolled stats on top of base profile
         Character* c = engine->getCharacter();
@@ -69,8 +75,17 @@ Component CreateCharacterCreationPage(int* selected_page, GameEngine* engine) {
         p.luck += rolled.luck;
         p.synergy += rolled.synergy;
         p.technicalDebt += rolled.techdebt;
-        if (rolled.busfactor > 0.0f) p.busFactor = rolled.busfactor;
+        {   // class flat mods (bus factor fixed at 1)
+            const ClassDef& cd = Archetypes::I().get(class_index);
+            const double ms = T("class.mod_scale");
+            p.runway += static_cast<int>(cd.mods.runway * ms); p.hypeEnergy += static_cast<int>(cd.mods.hype * ms);
+            p.hustle += static_cast<int>(cd.mods.hustle * ms); p.agility += static_cast<int>(cd.mods.agility * ms);
+            p.ndas += static_cast<int>(cd.mods.ndas * ms); p.luck += static_cast<int>(cd.mods.luck * ms);
+            p.synergy += static_cast<int>(cd.mods.synergy * ms);
+        }
         c->setBaseProfileDirect(p);
+        c->setMaxRunwayDirect(c->getProfile().runway); c->setRunway(c->getProfile().runway);
+        c->setMaxHypeEnergyDirect(c->getProfile().hypeEnergy); c->setHypeEnergy(c->getProfile().hypeEnergy);
 
         SaveGame::saveSlot(*engine);  // original chargen also saved on create
         *selected_page = PREAMBLE_PAGE;
@@ -93,10 +108,17 @@ Component CreateCharacterCreationPage(int* selected_page, GameEngine* engine) {
                border | size(HEIGHT, LESS_THAN, 30);
     });
 
+    auto class_container = Container::Vertical({class_selector});
+    auto class_renderer = Renderer(class_container, [class_selector] {
+        return vbox({text("Class") | bold | center, separator(), class_selector->Render() | vscroll_indicator | frame}) |
+               border | size(HEIGHT, LESS_THAN, 30);
+    });
+
     auto container = Container::Vertical({
         name_input,
         race_container,
         fusion_container,
+        class_container,
         roll_button,
         lets_do_it_button,
         back_button,
@@ -117,7 +139,7 @@ Component CreateCharacterCreationPage(int* selected_page, GameEngine* engine) {
             text("Hustle: " + std::to_string(rolled.hustle)) | bold,
             text("Patents: " + std::to_string(rolled.synergy)) | bold,
             text("Agile-ity: " + std::to_string(rolled.agility)) | bold,
-            text("Bus Factor: " + std::to_string(rolled.busfactor)) | bold,
+            text("Bus Factor: 1/1") | bold,
             text("Technical Debt: " + std::to_string(rolled.techdebt)) | bold,
             separator(),
             text("Total: " + std::to_string(static_cast<int>(total))) | bold | center,
@@ -129,7 +151,7 @@ Component CreateCharacterCreationPage(int* selected_page, GameEngine* engine) {
         return window(text("Fusion Quest") | bold | center, vbox({
             hbox({text("Name: ") | bold, name_input->Render()}),
             separator(),
-            hbox({race_column | flex, fusion_column | flex, stats_column | flex}),
+            hbox({race_column | flex, fusion_column | flex, class_renderer->Render() | flex, stats_column | flex}),
             separator(),
             back_button->Render(),
         }));

@@ -2,6 +2,7 @@
 #include "../include/Tuning.h"
 #include "../include/Balance.h"
 #include "../include/Character.h"
+#include "../include/Archetype.h"
 #include <cmath>
 #include <cstdlib>
 #include <ctime>
@@ -29,7 +30,7 @@ Character::Character(const std::string &name, const std::string &employeeNr, con
     baseProfile_.luck = static_cast<int>(start.luck);
     baseProfile_.synergy = static_cast<int>(start.synergy);
     baseProfile_.technicalDebt = static_cast<int>(start.techDebt);
-    baseProfile_.busFactor = static_cast<float>(start.bus);
+    baseProfile_.busFactor = 1.0f;  // offline game: fixed at 1
 
     profile_ = baseProfile_;
 
@@ -134,7 +135,20 @@ void Character::addFunding(double funding_) {
             baseProfile_.luck = static_cast<int>(baseProfile_.luck + gain.luck);
             baseProfile_.synergy = static_cast<int>(baseProfile_.synergy + gain.synergy);
             baseProfile_.technicalDebt -= static_cast<int>(gain.techDebt);
-            baseProfile_.busFactor += static_cast<float>(gain.bus);
+            {   // class growth per series (fractions accumulate)
+                const ClassDef& cd = Archetypes::I().get(classId_);
+                const double gs = T("class.grow_scale");
+                auto g = [&](int i, double add, int& stat) {
+                    growAcc_[i] += add * gs;
+                    int w = static_cast<int>(growAcc_[i]);
+                    growAcc_[i] -= w;
+                    stat += w;
+                };
+                g(0, cd.grow.runway, baseProfile_.runway); g(1, cd.grow.hype, baseProfile_.hypeEnergy);
+                g(2, cd.grow.hustle, baseProfile_.hustle); g(3, cd.grow.agility, baseProfile_.agility);
+                g(4, cd.grow.ndas, baseProfile_.ndas); g(5, cd.grow.luck, baseProfile_.luck);
+                g(6, cd.grow.synergy, baseProfile_.synergy);
+            }
 
             // Recalculate stats with equipment bonuses
             recalculateStats();
@@ -318,7 +332,7 @@ double Character::getFundingProgress() const {
 
 int Character::getInventoryLimit() const {
     auto backpack = equippedItems_.find(EquipmentType::BACKPACK);
-    if (backpack != equippedItems_.end()) {
+    if (backpack != equippedItems_.end() && !backpack->second.broken) {
         return backpack->second.inventoryLimit;
     }
     return static_cast<int>(T("econ.default_inventory"));
@@ -493,6 +507,7 @@ void Character::recalculateStats() {
     // Add equipment bonuses from all equipped slots
     for (const auto &slot: equippedItems_) {
         const Equipment &eq = slot.second;
+        if (eq.broken) continue;
         profile_.runway += eq.runway;
         profile_.hypeEnergy += eq.hypeEnergy;
         profile_.hustle += eq.hustle;
@@ -501,9 +516,9 @@ void Character::recalculateStats() {
         profile_.luck += eq.luck;
         profile_.synergy += eq.synergy;
         profile_.technicalDebt += eq.technicalDebt;
-        profile_.busFactor += eq.busFactor;
     }
 
+    profile_.busFactor = std::min(1.0f, baseProfile_.busFactor);
     hustle_ = profile_.hustle;
     agility_ = profile_.agility;
     ndas_ = profile_.ndas;
@@ -557,7 +572,7 @@ bool Character::sellEquipment(const std::string &equipmentName) {
     }
 
     // Calculate sell price (typically 50-75% of original value)
-    int sellPrice = static_cast<int>(it->equipmentvalue * T("econ.sell_ratio")); // 60% of original value
+    int sellPrice = static_cast<int>(it->equipmentvalue * sellRatio()); // 60% of original value
 
     std::cout << "Selling " << it->name << " for $" << sellPrice << std::endl;
 
@@ -584,7 +599,7 @@ int Character::sellAllEquipment() {
     for (size_t i = equipmentInventory_.size(); i-- > 0;) {
         const Equipment &item = equipmentInventory_[i];
         if (isSellProtected(item.name)) continue; // special drops never sell
-        int sellPrice = static_cast<int>(item.equipmentvalue * T("econ.sell_ratio"));
+        int sellPrice = static_cast<int>(item.equipmentvalue * sellRatio());
 
         std::cout << "- Sold " << item.name << " for $" << sellPrice << std::endl;
 
@@ -612,7 +627,7 @@ bool Character::sellEquipmentByIndex(size_t index) {
         return false;
     }
     const Equipment &item = equipmentInventory_[index];
-    int sellPrice = static_cast<int>(item.equipmentvalue * T("econ.sell_ratio")); // 60% of original value
+    int sellPrice = static_cast<int>(item.equipmentvalue * sellRatio()); // 60% of original value
 
     std::cout << "Selling " << item.name << " for $" << sellPrice << std::endl;
 
@@ -636,7 +651,7 @@ int Character::sellAllEquippedItems() {
 
     for (const auto &slot: equippedItems_) {
         const Equipment &item = slot.second;
-        int sellPrice = static_cast<int>(item.equipmentvalue * T("econ.sell_ratio"));
+        int sellPrice = static_cast<int>(item.equipmentvalue * sellRatio());
         std::cout << "- Unequipped and sold " << item.name << " from " << equipmentTypeToString(slot.first) << " slot for $" << sellPrice << std::endl;
         totalEarned += sellPrice;
         itemsSold++;
@@ -693,7 +708,7 @@ int Character::sellAllEquipmentForBankruptcy() {
     for (size_t i = equipmentInventory_.size(); i-- > 0;) {
         const Equipment &item = equipmentInventory_[i];
         if (isSellProtected(item.name)) continue; // special drops never sell
-        int sellPrice = static_cast<int>(item.equipmentvalue * T("econ.sell_ratio"));
+        int sellPrice = static_cast<int>(item.equipmentvalue * sellRatio());
         std::cout << "- Sold " << item.name << " for $" << sellPrice << std::endl;
         totalEarned += sellPrice;
         itemsSold++;
@@ -719,7 +734,7 @@ int Character::sellAllEquippedItemsForBankruptcy() {
 
     for (const auto &slot: equippedItems_) {
         const Equipment &item = slot.second;
-        int sellPrice = static_cast<int>(item.equipmentvalue * T("econ.sell_ratio"));
+        int sellPrice = static_cast<int>(item.equipmentvalue * sellRatio());
         std::cout << "- Unequipped and sold " << item.name << " from " << equipmentTypeToString(slot.first) << " slot for $" << sellPrice << std::endl;
         totalEarned += sellPrice;
         itemsSold++;
@@ -869,3 +884,34 @@ int Character::getModifiedSynergy() const {
     return std::max(1, synergy_ + effectsManager_.getSynergyModifier());
 }
 
+
+double Character::sellRatio() const {
+    return T("econ.sell_ratio") + std::min(T("syn.sell_cap"), std::max(0, synergy_) * T("syn.sell_per"));
+}
+
+std::string Character::breakRandomEquipped() {
+    std::vector<EquipmentType> c;
+    for (const auto &slot: equippedItems_)
+        if (!slot.second.broken && !isSellProtected(slot.second.name)) c.push_back(slot.first);
+    if (c.empty()) return "";
+    EquipmentType t = c[rand() % c.size()];
+    equippedItems_[t].broken = true;
+    recalculateStats();
+    return equippedItems_[t].name;
+}
+
+int Character::repairAll(double costMult) {
+    int total = 0;
+    for (auto &slot: equippedItems_) {
+        Equipment &e = slot.second;
+        if (!e.broken) continue;
+        int cost = std::max(1, static_cast<int>(e.equipmentvalue * T("econ.repair_pct") * costMult));
+        if (money_ < cost) continue;
+        money_ -= cost;
+        total += cost;
+        e.broken = false;
+        std::cout << "repaired " << e.name << " for $" << cost << std::endl;
+    }
+    if (total > 0) recalculateStats();
+    return total;
+}

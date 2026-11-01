@@ -113,6 +113,9 @@ public:
     PatentType getType() const;
 
     int getCost() const;
+    // cost after synergy / class discount for this caster
+    int effectiveCost(const CombatEntity* caster) const;
+    void updatePotency(const CombatEntity* caster) const;
 
     PatentTarget getTarget() const;
 
@@ -170,6 +173,7 @@ private:
     int customTechnicalDebtModifier_ = 0;
     int customDuration_ = 0;
     bool hasCustomModifiers_ = false;
+    mutable double potency_ = 1.0;
 
     // Helper static methods
     static PatentType getRandomPatentType();

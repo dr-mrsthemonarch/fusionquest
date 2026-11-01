@@ -146,7 +146,7 @@ Sprint QuestGenerator::makeSprint(int tier) {
             case GoalType::TOWN: lo = (int)T("quest.town_lo"); hi = (int)T("quest.town_hi_base") + tier / std::max(1, (int)T("quest.town_hi_div")); break;
         }
         std::uniform_int_distribution<int> td(lo, std::max(lo, hi));
-        g.target = std::max(1LL, std::llround(td(rng_) * bal_.goalScale));
+        g.target = std::max(1LL, std::llround(td(rng_) * bal_.goalScale * classGoalMult_));
         sp.goals.push_back(g);
     }
     return sp;
@@ -155,7 +155,7 @@ Sprint QuestGenerator::makeSprint(int tier) {
 double QuestGenerator::estimateSeconds(const Sprint& s) const {
     double t = 0.0;
     for (const auto& g : s.goals) t += static_cast<double>(g.target) * secPer(g.type);
-    return t;
+    return t / classGoalMult_;   // sprint count planned as if mult=1
 }
 
 void QuestGenerator::refill(Dev& d) {

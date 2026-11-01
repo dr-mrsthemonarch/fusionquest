@@ -45,7 +45,7 @@ bool validateConfig(std::string& error) {
         "items/mythical_nouns.txt", "items/it_words.txt", "items/company_suffixes.txt", "items/value_modifiers.txt",
         "items/patent_names.txt", "items/named_patents.txt",
         "quests/main_quests.txt", "tuning.txt", "quests/preamble.txt",
-        "quests/hustle_names.txt", "quests/dev_names.txt", "quests/sprint_names.txt"};
+        "quests/hustle_names.txt", "quests/dev_names.txt", "quests/sprint_names.txt", "classes.txt"};
 #ifndef FQ_EXTERNAL_CONFIG
     if (kEmbeddedFileCount == 0) { error = "embedded config is empty (build step failed?)"; return false; }
 #endif

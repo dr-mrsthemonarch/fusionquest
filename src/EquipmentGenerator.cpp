@@ -193,7 +193,7 @@ void EquipmentGenerator::applyHelmetStats(Equipment& eq, int s) { eq.ndas = calc
 
 EquipmentRarity EquipmentGenerator::rollBossDropRarity() const {
     std::uniform_int_distribution<int> rarityRoll(1, 10000);
-    int roll = rarityRoll(gen_);
+    int roll = rarityRoll(gen_) - static_cast<int>(luckBonus_);
     if (roll <= T("rarity.cum_legendary")) return EquipmentRarity::LEGENDARY;
     if (roll <= T("rarity.cum_epic")) return EquipmentRarity::EPIC;
     if (roll <= T("rarity.cum_rare")) return EquipmentRarity::RARE;

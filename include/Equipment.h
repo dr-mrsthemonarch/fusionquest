@@ -40,6 +40,7 @@ struct Equipment {
   int technicalDebt = 0;
   float busFactor = 0.0f;
   int inventoryLimit = 0;  // NEW: Used by backpacks to set inventory capacity
+  bool broken = false;     // tech debt breakage: stats off until repaired in town
 };
 
 // Helper function to convert rarity to string

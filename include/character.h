@@ -211,6 +211,13 @@ public:
     static void setSellProtection(std::function<bool(const std::string&)> fn) { sellProtected = std::move(fn); }
     int getSellableEquipmentCount() const;
 
+    // class + tech debt breakage
+    int getClassId() const { return classId_; }
+    void setClassId(int id) { classId_ = id; }
+    double sellRatio() const;                 // base + synergy bonus
+    std::string breakRandomEquipped();        // "" if nothing to break
+    int repairAll(double costMult);           // spends money, returns total cost
+
 
 private:
     TemporaryEffectsManager effectsManager_;
@@ -235,6 +242,8 @@ private:
     int technicalDebt_ = 0; // Technical Debt
     float busFactor_ = 1.0f; // Bus Factor
     bool isDead_ = false;
+    int classId_ = 0;
+    double growAcc_[7] = {0, 0, 0, 0, 0, 0, 0};
     int maxRunway_; // Maximum runway (full health)
     int maxHypeEnergy_; // Maximum hype energy (full MP)
     int sellAllInventoryForBankruptcy();

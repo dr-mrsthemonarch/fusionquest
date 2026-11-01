@@ -29,6 +29,7 @@ public:
     bool loadConfig(const std::string& root); // root = "config/"
     const QuestBalance& balance() const { return bal_; }
     void setTimeScale(double s) { bal_.timeScale = s > 1e-9 ? s : 1e-9; }
+    void setGoalMult(double m) { classGoalMult_ = m > 0.01 ? m : 0.01; }
     const std::string& preamble() const { return preamble_; }
 
     double mainBudget(int index, double elapsed) const;    // seconds
@@ -49,6 +50,7 @@ public:
 private:
     struct MainDef { std::string title, story; };
     QuestBalance bal_;
+    double classGoalMult_ = 1.0;   // class: bigger goals, same sprint count -> slower
     std::string preamble_;
     std::vector<MainDef> mainDefs_;
     std::vector<std::string> hustleNames_, devNames_, sprintNames_, killKw_, collectKw_;

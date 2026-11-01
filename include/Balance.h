@@ -3,6 +3,7 @@
 
 // pure balance formulas. read factors from Tuning (T("key")). used by the game AND the debug tuner,
 // so what the tuner shows is what the game computes. no randomness here (callers add variance/noise).
+#include <string>
 #include <vector>
 
 namespace Balance {
@@ -20,6 +21,21 @@ EnemyStats boss(int series, double diffMult);
 EnemyStats nemesis(int series, double elapsedSeconds, int type, int power);  // type 0..3
 EnemyStats special(int kind, int series, double diffMult);   // 0 safety manager, 1 conference, 2 paper (else base)
 EnemyStats review(int year, int month, double diffMult);     // monthly performance review boss
+
+// ---- stat effects (fractions 0..1; all tunable, capped) ----
+bool chance(double p);
+double critChance(double luck);
+double critMult(double luck, double synergy, double bonus = 0.0);
+double dodgeChance(double defenderAgility, double attackerSpeed);
+double extraActionChance(double agility, double foeSpeed, double bonus = 0.0);
+double failChance(double techDebt);                    // techDebt negative = debt
+double breakChance(double techDebt, double resist = 0.0);
+double patentPotency(double synergy);                  // power multiplier
+double hypeDiscount(double synergy, double bonus = 0.0); // cost multiplier
+double luckRarityBonus(double luck);                   // subtracted from 1..10000 boss rarity roll
+double luckItemMult(double luck, double bonus = 0.0);
+void setProjectionClass(int id);                       // tuner only (-1 = none)
+std::string projectionClassName();
 
 PlayerStats levelGain(int series);                        // gain applied when reaching `series`
 PlayerStats player(int series);                           // base stats at series (0 = start), no gear

@@ -78,6 +78,7 @@ public:
 
     // Query effects
     bool hasEffect(EffectType type) const;
+    bool hasEffectFrom(const std::string& source) const;
     std::vector<TemporaryEffect> getActiveEffects() const { return effects_; }
     int getEffectCount() const { return effects_.size(); }
 

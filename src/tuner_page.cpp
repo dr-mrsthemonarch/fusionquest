@@ -3,6 +3,7 @@
 #include "../include/NavBar.h"
 #include "../include/Tuning.h"
 #include "../include/Balance.h"
+#include "../include/Archetype.h"
 #include <algorithm>
 #include <array>
 #include <optional>
@@ -53,6 +54,9 @@ std::vector<std::string> formulaFor(const std::string& g) {
     if (g == "Quests") return {"budget = remaining clock * weight/sum(weights)", "sprints = budget / avg sprint seconds"};
     if (g == "Quest goals") return {"target in [lo, base + tier/div], tier = quest index"};
     if (g == "Patent effects") return {"attack = power + hustle/div - NDAs/div"};
+    if (g == "Stat effects") return {"crit = base + luck*per (cap); dmg x (base + syn*per + passive)", "dodge = (defAgi-atkSpd)/(sum) * edge (cap)", "fumble = max(0,-techDebt)*per (cap); break/battle same", "potency = 1+syn*per; hype cost x (1-syn*per)", "extra action = (agi/foeSpd - 1)*per (cap)"};
+    if (g == "Strategy") return {"danger = foeDmg*rounds*0.5/runway", "buff/defense only if danger > ratio, not active", "heal only below frac; debuff not on dying foe", "score x classWeight / (1+cost/maxHype*w) x noise"};
+    if (g == "Class") return {"mods flat at creation, grow per series (config/classes.txt)", "passives scale by passive.* factors", "c key in tuner: cycle projection class"};
     return {};
 }
 
@@ -380,7 +384,7 @@ Component CreateTunerPage(int* selected_page, GameEngine* engine, Closure exit_c
         auto qp = engine->getQuestSystem()->preview(st->quest, elapsed);
         return vbox({
                    text("series " + std::to_string(S) + "  year " + num(st->year) + "  quest #" + std::to_string(st->quest) +
-                        "   (s/S y/Y q/Q)") | bold,
+                        "   (s/S y/Y q/Q)  class(c): " + Balance::projectionClassName()) | bold,
                    text(g.real ? "fights use REAL equipped gear" : "fights use modeled gear +" + num(g.gh) + " hustle +" + num(g.gn) + " NDAs") | dim,
                    row("Runway/Hype", num(P.runway) + " / " + num(P.hype)),
                    row("Hustle/NDAs used", num(g.hustle) + " / " + num(g.ndas)),
@@ -523,6 +527,12 @@ Component CreateTunerPage(int* selected_page, GameEngine* engine, Closure exit_c
             return true;
         };
         if (e == Event::Character('p')) { st->view = 1 - st->view; return true; }
+        if (e == Event::Character('c')) {
+            static int cls = -1;
+            cls = (cls + 2) % (static_cast<int>(Archetypes::I().count()) + 1) - 1;
+            Balance::setProjectionClass(cls);
+            return true;
+        }
         if (e == Event::Character('+') || e == Event::Character('=')) return adjust(1);
         if (e == Event::Character('-')) return adjust(-1);
         if (e == Event::Character(']')) return adjust(10);

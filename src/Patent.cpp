@@ -15,6 +15,25 @@ static double dv(const char* k) { return std::max(0.01, T(k)); }
 #include "../include/Character.h"
 #include "../include/TemporaryEffect.h"
 #include "../include/PatentDefinition.h"
+#include "../include/Balance.h"
+#include "../include/Archetype.h"
+
+static double passiveOf(const CombatEntity* c, const char* key) {
+    const Character* ch = dynamic_cast<const Character*>(c);
+    return ch ? Archetypes::I().passive(ch->getClassId(), key) : 0.0;
+}
+
+int Patent::effectiveCost(const CombatEntity* caster) const {
+    if (!caster) return cost_;
+    const double m = Balance::hypeDiscount(caster->getModifiedSynergy(), passiveOf(caster, "hype_discount"));
+    return std::max(1, static_cast<int>(cost_ * m));
+}
+
+void Patent::updatePotency(const CombatEntity* caster) const {
+    potency_ = Balance::patentPotency(caster ? caster->getModifiedSynergy() : 0);
+    if (type_ == PatentType::BUFF || type_ == PatentType::DEBUFF || type_ == PatentType::DEFENSE)
+        potency_ += passiveOf(caster, "buff_potency");
+}
 
 std::unordered_map<std::string, Patent> Patent::characterPatents;
 std::vector<std::string> Patent::patentNames;
@@ -51,13 +70,14 @@ Patent::Patent(const std::string &name, int seriesRequired, PatentType type, int
 void Patent::applyAOEEffect(CombatEntity* caster, std::vector<CombatEntity*> targets) const {
     if (targets.empty()) return;
 
-    if (caster->getHypeEnergy() < cost_) {
+    if (caster->getHypeEnergy() < effectiveCost(caster)) {
         std::cout << "Not enough hype energy to use " << name_ << "!\n";
         return;
     }
 
+    updatePotency(caster);
     // Consume hype energy
-    caster->setHypeEnergy(caster->getHypeEnergy() - cost_);
+    caster->setHypeEnergy(caster->getHypeEnergy() - effectiveCost(caster));
 
     std::cout << caster->getName() << " uses " << getFullName() << " (AOE)! ";
 
@@ -66,7 +86,7 @@ void Patent::applyAOEEffect(CombatEntity* caster, std::vector<CombatEntity*> tar
     for (auto* target : targets) {
         if (!target || !target->isAlive()) continue;
 
-        int damage = currentPower_ + static_cast<int>(caster->getHustle() / dv("patent.aoe_hustle_div"));
+        int damage = static_cast<int>(currentPower_ * potency_) + static_cast<int>(caster->getHustle() / dv("patent.aoe_hustle_div"));
         int finalDamage = std::max(1, damage - static_cast<int>(target->getNDAs() / dv("patent.aoe_def_div")));
 
         target->takeDamage(finalDamage);
@@ -173,14 +193,20 @@ bool Patent::canLevelUp(int characterSeries) const {
 
 void Patent::applyEffect(CombatEntity *caster, CombatEntity *target) const {
     if (!caster || !target) return;
+    if ((type_ == PatentType::DEFENSE || type_ == PatentType::BUFF || type_ == PatentType::DEBUFF) &&
+        target->getEffectsManager().hasEffectFrom(name_)) {
+        std::cout << name_ << " already active\n";
+        return;
+    }
 
-    if (caster->getHypeEnergy() < cost_) {
+    if (caster->getHypeEnergy() < effectiveCost(caster)) {
         std::cout << "Not enough hype energy to use " << name_ << "!\n";
         return;
     }
 
+    updatePotency(caster);
     // Consume hype energy
-    caster->setHypeEnergy(caster->getHypeEnergy() - cost_);
+    caster->setHypeEnergy(caster->getHypeEnergy() - effectiveCost(caster));
 
     std::cout << caster->getName() << " uses " << getFullName() << "! ";
 
@@ -204,15 +230,22 @@ void Patent::applyEffect(CombatEntity *caster, CombatEntity *target) const {
 }
 
 void Patent::applyAttackEffect(CombatEntity *caster, CombatEntity *target) const {
-    int damage = currentPower_ + static_cast<int>(caster->getHustle() / dv("patent.attack_hustle_div"));
+    int damage = static_cast<int>(currentPower_ * potency_) + static_cast<int>(caster->getHustle() / dv("patent.attack_hustle_div"));
     int finalDamage = std::max(1, damage - static_cast<int>(target->getNDAs() / dv("patent.attack_def_div")));
 
+    {
+        const double lk = caster->getModifiedLuck();
+        if (Balance::chance(Balance::critChance(lk))) {
+            finalDamage = static_cast<int>(finalDamage * Balance::critMult(lk, caster->getModifiedSynergy(), passiveOf(caster, "crit_mult")));
+            std::cout << "CRIT! ";
+        }
+    }
     target->takeDamage(finalDamage);
     std::cout << "Deals " << finalDamage << " damage to " << target->getName() << "!\n";
 }
 
 void Patent::applyHealEffect(CombatEntity *caster, CombatEntity *target) const {
-    int healAmount = currentPower_ + static_cast<int>(caster->getSynergy() / dv("patent.heal_synergy_div"));
+    int healAmount = static_cast<int>(currentPower_ * potency_) + static_cast<int>(caster->getSynergy() / dv("patent.heal_synergy_div"));
     int currentRunway = target->getRunway();
     int maxRunway = target->getMaxRunway();
 
@@ -232,7 +265,7 @@ void Patent::applyHealEffect(CombatEntity *caster, CombatEntity *target) const {
 }
 
 void Patent::applyDefenseEffect(CombatEntity *caster, CombatEntity *target) const {
-    int defenseBoost = static_cast<int>(currentPower_ / dv("patent.defense_div"));
+    int defenseBoost = static_cast<int>(currentPower_ * potency_ / dv("patent.defense_div"));
     int turns = static_cast<int>(T("patent.defense_turns_base") + level_ / dv("patent.defense_turns_div"));
 
     // Create a defense shield effect
@@ -305,7 +338,7 @@ void Patent::applyBuffEffect(CombatEntity *caster, CombatEntity *target) const {
 
     // Original buff logic for non-custom patents
     int statChoice = std::hash<std::string>{}(name_) % 4;
-    int boostAmount = static_cast<int>(currentPower_ / dv("patent.buff_div"));
+    int boostAmount = static_cast<int>(currentPower_ * potency_ / dv("patent.buff_div"));
     int turns = static_cast<int>(T("patent.buff_turns_base") + level_ / dv("patent.buff_turns_div"));
 
     EffectType effectType;
@@ -393,7 +426,7 @@ void Patent::applyDebuffEffect(CombatEntity *caster, CombatEntity *target) const
 
     // Original debuff logic for non-custom patents
     int statChoice = std::hash<std::string>{}(name_) % 4;
-    int reduceAmount = static_cast<int>(currentPower_ / dv("patent.debuff_div"));
+    int reduceAmount = static_cast<int>(currentPower_ * potency_ / dv("patent.debuff_div"));
     int turns = static_cast<int>(T("patent.buff_turns_base") + level_ / dv("patent.buff_turns_div"));
 
     EffectType effectType;

@@ -59,6 +59,8 @@ set(ENGINE_SOURCES
         src/SaveCrypto.cpp
         src/Tuning.cpp
         src/Balance.cpp
+        src/Archetype.cpp
+        src/PlayerStrategy.cpp
 )
 
 set(HEADERS
@@ -96,6 +98,8 @@ set(HEADERS
         include/SaveCrypto.h
         include/Tuning.h
         include/Balance.h
+        include/Archetype.h
+        include/PlayerStrategy.h
 )
 
 # ---- config compiled into the executable (players can't edit it) ----

@@ -33,35 +33,12 @@ const std::vector<std::string> RACES = {
 
 const std::vector<std::string> CLASSES = {
     // Scientist Roles (with Fusion Focus)
-    "Fusion Energy Quantum Mechanics Maverick",
-    "Plasma Containment and Cosmic Fusion Whisperer",
-    "Tokamak Reactor Optimization Guru",
-    "Nuclear Fusion Breakthrough Architect",
-    "Stellarator System Dynamics Wizard",
-    "Senior Splatter Researcher",
-    "Fusioneer",
-
-
-    // Engineering Roles
-    "Extreme Thermal Management Ninja",
-    "Superconducting Magnet Design Maestro",
-    "Plasma-Material Interaction Alchemist",
-    "Advanced Neutronics and Shielding Engineer",
-    "Fusion Control Systems Virtuoso",
-
-    // C-Level Roles
-    "Chief Impossible Dreams Officer (CIDO)",
-    "Visionary Disruption Czar",
-    "Quantum Potential Maximization Executive",
-    "Exponential Innovation Overlord",
-    "Chief Radical Transformation Architect",
-
-    // Random Roles
-    "Professional Serendipity Orchestrator",
-    "Chaos Theory Implementation Specialist",
-    "Interdimensional Problem Solver",
-    "Narrative Engineering Provocateur",
-    "Unexpected Connections Choreographer"
+    "C-Level",
+    "Director"
+    "Head of "
+    "median manager",
+    "dirt class"
+    "admin"
 };
 
 const std::vector<std::string> equipment_list = {

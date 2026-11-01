@@ -1,10 +1,16 @@
 #include "../include/Balance.h"
 #include "../include/Tuning.h"
+#include "../include/Archetype.h"
+#include <random>
 #include <algorithm>
 #include <cmath>
 #include <string>
 
 namespace Balance {
+
+namespace { int g_class = -1; }
+void setProjectionClass(int id) { g_class = id; }
+std::string projectionClassName() { return g_class < 0 ? "none" : Archetypes::I().get(g_class).name; }
 
 double difficultyMult(int d) {
     switch (d) {
@@ -115,6 +121,15 @@ PlayerStats player(int series) {
         p.techDebt -= static_cast<int>(g.techDebt);
         p.bus += g.bus;
     }
+    if (g_class >= 0) {
+        const ClassDef& c = Archetypes::I().get(g_class);
+        const double ms = T("class.mod_scale"), gs = T("class.grow_scale");
+        auto ap = [&](double& v, double m, double g) { v += m * ms + g * gs * series; };
+        ap(p.runway, c.mods.runway, c.grow.runway); ap(p.hype, c.mods.hype, c.grow.hype);
+        ap(p.hustle, c.mods.hustle, c.grow.hustle); ap(p.agility, c.mods.agility, c.grow.agility);
+        ap(p.ndas, c.mods.ndas, c.grow.ndas); ap(p.luck, c.mods.luck, c.grow.luck);
+        ap(p.synergy, c.mods.synergy, c.grow.synergy);
+    }
     return p;
 }
 
@@ -165,7 +180,10 @@ SeriesMetrics seriesMetrics(int s, double elapsed, double gH, double gN) {
     m.hustle = m.player.hustle + gH;
     m.ndas = m.player.ndas + gN;
     m.runway = m.player.runway;
-    const double pm = T("combat.player_dmg_mult"), em = T("combat.enemy_dmg_mult");
+    // expected stat effects folded into damage multipliers
+    const double cc = critChance(m.player.luck), cm = critMult(m.player.luck, m.player.synergy);
+    const double pm = T("combat.player_dmg_mult") * (1.0 + cc * (cm - 1.0)) * (1.0 - failChance(m.player.techDebt));
+    const double em = T("combat.enemy_dmg_mult") * (1.0 - dodgeChance(m.player.agility, mob(s, 1.0).spd));
     const int yr = static_cast<int>(elapsed / (365.0 * 86400.0)) + 1;
     const int ntype = yr <= 5 ? 0 : yr <= 10 ? 1 : yr <= 15 ? 2 : 3;
     m.mob = mob(s, difficultyMult(1));
@@ -234,5 +252,36 @@ Projection project() {
     }
     return p;
 }
+
+bool chance(double p) {
+    static std::mt19937 g(std::random_device{}());
+    if (p <= 0.0) return false;
+    return std::uniform_real_distribution<double>(0.0, 1.0)(g) < p;
+}
+double critChance(double luck) {
+    return std::clamp(T("crit.base") + std::max(0.0, luck) * T("crit.per_luck"), 0.0, T("crit.cap"));
+}
+double critMult(double luck, double synergy, double bonus) {
+    (void)luck;
+    return std::min(T("crit.mult_cap"), T("crit.mult_base") + std::max(0.0, synergy) * T("crit.mult_per_syn") + bonus);
+}
+double dodgeChance(double def, double atk) {
+    const double adv = (def - atk) / std::max(1.0, def + atk);
+    return std::clamp(adv * T("dodge.edge"), 0.0, T("dodge.cap"));
+}
+double extraActionChance(double agi, double foe, double bonus) {
+    const double lead = agi / std::max(1.0, foe);
+    return std::clamp((lead - 1.0) * T("extra.per_lead"), 0.0, T("extra.cap")) + bonus;
+}
+double failChance(double td) { return std::clamp(std::max(0.0, -td) * T("fail.per_debt"), 0.0, T("fail.cap")); }
+double breakChance(double td, double resist) {
+    return std::clamp(std::max(0.0, -td) * T("break.per_debt"), 0.0, T("break.cap")) * (1.0 - std::clamp(resist, 0.0, 1.0));
+}
+double patentPotency(double syn) { return 1.0 + std::min(T("syn.potency_cap") - 1.0, std::max(0.0, syn) * T("syn.potency_per")); }
+double hypeDiscount(double syn, double bonus) {
+    return std::max(0.2, 1.0 - std::min(T("syn.hype_cap"), std::max(0.0, syn) * T("syn.hype_per")) - bonus);
+}
+double luckRarityBonus(double luck) { return std::min(T("luck.rarity_cap"), std::max(0.0, luck) * T("luck.rarity_per")); }
+double luckItemMult(double luck, double bonus) { return 1.0 + std::min(T("luck.item_cap"), std::max(0.0, luck) * T("luck.item_per")) + bonus; }
 
 }  // namespace Balance

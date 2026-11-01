@@ -32,6 +32,7 @@ public:
     std::vector<std::string> collectKeywords();
     const QuestBalance& balance() const { return gen_.balance(); }
     void setTimeScale(double s) { gen_.setTimeScale(s); }
+    void setGoalMult(double m) { gen_.setGoalMult(m); }
     QuestGenerator::QuestPreview preview(int index, double elapsed) { return gen_.preview(index, elapsed); }
 
     // UI

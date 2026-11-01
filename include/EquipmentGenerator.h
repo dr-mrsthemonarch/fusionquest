@@ -16,6 +16,7 @@ public:
     Equipment generateSpecificEquipment(EquipmentType type);
     Equipment generateSpecificEquipmentForPlayer(EquipmentType type, int playerSeries);
     Equipment generateBossDropEquipment(int playerSeries); // Special boss drops with enhanced rarity
+    void setLuckBonus(double b) { luckBonus_ = b; }
   std::string equipmentTypeToString(EquipmentType type) const;
 
 private:
@@ -25,6 +26,7 @@ private:
     std::vector<std::string> suffixes_;
 
     mutable std::mt19937 gen_;
+    double luckBonus_ = 0.0;
 
     // Base stat calculation methods
     float calculateBaseStat(int playerSeries, double statMultiplier) const;

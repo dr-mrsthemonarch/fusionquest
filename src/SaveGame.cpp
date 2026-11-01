@@ -10,7 +10,7 @@
 #include <sstream>
 
 namespace {
-constexpr int32_t SAVE_VERSION = 5; // v2: + employeeNr, position. v3: + quest state. v4: + inventory stack counts. v5: lazy sprints, counts before quest state (v3/v4 rejected)
+constexpr int32_t SAVE_VERSION = 6; // v2: + employeeNr, position. v3: + quest state. v4: + inventory stack counts. v5: lazy sprints, counts before quest state (v3/v4 rejected)
 
 template <typename T>
 void w(std::ostream& f, const T& v) { f.write(reinterpret_cast<const char*>(&v), sizeof(v)); }
@@ -34,7 +34,7 @@ void writeEquipment(std::ostream& f, const Equipment& eq) {
     writeStr(f, eq.name); writeStr(f, eq.equipmentclass);
     w(f, eq.runway); w(f, eq.hypeEnergy); w(f, eq.hustle); w(f, eq.agility);
     w(f, eq.ndas); w(f, eq.luck); w(f, eq.synergy); w(f, eq.technicalDebt);
-    w(f, eq.busFactor); w(f, eq.inventoryLimit); w(f, eq.equipmentvalue);
+    w(f, eq.busFactor); w(f, eq.inventoryLimit); w(f, eq.equipmentvalue); w(f, eq.broken);
 }
 Equipment readEquipment(std::istream& f) {
     Equipment eq;
@@ -42,7 +42,7 @@ Equipment readEquipment(std::istream& f) {
     eq.name = readStr(f); eq.equipmentclass = readStr(f);
     r(f, eq.runway); r(f, eq.hypeEnergy); r(f, eq.hustle); r(f, eq.agility);
     r(f, eq.ndas); r(f, eq.luck); r(f, eq.synergy); r(f, eq.technicalDebt);
-    r(f, eq.busFactor); r(f, eq.inventoryLimit); r(f, eq.equipmentvalue);
+    r(f, eq.busFactor); r(f, eq.inventoryLimit); r(f, eq.equipmentvalue); r(f, eq.broken);
     return eq;
 }
 void writeSprint(std::ostream& f, const Sprint& s) {
@@ -206,6 +206,7 @@ bool SaveGame::save(const GameEngine& engine, const std::string& filename) {
     for (const auto& [name, n] : cnts) { writeStr(f, name); w(f, n); }
 
     writeQuestState(f, engine.getQuestSystem()->state());
+    w(f, c->getClassId());
 
     std::ofstream out(filename, std::ios::binary);
     if (!out) { std::cerr << "SaveGame: cannot open " << filename << "\n"; return false; }
@@ -223,7 +224,7 @@ bool SaveGame::load(GameEngine& engine, const std::string& filename) {
     std::istringstream f(plain, std::ios::binary);
 
     int32_t version; r(f, version);
-    if (version < 2 || version > SAVE_VERSION || version == 3 || version == 4) { std::cerr << "SaveGame: version mismatch (" << version << ")\n"; return false; }
+    if (version != SAVE_VERSION) { std::cerr << "SaveGame: version mismatch (" << version << ")\n"; return false; }
 
     std::string name = readStr(f);
     std::string startup = readStr(f);
@@ -299,6 +300,8 @@ bool SaveGame::load(GameEngine& engine, const std::string& filename) {
     QuestState qs;
     const bool haveQs = version >= 5;
     if (haveQs) qs = readQuestState(f);
+    int classId = 0;
+    r(f, classId);
 
     // --- apply ---
     // NOTE: initializeCharacter() already ran generic startup (money, funding, starter gear,
@@ -309,6 +312,7 @@ bool SaveGame::load(GameEngine& engine, const std::string& filename) {
 
     engine.setIdentityDirect(employeeNr, position);
     c->setNameDirect(name);
+    c->setClassId(classId);
     c->setStartupDirect(startup);
     c->setBaseProfileDirect(bp); // also recalculates profile_ from base + (not-yet-set) equipment
     c->setSeriesDirect(series);

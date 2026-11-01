@@ -268,3 +268,7 @@ std::string TemporaryEffectsManager::getEffectsSummary() const {
 
     return ss.str();
 }
+bool TemporaryEffectsManager::hasEffectFrom(const std::string& source) const {
+    return std::any_of(effects_.begin(), effects_.end(),
+        [&source](const TemporaryEffect& e) { return e.getSourceName() == source; });
+}

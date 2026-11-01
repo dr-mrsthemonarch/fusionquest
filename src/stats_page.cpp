@@ -5,6 +5,8 @@
 #include "../include/progress_bar.h"
 #include "../include/ui.h"
 #include "../include/Tuning.h"
+#include "../include/Balance.h"
+#include <cmath>
 #include "../include/globals.h"
 #include <algorithm>
 #include <chrono>
@@ -146,6 +148,16 @@ Component CreateStatsPage(int* selected_page, GameEngine* engine,
         pushTarget(activity_bar, activity_frac);
         encumberance_bar->SetTarget(encumb_frac); // animate down too, so selloff visibly retracts
 
+        // stat with active buff/debuff delta, e.g. "120 (+8)" green / "(-5)" red
+        auto statRow = [](const std::string& label, int base, int modified) {
+            Elements parts = {text(label) | bold | size(WIDTH, EQUAL, 16), text(std::to_string(modified))};
+            const int d = modified - base;
+            if (d != 0)
+                parts.push_back(text(std::string(" (") + (d > 0 ? "+" : "") + std::to_string(d) + ")") |
+                                color(d > 0 ? Color::Green : Color::Red));
+            return hbox(parts);
+        };
+
         // ---- Column 1: character ----
         Element character_stats =
             vbox({
@@ -162,13 +174,14 @@ Component CreateStatsPage(int* selected_page, GameEngine* engine,
                       text(std::to_string(c->getHypeEnergy()) + "/" + std::to_string(c->getMaxHypeEnergy()))}),
                 hbox({text("Income: ") | bold | size(WIDTH, EQUAL, 16), text(formatMoney(c->getMoney()))}),
                 separator(),
-                hbox({text("Hustle: ") | bold | size(WIDTH, EQUAL, 16), text(std::to_string(c->getModifiedHustle()))}),
-                hbox({text("Agile-ity: ") | bold | size(WIDTH, EQUAL, 16), text(std::to_string(c->getModifiedAgility()))}),
-                hbox({text("NDAs: ") | bold | size(WIDTH, EQUAL, 16), text(std::to_string(c->getModifiedNDAs()))}),
-                hbox({text("Luck: ") | bold | size(WIDTH, EQUAL, 16), text(std::to_string(c->getModifiedLuck()))}),
-                hbox({text("Synergy: ") | bold | size(WIDTH, EQUAL, 16), text(std::to_string(c->getModifiedSynergy()))}),
+                statRow("Hustle: ", c->getHustle(), c->getModifiedHustle()),
+                statRow("Agile-ity: ", c->getAgility(), c->getModifiedAgility()),
+                statRow("NDAs: ", c->getNDAs(), c->getModifiedNDAs()),
+                statRow("Luck: ", c->getLuck(), c->getModifiedLuck()),
+                statRow("Synergy: ", c->getSynergy(), c->getModifiedSynergy()),
                 hbox({text("Technical Debt: ") | bold | size(WIDTH, EQUAL, 16), text(std::to_string(c->getTechnicalDebt()))}),
-                hbox({text("Bus Factor: ") | bold | size(WIDTH, EQUAL, 16), text(std::to_string(c->getBusFactor()))}),
+                hbox({text("Bus Factor: ") | bold | size(WIDTH, EQUAL, 16),
+                      text("1/" + std::to_string(std::max(1, static_cast<int>(std::lround(1.0f / std::max(0.01f, c->getBusFactor()))))))}),
             }) |
             border;
 
@@ -253,7 +266,7 @@ Component CreateStatsPage(int* selected_page, GameEngine* engine,
                 int total = e.runway + e.hypeEnergy + e.hustle + e.agility + e.ndas + e.luck + e.synergy +
                             (t == EquipmentType::BACKPACK ? e.inventoryLimit : 0);
                 bonus = "+" + std::to_string(total);
-                name = e.name;
+                name = e.name + (e.broken ? " [BROKEN]" : "");
             }
             return hbox({text(std::string(label) + ": ") | bold | size(WIDTH, EQUAL, 16),
                          text(bonus + " ") | size(WIDTH, EQUAL, 8), text(fit(name, std::max(8, tw - 24)))});
