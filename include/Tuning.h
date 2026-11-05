@@ -26,6 +26,7 @@ public:
     void reset(size_t index);
     void resetAll();
     const std::vector<TuneParam>& params() const { return params_; }
+    unsigned version() const { return version_; }   // bumps on every change (tuner cache key)
     bool save(const std::string& path) const;
 
 private:
@@ -34,6 +35,7 @@ private:
     std::vector<TuneParam> params_;
     std::unordered_map<std::string, size_t> index_;
     bool enabled_ = false;
+    unsigned version_ = 1;
     mutable bool warned_ = false;
 };
 

@@ -1,4 +1,5 @@
 #include "../include/Tuning.h"
+#include "../include/GameMath.h"
 #include "../include/ConfigStore.h"
 #include "../include/QuestGenerator.h"
 #include <algorithm>
@@ -84,23 +85,16 @@ bool QuestGenerator::loadConfig(const std::string& root) {
 }
 
 int QuestGenerator::hustlesRequired(int index) const {
-    return index > static_cast<int>(bal_.mainQuestCount) ? 0 : static_cast<int>(T("quest.hustles_base") + index * T("quest.hustles_per_index"));
+    return GameMath::questHustlesRequired(index, static_cast<int>(bal_.mainQuestCount));
 }
 
 double QuestGenerator::mainBudget(int index, double elapsed) const {
-    const int n = static_cast<int>(bal_.mainQuestCount);
-    if (index > n) return std::max(86400.0, bal_.totalSeconds - elapsed); // final: rest of clock
-    double remaining = std::max(0.0, bal_.totalSeconds * bal_.usableFraction - elapsed);
-    double sumW = 0.0;
-    for (int j = index; j <= n; ++j) sumW += 1.0 + bal_.growth * j;
-    double w = 1.0 + bal_.growth * index;
-    return std::max(3600.0, remaining * w / std::max(sumW, 1e-9));
+    return GameMath::questMainBudget(index, elapsed, bal_.totalSeconds, bal_.usableFraction, bal_.growth,
+                                     static_cast<int>(bal_.mainQuestCount), 86400.0);
 }
 
 double QuestGenerator::hustleBudget(int index, double elapsed) const {
-    double b = mainBudget(index, elapsed);
-    int k = hustlesRequired(index);
-    return k > 0 ? b * (1.0 - bal_.mainShare) / k : b * 0.1;
+    return GameMath::questHustleBudget(mainBudget(index, elapsed), hustlesRequired(index), bal_.mainShare);
 }
 
 std::string QuestGenerator::pick(const std::vector<std::string>& v) {
@@ -138,13 +132,10 @@ Sprint QuestGenerator::makeSprint(int tier) {
     for (int i = 0; i < ng; ++i) {
         Goal g;
         g.type = rollType();
-        int lo = 1, hi = 1;
-        switch (g.type) {
-            case GoalType::KILL: g.keyword = pick(killKw_); lo = (int)T("quest.kill_lo"); hi = (int)T("quest.kill_hi_base") + tier / std::max(1, (int)T("quest.kill_hi_div")); break;
-            case GoalType::COLLECT: g.keyword = pick(collectKw_); lo = (int)T("quest.collect_lo"); hi = (int)T("quest.collect_hi_base") + tier / std::max(1, (int)T("quest.collect_hi_div")); break;
-            case GoalType::BOSS: lo = (int)T("quest.boss_lo"); hi = (int)T("quest.boss_hi_base") + tier / std::max(1, (int)T("quest.boss_hi_div")); break;
-            case GoalType::TOWN: lo = (int)T("quest.town_lo"); hi = (int)T("quest.town_hi_base") + tier / std::max(1, (int)T("quest.town_hi_div")); break;
-        }
+        if (g.type == GoalType::KILL) g.keyword = pick(killKw_);
+        else if (g.type == GoalType::COLLECT) g.keyword = pick(collectKw_);
+        const GameMath::GoalRange gr = GameMath::questGoalRange(static_cast<int>(g.type), tier);
+        const int lo = gr.lo, hi = gr.hi;
         std::uniform_int_distribution<int> td(lo, std::max(lo, hi));
         g.target = std::max(1LL, std::llround(td(rng_) * bal_.goalScale * classGoalMult_));
         sp.goals.push_back(g);
@@ -170,15 +161,14 @@ void QuestGenerator::refill(Dev& d) {
 Quest QuestGenerator::build(int index, double budget) {
     Quest q;
     q.index = index;
-    const int devCount = (int)T("quest.devs_base") + index / std::max(1, (int)T("quest.devs_div"));
+    const int devCount = GameMath::questDevCount(index);
 
     double avg = 0.0;
     const int samples = 64;
     for (int i = 0; i < samples; ++i) avg += estimateSeconds(makeSprint(index));
     avg = std::max(avg / samples, 1.0);
 
-    long long total = std::llround(budget / avg);
-    total = std::clamp<long long>(total, devCount * static_cast<long long>(T("quest.min_sprints_per_dev")), static_cast<long long>(bal_.maxSprints));
+    const long long total = GameMath::questSprintTotal(budget, avg, devCount, bal_.maxSprints);
 
     for (int d = 0; d < devCount; ++d) {
         Dev dev;
@@ -242,10 +232,10 @@ QuestGenerator::QuestPreview QuestGenerator::preview(int index, double elapsed) 
     p.budget = b;
     p.hustleBudget = hustleBudget(index, elapsed);
     p.hustlesRequired = hustlesRequired(index);
-    p.devs = (int)T("quest.devs_base") + index / std::max(1, (int)T("quest.devs_div"));
+    p.devs = GameMath::questDevCount(index);
     double avg = 0.0;
     for (int i = 0; i < 32; ++i) avg += estimateSeconds(makeSprint(index));
     p.avgSprintSeconds = std::max(avg / 32, 1.0);
-    p.sprints = std::clamp<long long>(std::llround(mb / p.avgSprintSeconds), p.devs * static_cast<long long>(T("quest.min_sprints_per_dev")), static_cast<long long>(bal_.maxSprints));
+    p.sprints = GameMath::questSprintTotal(mb, p.avgSprintSeconds, p.devs, bal_.maxSprints);
     return p;
 }

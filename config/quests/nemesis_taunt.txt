@@ -1,0 +1,26 @@
+# generic popups for every nemesis after the first. blocks separated by a line with ---. {nemesis} = name.
+YOU AGAIN
+
+{nemesis} is blocking the hallway. Again. Their lanyard has a new certification on it.
+
+"Still doing the same work?" they ask.
+
+You never worked out what their problem is. It is time to fight about it.
+---
+CALENDAR INVITE
+
+An invite arrives: "Quick sync". Organizer: {nemesis}. Attendees: you. Agenda: none.
+
+You decline. They show up anyway.
+---
+PERFORMANCE THEATER
+
+{nemesis} has been telling everyone you are "a bit of a risk". Nobody asked them. They have slides.
+
+They have come to make it official.
+---
+REORG
+
+Another reorg. Another all-hands. Somehow {nemesis} is standing right next to you at the coffee machine.
+
+"Nothing personal," they say. It is extremely personal.

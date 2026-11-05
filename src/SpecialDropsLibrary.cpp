@@ -1,9 +1,20 @@
 // SPG Engine made by drmrsthemonarch
 #include "../include/SpecialDropsLibrary.h"
+#include "../include/GameMath.h"
 #include <cstdlib>
 #include <iostream>
 #include <iomanip>
 #include <algorithm>
+
+namespace {
+// stats come from GameMath (gear tables). this file only picks type / name / rarity.
+void applyGear(Equipment& e, const GameMath::GearStats& g) {
+    e.runway = g.runway; e.hypeEnergy = g.hype; e.hustle = g.hustle; e.agility = g.agility;
+    e.ndas = g.ndas; e.luck = g.luck; e.synergy = g.synergy; e.technicalDebt = g.techDebt;
+    e.busFactor = g.bus; e.equipmentvalue = g.value;
+    e.inventoryLimit = e.type == EquipmentType::BACKPACK ? g.inventoryLimit : 0;
+}
+}  // namespace
 
 SpecialDropsLibrary::SpecialDropsLibrary() : nextUniqueID_(1) {
 }
@@ -48,167 +59,66 @@ void SpecialDropsLibrary::addSpecialDrop(const SpecialDrop &drop) {
 }
 
 Equipment SpecialDropsLibrary::generateNemesisEquipment(int playerSeries, int nemesisPowerLevel, const std::string &nemesisName) {
-    Equipment nemesisGear;
-
-    // Determine equipment type based on power level
+    Equipment gear;
     EquipmentType types[] = {EquipmentType::LAPTOP, EquipmentType::PHONE, EquipmentType::BACKPACK, EquipmentType::HELMET, EquipmentType::BIKE, EquipmentType::JACKET, EquipmentType::GLOVES, EquipmentType::HEADPHONES};
-
-    nemesisGear.type = types[nemesisPowerLevel % 8];
-    nemesisGear.rarity = EquipmentRarity::LEGENDARY;
-    nemesisGear.equipmentclass = *"Competitor";
-
-    // Name based on power level
-    if (nemesisPowerLevel == 0) {
-        nemesisGear.name = "Competitor Memento";
-    } else {
-        nemesisGear.name = "Competitor Relic [+" + std::to_string(nemesisPowerLevel) + "]";
-    }
-
-    // Powerful stats scaling with power level
-    double powerMult = 1.0 + (nemesisPowerLevel * 0.5); // +50% per evolution
-
-    nemesisGear.runway = static_cast<int>(30 + playerSeries * 5) * powerMult;
-    nemesisGear.hypeEnergy = static_cast<int>(25 + playerSeries * 4) * powerMult;
-    nemesisGear.hustle = static_cast<int>(10 + playerSeries * 2) * powerMult;
-    nemesisGear.agility = static_cast<int>(8 + playerSeries * 1.5) * powerMult;
-    nemesisGear.ndas = static_cast<int>(5 + playerSeries) * powerMult;
-    nemesisGear.luck = static_cast<int>(6 + playerSeries * 1.2) * powerMult;
-    nemesisGear.synergy = static_cast<int>(7 + playerSeries * 1.5) * powerMult;
-    nemesisGear.technicalDebt = -static_cast<int>(3 + playerSeries * 0.5) * powerMult;
-    nemesisGear.busFactor = 2.0f * powerMult;
-    nemesisGear.equipmentvalue = 10 * powerMult; // Extremely valuable but unsellable
-
-    if (nemesisGear.type == EquipmentType::BACKPACK) {
-        nemesisGear.inventoryLimit = 50; // Huge inventory
-    }
-
-    return nemesisGear;
+    gear.type = types[nemesisPowerLevel % 8];
+    gear.rarity = EquipmentRarity::LEGENDARY;
+    gear.equipmentclass = "Competitor";
+    gear.name = nemesisPowerLevel == 0 ? "Competitor Memento" : "Competitor Relic [+" + std::to_string(nemesisPowerLevel) + "]";
+    applyGear(gear, GameMath::gearNemesis(playerSeries, nemesisPowerLevel));
+    return gear;
 }
 
 Equipment SpecialDropsLibrary::generateShadowPlayerEquipment(int playerSeries, const std::string &playerName) {
-    Equipment shadowGear;
-
-    shadowGear.type = EquipmentType::JACKET;
-    shadowGear.rarity = EquipmentRarity::LEGENDARY;
-    shadowGear.equipmentclass = "Shadow";
-    shadowGear.name = "Shadow's Reflection";
-
-    // Extremely powerful - once per game item
-    shadowGear.runway = 50 + playerSeries * 8;
-    shadowGear.hypeEnergy = 40 + playerSeries * 6;
-    shadowGear.hustle = 15 + playerSeries * 3;
-    shadowGear.agility = 12 + playerSeries * 2.5;
-    shadowGear.ndas = 10 + playerSeries * 2;
-    shadowGear.luck = 20 + playerSeries * 30;
-    shadowGear.synergy = 10 + playerSeries * 2;
-    shadowGear.technicalDebt = (5 + playerSeries);
-    shadowGear.busFactor = -1e-2f;
-    shadowGear.equipmentvalue = 1e9; // Priceless
-
-    return shadowGear;
+    Equipment gear;
+    gear.type = EquipmentType::JACKET;
+    gear.rarity = EquipmentRarity::LEGENDARY;
+    gear.equipmentclass = "Shadow";
+    gear.name = "Shadow's Reflection";
+    applyGear(gear, GameMath::gearShadow(playerSeries));
+    return gear;
 }
 
 Equipment SpecialDropsLibrary::generateSafetyManagerEquipment(int playerSeries) {
-    Equipment safetyGear;
-
-    safetyGear.type = EquipmentType::HELMET;
-    safetyGear.rarity = EquipmentRarity::RARE;
-    safetyGear.equipmentclass = "Safety";
-    safetyGear.name = "Safety Manager's Hardhat";
-
-    // High defense focus
-    safetyGear.runway = 20 + playerSeries * 3;
-    safetyGear.hypeEnergy = 10 + playerSeries * 2;
-    safetyGear.hustle = 3 + playerSeries;
-    safetyGear.agility = 12 + playerSeries * 2; // High agility (safety awareness)
-    safetyGear.ndas = 15 + playerSeries * 3;
-    safetyGear.luck = 2 + playerSeries * 0.5;
-    safetyGear.synergy = 5 + playerSeries;
-    safetyGear.technicalDebt = (10 + playerSeries * 2); // Reduces technical debt significantly
-    safetyGear.busFactor = -1e-41f;
-    safetyGear.equipmentvalue = 50000;
-
-    return safetyGear;
+    Equipment gear;
+    gear.type = EquipmentType::HELMET;
+    gear.rarity = EquipmentRarity::RARE;
+    gear.equipmentclass = "Safety";
+    gear.name = "Safety Manager's Hardhat";
+    applyGear(gear, GameMath::gearSafety(playerSeries));
+    return gear;
 }
 
 Equipment SpecialDropsLibrary::generateConferenceEquipment(int playerSeries) {
-    Equipment confGear;
-
-    confGear.type = EquipmentType::HEADPHONES;
-    confGear.rarity = EquipmentRarity::RARE;
-    confGear.equipmentclass = "Conference";
-    confGear.name = "Keynote Speaker's Headset";
-
-    // Synergy and luck focus
-    confGear.runway = 15 + playerSeries * 2;
-    confGear.hypeEnergy = 20 + playerSeries * 3;
-    confGear.hustle = 5 + playerSeries;
-    confGear.agility = 6 + playerSeries;
-    confGear.ndas = 3 + playerSeries * 0.5;
-    confGear.luck = 15 + playerSeries * 3; // High luck (networking)
-    confGear.synergy = 20 + playerSeries * 4;
-    confGear.technicalDebt = 10 + playerSeries * 2;
-    confGear.busFactor = -1e-41f;
-    confGear.equipmentvalue = 30000;
-
-    return confGear;
+    Equipment gear;
+    gear.type = EquipmentType::HEADPHONES;
+    gear.rarity = EquipmentRarity::RARE;
+    gear.equipmentclass = "Conference";
+    gear.name = "Keynote Speaker's Headset";
+    applyGear(gear, GameMath::gearConference(playerSeries));
+    return gear;
 }
 
 Equipment SpecialDropsLibrary::generatePaperWritingEquipment(int playerSeries) {
-    Equipment paperGear;
-
-    paperGear.type = EquipmentType::LAPTOP;
-    paperGear.rarity = EquipmentRarity::RARE;
-    paperGear.equipmentclass = "Academic";
-    paperGear.name = "Researcher's Workstation";
-
-    // Agility and NDAs focus
-    paperGear.runway = 18 + playerSeries * 2.5;
-    paperGear.hypeEnergy = 15 + playerSeries * 2;
-    paperGear.hustle = 8 + playerSeries * 1.5;
-    paperGear.agility = 15 + playerSeries * 3; // High agility (writing skill)
-    paperGear.ndas = 1 + playerSeries * 1.1; // High NDAs (citations/references)
-    paperGear.luck = 3 + playerSeries * 0.5;
-    paperGear.synergy = 8 + playerSeries * 1.5;
-    paperGear.technicalDebt = 5 + playerSeries*3; // Papers create tech debt
-    paperGear.busFactor = -1e-41f;
-    paperGear.equipmentvalue = 40000;
-
-    return paperGear;
+    Equipment gear;
+    gear.type = EquipmentType::LAPTOP;
+    gear.rarity = EquipmentRarity::RARE;
+    gear.equipmentclass = "Academic";
+    gear.name = "Researcher's Workstation";
+    applyGear(gear, GameMath::gearPaper(playerSeries));
+    return gear;
 }
 
 Equipment SpecialDropsLibrary::generateMonthlyReviewEquipment(int year, int month, int playerSeries) {
-    Equipment reviewGear;
-
-    // Cycle through equipment types
+    Equipment gear;
     EquipmentType types[] = {EquipmentType::LAPTOP, EquipmentType::PHONE, EquipmentType::BACKPACK, EquipmentType::HELMET, EquipmentType::BIKE, EquipmentType::JACKET, EquipmentType::GLOVES, EquipmentType::HEADPHONES};
-    reviewGear.type = types[month % 8];
-
-    reviewGear.rarity = EquipmentRarity::EPIC;
-    reviewGear.equipmentclass = "Monthly";
-
+    gear.type = types[month % 8];
+    gear.rarity = EquipmentRarity::EPIC;
+    gear.equipmentclass = "Monthly";
     std::vector<std::string> monthNames = {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"};
-    reviewGear.name = monthNames[month - 1] + " Trophy (Year " + std::to_string(year) + ")";
-
-    // Scale with year
-    double yearMult = 1.0 + (year * 0.3);
-
-    reviewGear.runway = static_cast<int>((15 + playerSeries * 2) * yearMult);
-    reviewGear.hypeEnergy = static_cast<int>((12 + playerSeries * 1.5) * yearMult);
-    reviewGear.hustle = static_cast<int>((6 + playerSeries) * yearMult);
-    reviewGear.agility = static_cast<int>((5 + playerSeries * 0.8) * yearMult);
-    reviewGear.ndas = static_cast<int>((4 + playerSeries * 0.6) * yearMult);
-    reviewGear.luck = static_cast<int>((3 + playerSeries * 0.5) * yearMult);
-    reviewGear.synergy = static_cast<int>((5 + playerSeries * 0.8) * yearMult);
-    reviewGear.technicalDebt = static_cast<int>((2 + playerSeries * 3) * yearMult);
-    reviewGear.busFactor = -1e-21f * yearMult;
-    reviewGear.equipmentvalue = static_cast<int>(20000 * yearMult);
-
-    if (reviewGear.type == EquipmentType::BACKPACK) {
-        reviewGear.inventoryLimit = 20 + (year * 2);
-    }
-
-    return reviewGear;
+    gear.name = monthNames[month - 1] + " Trophy (Year " + std::to_string(year) + ")";
+    applyGear(gear, GameMath::gearReview(year, playerSeries));
+    return gear;
 }
 
 bool SpecialDropsLibrary::isSpecialEquipment(const std::string &equipmentName) const {
@@ -376,39 +286,11 @@ Equipment SpecialDropsLibrary::generateNamedMonsterCertificate(
     int playerSeries
 ) {
     Equipment cert;
-
     cert.type = type;
     cert.rarity = rarity;
     cert.equipmentclass = "Named";
     cert.name = monsterName + " Certificate";
-
-    // Base stats for the equipment type (use existing generator)
-    // Then apply rarity multiplier
-    float multiplier = 1.0f;
-    switch (rarity) {
-        case EquipmentRarity::UNCOMMON: multiplier = 1.2f; break;
-        case EquipmentRarity::RARE: multiplier = 1.5f; break;
-        case EquipmentRarity::EPIC: multiplier = 2.0f; break;
-        case EquipmentRarity::LEGENDARY: multiplier = 5.0f; break;
-        default: multiplier = 1.0f; break;
-    }
-
-    // Scale base stats with series and rarity
-    cert.runway = static_cast<int>((20 + playerSeries * 3) * multiplier);
-    cert.hypeEnergy = static_cast<int>((15 + playerSeries * 2) * multiplier);
-    cert.hustle = static_cast<int>((8 + playerSeries * 1.5) * multiplier);
-    cert.agility = static_cast<int>((8 + playerSeries * 1.5) * multiplier);
-    cert.ndas = static_cast<int>((6 + playerSeries) * multiplier);
-    cert.luck = static_cast<int>((5 + playerSeries) * multiplier);
-    cert.synergy = static_cast<int>((7 + playerSeries * 1.5) * multiplier);
-    cert.technicalDebt = -static_cast<int>((3 + playerSeries * 0.5) * multiplier);
-    cert.busFactor = 1.5f * multiplier;
-    cert.equipmentvalue = 1000000; // Priceless
-
-    if (type == EquipmentType::BACKPACK) {
-        cert.inventoryLimit = static_cast<int>(30 * multiplier);
-    }
-
+    applyGear(cert, GameMath::gearNamed(playerSeries, rarity));
     return cert;
 }
 Equipment SpecialDropsLibrary::generateQuestEquipment(int playerSeries, EquipmentRarity rarity, const std::string& questTitle) {
@@ -417,25 +299,6 @@ Equipment SpecialDropsLibrary::generateQuestEquipment(int playerSeries, Equipmen
     eq.rarity = rarity;
     eq.equipmentclass = "Quest";
     eq.name = questTitle + " Trophy";
-
-    float m = 1.0f;
-    switch (rarity) {
-        case EquipmentRarity::UNCOMMON: m = 1.2f; break;
-        case EquipmentRarity::RARE: m = 1.5f; break;
-        case EquipmentRarity::EPIC: m = 2.0f; break;
-        case EquipmentRarity::LEGENDARY: m = 5.0f; break;
-        default: break;
-    }
-    eq.runway = static_cast<int>((20 + playerSeries * 3) * m);
-    eq.hypeEnergy = static_cast<int>((15 + playerSeries * 2) * m);
-    eq.hustle = static_cast<int>((8 + playerSeries * 1.5) * m);
-    eq.agility = static_cast<int>((8 + playerSeries * 1.5) * m);
-    eq.ndas = static_cast<int>((6 + playerSeries) * m);
-    eq.luck = static_cast<int>((5 + playerSeries) * m);
-    eq.synergy = static_cast<int>((7 + playerSeries * 1.5) * m);
-    eq.technicalDebt = -static_cast<int>((3 + playerSeries * 0.5) * m);
-    eq.busFactor = 1.0f * m;
-    eq.equipmentvalue = static_cast<int>(2000 * m);
-    if (eq.type == EquipmentType::BACKPACK) eq.inventoryLimit = static_cast<int>(25 * m);
+    applyGear(eq, GameMath::gearQuest(playerSeries, rarity));
     return eq;
 }

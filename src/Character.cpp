@@ -1,6 +1,6 @@
 
 #include "../include/Tuning.h"
-#include "../include/Balance.h"
+#include "../include/GameMath.h"
 #include "../include/Character.h"
 #include "../include/Archetype.h"
 #include <cmath>
@@ -21,7 +21,7 @@ Character::Character(const std::string &name, const std::string &employeeNr, con
 : name_(name), employeeNr_(employeeNr), position_(position), startupName_(startupName) {
 
     // Initialize base profile
-    const Balance::PlayerStats start = Balance::player(0);
+    const GameMath::PlayerStats start = GameMath::player(0);
     baseProfile_.runway = static_cast<int>(start.runway);
     baseProfile_.hypeEnergy = static_cast<int>(start.hype);
     baseProfile_.hustle = static_cast<int>(start.hustle);
@@ -126,7 +126,7 @@ void Character::addFunding(double funding_) {
             series_++;
 
             // Update BASE stats
-            const Balance::PlayerStats gain = Balance::levelGain(series_);
+            const GameMath::PlayerStats gain = GameMath::levelGain(series_);
             baseProfile_.runway += static_cast<int>(gain.runway);
             baseProfile_.hypeEnergy += static_cast<int>(gain.hype);
             baseProfile_.hustle += static_cast<int>(gain.hustle);
@@ -541,7 +541,7 @@ void Character::restoreToFull() {
 double Character::requiredFundingForNextLevel(double elapsedSeconds) const {
     // small randomness hides the deterministic feel; tuner shows the noise-free value
     double noise = 0.95 + ((rand() % 11) / 100.0);
-    return Balance::fundingRequired(series_, elapsedSeconds, noise);
+    return GameMath::fundingRequired(series_, elapsedSeconds, noise);
 }
 
 void Character::removeInventoryItem(const std::string &itemName) {
@@ -885,9 +885,7 @@ int Character::getModifiedSynergy() const {
 }
 
 
-double Character::sellRatio() const {
-    return T("econ.sell_ratio") + std::min(T("syn.sell_cap"), std::max(0, synergy_) * T("syn.sell_per"));
-}
+double Character::sellRatio() const { return GameMath::sellRatio(synergy_); }
 
 std::string Character::breakRandomEquipped() {
     std::vector<EquipmentType> c;
@@ -905,7 +903,7 @@ int Character::repairAll(double costMult) {
     for (auto &slot: equippedItems_) {
         Equipment &e = slot.second;
         if (!e.broken) continue;
-        int cost = std::max(1, static_cast<int>(e.equipmentvalue * T("econ.repair_pct") * costMult));
+        int cost = GameMath::repairCost(e.equipmentvalue, costMult);
         if (money_ < cost) continue;
         money_ -= cost;
         total += cost;

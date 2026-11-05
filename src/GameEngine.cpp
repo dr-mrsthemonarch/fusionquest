@@ -1,5 +1,5 @@
 #include "../include/Tuning.h"
-#include "../include/Balance.h"
+#include "../include/GameMath.h"
 #include "../include/ConfigStore.h"
 #include "../include/Archetype.h"
 #include "../include/PlayerStrategy.h"
@@ -41,6 +41,19 @@ bool GameEngine::loadConfig(const std::string& configRoot) {
                 if (!l.empty() && l[0] == '#') continue;
                 introTemplate_ += l + "\n";
             }
+        }
+        // generic taunts for later nemeses: blocks separated by "---"
+        tauntBlocks_.clear();
+        ConfigFile tf(configRoot + "quests/nemesis_taunt.txt");
+        if (tf.is_open()) {
+            std::string l, cur;
+            while (std::getline(tf, l)) {
+                while (!l.empty() && (l.back() == '\r' || l.back() == ' ')) l.pop_back();
+                if (!l.empty() && l[0] == '#') continue;
+                if (l == "---") { if (!cur.empty()) tauntBlocks_.push_back(cur); cur.clear(); continue; }
+                cur += l + "\n";
+            }
+            if (!cur.empty()) tauntBlocks_.push_back(cur);
         }
     }
     equipGen_ = std::make_unique<EquipmentGenerator>();
@@ -233,9 +246,9 @@ void GameEngine::checkSeriesUpgrade() {
 void GameEngine::checkHypeEnergyRecovery() {
     int maxHype = character_->getMaxHypeEnergy();
     int cur = character_->getHypeEnergy();
-    if (cur < maxHype * T("hype.low_threshold")) {
-        int cost = static_cast<int>(character_->getMoney() * T("hype.cost_pct"));
-        int recover = static_cast<int>(maxHype * T("hype.recover_frac"));
+    if (GameMath::hypeRecoveryNeeded(cur, maxHype)) {
+        int cost = GameMath::hypeRecoveryCost(character_->getMoney());
+        int recover = GameMath::hypeRecoveryAmount(maxHype);
         if (character_->getMoney() >= cost && cost > 0) {
             character_->spendMoney(cost);
             character_->setHypeEnergy(std::min(maxHype, cur + recover));
@@ -285,26 +298,23 @@ void GameEngine::checkNemesisEncounter() {
     auto nemesis = std::make_unique<Monster>(
         nemesisSystem_->generateNemesis(character_->getSeries(), currentElapsedSeconds_, character_->getName()));
 
-    if (introPending_) {   // first nemesis of a new game: story popup first, clock paused
-        introPending_ = false;
-        std::string base = nemesis->name;
-        const size_t p = base.find(" (Year");
-        if (p != std::string::npos) base.erase(p);
-        introText_ = introTemplate_;
-        for (size_t at; (at = introText_.find("{nemesis}")) != std::string::npos;) introText_.replace(at, 9, base);
-        if (introText_.empty()) introText_ = base + " glares at you.";
-        pendingNemesis_ = std::move(nemesis);
-        introOpen_ = introWarn_ = true;
-        return;
+    // every nemesis opens the story popup: the first one the onboarding story, later ones a generic taunt
+    std::string text;
+    if (introPending_) {
+        text = introTemplate_;
+    } else if (!tauntBlocks_.empty()) {
+        std::uniform_int_distribution<size_t> pick(0, tauntBlocks_.size() - 1);
+        text = tauntBlocks_[pick(rng_)];
     }
-
-    log_.add("NEMESIS ENCOUNTER!");
-    currentEncounter_ = std::make_unique<BattleEncounter>();
-    currentEncounter_->addEnemy(std::move(nemesis));
-    log_.add(currentEncounter_->getEnemy(0)->name + " appears!");
-    inBattle_ = true; roundNumber_ = 1;
-    playerTurn_ = playerFirst();
-    counters_.totalBattles++; ticksSinceLastAction_ = 0;
+    introPending_ = false;
+    std::string base = nemesis->name;
+    const size_t p = base.find(" (Year");
+    if (p != std::string::npos) base.erase(p);
+    if (text.empty()) text = "{nemesis} glares at you.";
+    for (size_t at; (at = text.find("{nemesis}")) != std::string::npos;) text.replace(at, 9, base);
+    introText_ = text;
+    pendingNemesis_ = std::move(nemesis);
+    introOpen_ = introWarn_ = true;
 }
 
 void GameEngine::armNemesisIntro() {
@@ -411,7 +421,7 @@ void GameEngine::handleBattle() {
             for (auto* e : currentEncounter_->getAliveEnemies()) { es += e->getModifiedAgility(); ++n; }
             if (n) es /= n;
             const double bonus = Archetypes::I().passive(character_->getClassId(), "extra_action");
-            if (n && Balance::chance(Balance::extraActionChance(character_->getModifiedAgility(), es, bonus))) {
+            if (n && GameMath::chance(GameMath::extraActionChance(character_->getModifiedAgility(), es, bonus))) {
                 log_.add("EXTRA ACTION");
                 return;
             }
@@ -425,8 +435,8 @@ void GameEngine::handleBattle() {
         }
         if (!currentEncounter_->hasAliveEnemies()) { handleVictory(); return; }
 
-        if (character_->getRunway() < character_->getMaxRunway() * T("emerg.heal_frac")) tryEmergencyHealing();
-        if (character_->getRunway() < T("emerg.sale_runway") && character_->getInventoryCount() > 0) {
+        if (GameMath::emergencyHealNeeded(character_->getRunway(), character_->getMaxRunway())) tryEmergencyHealing();
+        if (GameMath::emergencySaleNeeded(character_->getRunway()) && character_->getInventoryCount() > 0) {
             beginSelloff(true, false); // runway restored when the last item is sold
         }
     }
@@ -446,7 +456,7 @@ bool GameEngine::playerAttack() {
     const PlayerChoice pick = PlayerStrategy::choose(*character_, *currentEncounter_, rng_);
 
     // tech debt: fumble (basic) or misfire (patent: hype spent, no effect)
-    if (Balance::chance(Balance::failChance(character_->getTechnicalDebt()))) {
+    if (GameMath::chance(GameMath::failChance(character_->getTechnicalDebt()))) {
         if (!pick.patent.empty()) {
             const Patent& p = Patent::characterPatents[pick.patent];
             character_->setHypeEnergy(character_->getHypeEnergy() - p.effectiveCost(character_.get()));
@@ -472,16 +482,16 @@ bool GameEngine::playerAttack() {
     } else {
         Monster* target = currentEncounter_->getLowestHPEnemy();
         if (!target) return false;
-        if (Balance::chance(Balance::dodgeChance(target->getModifiedAgility(), character_->getModifiedAgility()))) {
+        if (GameMath::chance(GameMath::dodgeChance(target->getModifiedAgility(), character_->getModifiedAgility()))) {
             log_.add(target->getName() + " dodged");
             return false;
         }
-        const int varianceRange = static_cast<int>(T("combat.variance"));
+        const int varianceRange = GameMath::combatVariance();
         std::uniform_int_distribution<> variance(-varianceRange, varianceRange);
-        int dmg = std::max(1, static_cast<int>((character_->getModifiedHustle() - target->getModifiedNDAs()) * T("combat.player_dmg_mult")) + variance(rng_));
+        int dmg = GameMath::playerDamage(character_->getModifiedHustle(), target->getModifiedNDAs(), variance(rng_));
         const double lk = character_->getModifiedLuck();
-        bool crit = Balance::chance(Balance::critChance(lk));
-        if (crit) dmg = static_cast<int>(dmg * Balance::critMult(lk, character_->getModifiedSynergy(),
+        bool crit = GameMath::chance(GameMath::critChance(lk));
+        if (crit) dmg = static_cast<int>(dmg * GameMath::critMult(lk, character_->getModifiedSynergy(),
                                           Archetypes::I().passive(character_->getClassId(), "crit_mult")));
         target->takeDamage(dmg);
         log_.add(std::string(crit ? "CRIT! " : "") + "dealt " + std::to_string(dmg) + " dmg to " + target->getName());
@@ -498,15 +508,15 @@ void GameEngine::monsterAttack(Monster* enemy) {
         if (usedPatent) log_.add(enemy->getName() + " used strategic magic!");
     }
     if (!usedPatent) {
-        if (Balance::chance(Balance::dodgeChance(character_->getModifiedAgility(), enemy->getModifiedAgility()))) {
+        if (GameMath::chance(GameMath::dodgeChance(character_->getModifiedAgility(), enemy->getModifiedAgility()))) {
             log_.add("dodged " + enemy->getName());
             return;
         }
-        const int varianceRange = static_cast<int>(T("combat.variance"));
+        const int varianceRange = GameMath::combatVariance();
         std::uniform_int_distribution<> variance(-varianceRange, varianceRange);
-        int dmg = std::max(1, static_cast<int>((enemy->getModifiedHustle() - character_->getModifiedNDAs()) * T("combat.enemy_dmg_mult")) + variance(rng_));
-        bool crit = Balance::chance(Balance::critChance(enemy->getLuck()));
-        if (crit) dmg = static_cast<int>(dmg * Balance::critMult(enemy->getLuck(), enemy->getSynergy()));
+        int dmg = GameMath::enemyDamage(enemy->getModifiedHustle(), character_->getModifiedNDAs(), variance(rng_));
+        bool crit = GameMath::chance(GameMath::critChance(enemy->getLuck()));
+        if (crit) dmg = static_cast<int>(dmg * GameMath::critMult(enemy->getLuck(), enemy->getSynergy()));
         character_->takeDamage(dmg);
         log_.add(enemy->getName() + (crit ? " CRIT " : " dealt ") + std::to_string(dmg) + " dmg");
     }
@@ -519,7 +529,7 @@ void GameEngine::handleVictory() {
               + " in " + std::to_string(roundNumber_) + " rounds");
 
     int moneyReward = currentEncounter_->getTotalMoneyReward();
-    int fundingReward = static_cast<int>(moneyReward * T("funding.per_money"));
+    int fundingReward = GameMath::fundingFromMoney(moneyReward);
     const ClassDef& cls = Archetypes::I().get(character_->getClassId());
     character_->addMoney(static_cast<int>(moneyReward * cls.cashMult));
     character_->setElapsedSeconds(currentElapsedSeconds_);
@@ -564,14 +574,14 @@ void GameEngine::handleVictory() {
         for (auto* e : allEnemies) if (e->type == MonsterType::MOB && e->itemReward == itemName) { dropper = e; break; }
         if (dropper) { {
             int v = dropper->itemValue;
-            if (v > 0) v = static_cast<int>(v * Balance::luckItemMult(character_->getLuck(), Archetypes::I().passive(character_->getClassId(), "luck_drop")));
+            if (v > 0) v = static_cast<int>(v * GameMath::luckItemMult(character_->getLuck(), Archetypes::I().passive(character_->getClassId(), "luck_drop")));
             character_->addInventoryItem(itemName, v);
         } log_.add("item: " + itemName); questSystem_->onItem(itemName); }
     }
 
     for (auto* e : allEnemies) {
         if (e->type == MonsterType::BOSS && !hasSpecialDrop) {
-            equipGen_->setLuckBonus(Balance::luckRarityBonus(character_->getLuck()));
+            equipGen_->setLuckBonus(GameMath::luckRarityBonus(character_->getLuck()));
             Equipment reward = equipGen_->generateBossDropEquipment(character_->getSeries());
             character_->addEquipmentToInventory(reward);
             counters_.bossesDefeated++;
@@ -737,7 +747,7 @@ void GameEngine::stepSelloff() {
         for (size_t i = inv.size(); i-- > 0;) {
             if (specialDropsLibrary_->isSpecialEquipment(inv[i].name)) continue; // unsellable
             std::string name = inv[i].name;
-            int price = static_cast<int>(inv[i].equipmentvalue * T("econ.sell_ratio"));
+            int price = static_cast<int>(inv[i].equipmentvalue * character_->sellRatio());
             character_->sellEquipmentByIndex(i);
             selloff_.earned += price;
             log_.add("sold " + name + " for $" + std::to_string(price));
@@ -751,7 +761,7 @@ void GameEngine::stepSelloff() {
 void GameEngine::finishSelloff() {
     selloff_.active = false;
     if (selloff_.emergency) {
-        int recovered = std::max(0, static_cast<int>(selloff_.earned / std::max(1.0, T("emerg.runway_money_div"))));
+        int recovered = GameMath::emergencyRunwayGain(selloff_.earned);
         character_->setRunway(std::min(character_->getRunway() + recovered, character_->getMaxRunway()));
         log_.add("emergency sale done: +" + std::to_string(recovered) + " runway");
     } else {
@@ -816,15 +826,12 @@ void GameEngine::syncBias() {
 }
 
 void GameEngine::grantQuestReward(bool isMain, const std::string& title) {
-    const auto& b = questSystem_->balance();
     character_->setElapsedSeconds(currentElapsedSeconds_);
-    double funding = character_->getRequiredFunding() * (isMain ? b.rewardMainPct : b.rewardHustlePct) / 100.0;
+    double funding = GameMath::questRewardFunding(character_->getRequiredFunding(), isMain);
     character_->addFunding(funding);
 
     std::uniform_int_distribution<> d(0, 99);
-    bool hi = d(rng_) < 30;
-    EquipmentRarity r = isMain ? (hi ? EquipmentRarity::LEGENDARY : EquipmentRarity::EPIC)
-                               : (hi ? EquipmentRarity::EPIC : EquipmentRarity::RARE);
+    EquipmentRarity r = GameMath::questRewardRarity(isMain, d(rng_));
     Equipment eq = specialDropsLibrary_->generateQuestEquipment(character_->getSeries(), r, title);
     scaleSpecial(eq);
 
@@ -850,7 +857,7 @@ bool GameEngine::playerFirst() {
 // tech debt: chance per battle that a random equipped (non-special) item breaks until repaired in town
 void GameEngine::rollBreakage() {
     const double resist = Archetypes::I().passive(character_->getClassId(), "break_resist");
-    if (!Balance::chance(Balance::breakChance(character_->getTechnicalDebt(), resist))) return;
+    if (!GameMath::chance(GameMath::breakChance(character_->getTechnicalDebt(), resist))) return;
     const std::string n = character_->breakRandomEquipped();
     if (!n.empty()) log_.add("BROKEN (tech debt): " + n);
 }

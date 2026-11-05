@@ -5,7 +5,7 @@
 #include "../include/progress_bar.h"
 #include "../include/ui.h"
 #include "../include/Tuning.h"
-#include "../include/Balance.h"
+#include "../include/GameMath.h"
 #include <cmath>
 #include "../include/globals.h"
 #include <algorithm>

@@ -1,5 +1,6 @@
 // SPG Engine made by drmrsthemonarch
 #include "../include/Tuning.h"
+#include "../include/GameMath.h"
 #include "../include/ConfigStore.h"
 #include "../include/EquipmentGenerator.h"
 #include <fstream>
@@ -157,21 +158,15 @@ Equipment EquipmentGenerator::generateBossDropEquipment(int playerSeries) {
 }
 
 float EquipmentGenerator::calculateBaseStat(int playerSeries, double statMultiplier) const {
-    // Base formula: (playerSeries * 2 + 5) * statMultiplier
-    // statMultiplier: 1 = +, 2 = ++
-    float baseStat = (playerSeries * T("equip.per_series") + T("equip.base")) * statMultiplier;
-
-    // Add some randomness (±20%)
-    const float v = static_cast<float>(T("equip.variance"));
+    const float v = static_cast<float>(GameMath::equipVariance());
     std::uniform_real_distribution<float> variance(1.0f - v, 1.0f + v);
-    return static_cast<int>(baseStat * variance(gen_));
+    return static_cast<int>(GameMath::equipStat(playerSeries, statMultiplier) * variance(gen_));
 }
 
 int EquipmentGenerator::calculateInventoryLimit(int playerSeries) const {
-    int baseLimit = static_cast<int>(T("equip.backpack_base") + playerSeries * T("equip.backpack_per"));
-    const int v = std::max(0, static_cast<int>(T("equip.backpack_var")));
+    const int v = GameMath::backpackNoiseRange();
     std::uniform_int_distribution<int> variance(-v, v);
-    return std::max(static_cast<int>(T("equip.backpack_min")), baseLimit + variance(gen_));
+    return GameMath::backpackSlots(playerSeries, variance(gen_));
 }
 
 void EquipmentGenerator::applyLaptopStats(Equipment& eq, int s) {
@@ -193,23 +188,11 @@ void EquipmentGenerator::applyHelmetStats(Equipment& eq, int s) { eq.ndas = calc
 
 EquipmentRarity EquipmentGenerator::rollBossDropRarity() const {
     std::uniform_int_distribution<int> rarityRoll(1, 10000);
-    int roll = rarityRoll(gen_) - static_cast<int>(luckBonus_);
-    if (roll <= T("rarity.cum_legendary")) return EquipmentRarity::LEGENDARY;
-    if (roll <= T("rarity.cum_epic")) return EquipmentRarity::EPIC;
-    if (roll <= T("rarity.cum_rare")) return EquipmentRarity::RARE;
-    if (roll <= T("rarity.cum_uncommon")) return EquipmentRarity::UNCOMMON;
-    return EquipmentRarity::COMMON;
+    return GameMath::bossRarity(rarityRoll(gen_) - static_cast<int>(luckBonus_));
 }
 
 void EquipmentGenerator::applyRarityBonus(Equipment& equipment, EquipmentRarity rarity) const {
-    double m = 1.0;
-    switch (rarity) {
-        case EquipmentRarity::UNCOMMON: m = T("rarity.stat_uncommon"); break;
-        case EquipmentRarity::RARE: m = T("rarity.stat_rare"); break;
-        case EquipmentRarity::EPIC: m = T("rarity.stat_epic"); break;
-        case EquipmentRarity::LEGENDARY: m = T("rarity.stat_legendary"); break;
-        default: break;
-    }
+    const double m = GameMath::rarityStatMult(rarity);
     auto sc = [m](int& v) { if (v > 0) v = static_cast<int>(v * m); };
     sc(equipment.runway); sc(equipment.hypeEnergy); sc(equipment.hustle); sc(equipment.agility);
     sc(equipment.ndas); sc(equipment.luck); sc(equipment.synergy); sc(equipment.technicalDebt);
@@ -217,28 +200,7 @@ void EquipmentGenerator::applyRarityBonus(Equipment& equipment, EquipmentRarity 
     if (equipment.busFactor > 0.0f) equipment.busFactor = static_cast<float>(equipment.busFactor * m);
 }
 
-double EquipmentGenerator::calculateEquipmentValue(const Equipment& q) const {
-    double v = 0.0;
-    v += q.runway * T("equip.val_runway");
-    v += q.hypeEnergy * T("equip.val_hype");
-    v += q.hustle * T("equip.val_hustle");
-    v += q.agility * T("equip.val_agility");
-    v += q.ndas * T("equip.val_ndas");
-    v += q.luck * T("equip.val_luck");
-    v += q.synergy * T("equip.val_synergy");
-    v += q.technicalDebt * T("equip.val_td");
-    v += q.busFactor * T("equip.val_bus");
-    v += q.inventoryLimit * T("equip.val_inv");
-    double rm = 1.0;
-    switch (q.rarity) {
-        case EquipmentRarity::UNCOMMON: rm = T("rarity.val_uncommon"); break;
-        case EquipmentRarity::RARE: rm = T("rarity.val_rare"); break;
-        case EquipmentRarity::EPIC: rm = T("rarity.val_epic"); break;
-        case EquipmentRarity::LEGENDARY: rm = T("rarity.val_legendary"); break;
-        default: break;
-    }
-    return std::max(T("equip.val_min"), v * rm);
-}
+double EquipmentGenerator::calculateEquipmentValue(const Equipment& q) const { return GameMath::equipValue(q); }
 
 // Name generation methods
 std::string EquipmentGenerator::generateEquipmentName(EquipmentType type) {

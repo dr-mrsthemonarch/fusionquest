@@ -1,5 +1,5 @@
 #include "../include/Tuning.h"
-#include "../include/Balance.h"
+#include "../include/GameMath.h"
 #include "../include/NemesisSystem.h"
 #include <cmath>
 #include <algorithm>
@@ -20,7 +20,7 @@ NemesisSystem::NemesisSystem() : nemesisPowerLevel_(0) {
 }
 
 NemesisSystem::NemesisStats NemesisSystem::calculateNemesisStats(int playerSeries, double elapsedSeconds, NemesisType type, int powerLevel) {
-    Balance::EnemyStats e = Balance::nemesis(playerSeries, elapsedSeconds, static_cast<int>(type), powerLevel);
+    GameMath::EnemyStats e = GameMath::nemesis(playerSeries, elapsedSeconds, static_cast<int>(type), powerLevel);
     NemesisStats s;
     s.maxHealth = static_cast<int>(e.hp);
     s.health = s.maxHealth;
@@ -76,15 +76,14 @@ Monster NemesisSystem::generateNemesis(int playerSeries, double elapsedSeconds, 
     nemesis.moneyReward = stats.moneyReward;
 
     // Nemesis gets MASSIVE hype energy
-    nemesis.maxHypeEnergy = static_cast<int>(T("nemesis.hype_base") + playerSeries * T("nemesis.hype_per") + nemesisPowerLevel_ * T("nemesis.hype_pow"));
+    nemesis.maxHypeEnergy = GameMath::nemesisHype(playerSeries, nemesisPowerLevel_);
     nemesis.hypeEnergy = nemesis.maxHypeEnergy;
 
     // Nemesis uses TACTICAL strategy (smart and deadly)
     nemesis.setStrategy(std::make_unique<TacticalStrategy>());
 
     // Nemesis gets 4-7 patents depending on type and power level
-    int patentCount = 4 + (static_cast<int>(nemesisType)) + (nemesisPowerLevel_ / 2);
-    patentCount = std::min(patentCount, 8); // Cap at 8
+    const int patentCount = GameMath::nemesisPatentCount(static_cast<int>(nemesisType), nemesisPowerLevel_);
     generateNemesisPatents(nemesis, patentCount, playerSeries, nemesisType);
 
     nemesis.itemReward = "NEMESIS_EQUIPMENT";
@@ -285,15 +284,9 @@ void NemesisSystem::generateNemesisPatents(Monster& nemesis, int count, int play
 
     // Create the patents with power scaling
     for (const auto& [name, type] : selected) {
-        int basePower = static_cast<int>(T("nemesis.patent_pow_base") + playerSeries * T("nemesis.patent_pow_per") + nemesisPowerLevel_ * T("nemesis.patent_pow_pow"));
-        int cost = static_cast<int>(T("nemesis.patent_cost_base") + playerSeries * T("nemesis.patent_cost_per"));
-
-        // Debuffs and attacks are extra powerful for Nemesis
-        if (type == PatentType::DEBUFF) {
-            basePower = static_cast<int>(basePower * 1.5); // 50% stronger
-        } else if (type == PatentType::ATTACK) {
-            basePower = static_cast<int>(basePower * 1.3); // 30% stronger
-        }
+        const GameMath::PatentSpec ps = GameMath::nemesisPatent(playerSeries, nemesisPowerLevel_,
+            type == PatentType::DEBUFF ? 2 : type == PatentType::ATTACK ? 1 : 0);
+        int basePower = ps.power, cost = ps.cost;
 
         PatentTarget target = (type == PatentType::ATTACK || type == PatentType::DEBUFF)
             ? PatentTarget::ENEMY

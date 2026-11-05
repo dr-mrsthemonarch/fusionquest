@@ -179,6 +179,7 @@ private:
     void syncBias();
     bool introPending_ = false, introWarn_ = false, introOpen_ = false;
     std::string introTemplate_, introText_;
+    std::vector<std::string> tauntBlocks_;
     std::unique_ptr<Monster> pendingNemesis_;
     bool playerFirst();
     void rollBreakage();

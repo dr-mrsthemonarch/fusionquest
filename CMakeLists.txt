@@ -58,10 +58,11 @@ set(ENGINE_SOURCES
         src/Sha256.cpp
         src/SaveCrypto.cpp
         src/Tuning.cpp
-        src/Balance.cpp
+#        src/Balance.cpp
         src/Archetype.cpp
         src/PlayerStrategy.cpp
         src/nemesis_intro_page.cpp
+        src/GameMath.cpp
 )
 
 set(HEADERS
@@ -98,9 +99,10 @@ set(HEADERS
         include/Sha256.h
         include/SaveCrypto.h
         include/Tuning.h
-        include/Balance.h
+#        include/Balance.h
         include/Archetype.h
         include/PlayerStrategy.h
+        include/GameMath.h
 )
 
 # ---- config compiled into the executable (players can't edit it) ----

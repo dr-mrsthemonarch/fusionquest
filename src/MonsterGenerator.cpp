@@ -1,10 +1,11 @@
 // SPG Engine made by drmrsthemonarch
 #include "../include/Tuning.h"
-#include "../include/Balance.h"
+#include "../include/GameMath.h"
 #include "../include/ConfigStore.h"
 #include "../include/MonsterGenerator.h"
 #include "../include/PatentStrategy.h"
 #include <cmath>
+#include <ctime>
 #include <algorithm>
 #include <fstream>
 #include <iostream>
@@ -33,7 +34,7 @@ namespace MonsterScaling {
 
     // Difficulty multipliers
     double getDifficultyMultiplier(MonsterDifficulty difficulty) {
-        return Balance::difficultyMult(static_cast<int>(difficulty));
+        return GameMath::difficultyMult(static_cast<int>(difficulty));
     }
 
     // Add random variance (±percentage)
@@ -50,7 +51,7 @@ int vary(double v, double pct, std::mt19937 &rng) {
 }  // namespace
 
 BossStats MonsterGenerator::calculateBossStats(int playerSeries, MonsterDifficulty difficulty) {
-    Balance::EnemyStats e = Balance::boss(playerSeries, MonsterScaling::getDifficultyMultiplier(difficulty));
+    GameMath::EnemyStats e = GameMath::boss(playerSeries, MonsterScaling::getDifficultyMultiplier(difficulty));
     BossStats s;
     s.maxHealth = vary(e.hp, T("boss.var_hp"), rng_);
     s.health = s.maxHealth;
@@ -62,7 +63,7 @@ BossStats MonsterGenerator::calculateBossStats(int playerSeries, MonsterDifficul
 }
 
 MobStats MonsterGenerator::calculateMobStats(int playerSeries, MonsterDifficulty difficulty) {
-    Balance::EnemyStats e = Balance::mob(playerSeries, MonsterScaling::getDifficultyMultiplier(difficulty));
+    GameMath::EnemyStats e = GameMath::mob(playerSeries, MonsterScaling::getDifficultyMultiplier(difficulty));
     MobStats s;
     s.maxHealth = vary(e.hp, T("mob.var_hp"), rng_);
     s.health = s.maxHealth;
@@ -158,7 +159,7 @@ Monster MonsterGenerator::generateBoss(int playerSeries) {
     boss.moneyReward = stats.moneyReward;
 
     // Bosses get hype energy and patents
-    boss.maxHypeEnergy = static_cast<int>(T("monster.boss_hype_base") + playerSeries * T("monster.boss_hype_per"));
+    boss.maxHypeEnergy = GameMath::bossHype(playerSeries);
     boss.hypeEnergy = boss.maxHypeEnergy;
 
     // Assign strategy based on difficulty
@@ -176,16 +177,7 @@ Monster MonsterGenerator::generateBoss(int playerSeries) {
     }
 
     // Give bosses diverse patents based on difficulty
-    int patentCount = 1;
-    switch (boss.difficulty) {
-        case MonsterDifficulty::MEDIUM: patentCount = 2;
-            break;
-        case MonsterDifficulty::HARD: patentCount = 3;
-            break;
-        case MonsterDifficulty::LEGENDARY: patentCount = 4;
-            break;
-        default: patentCount = 1;
-    }
+    const int patentCount = GameMath::bossPatentCount(static_cast<int>(boss.difficulty));
 
     // Generate diverse patent loadout
     generateBossPatents(boss, patentCount, playerSeries);
@@ -211,30 +203,15 @@ Monster MonsterGenerator::generateMob(int playerSeries, ItemGenerator &itemGen) 
     mob.moneyReward = stats.moneyReward;
 
     // Mobs get limited hype energy
-    mob.maxHypeEnergy = static_cast<int>(T("monster.mob_hype_base") + playerSeries * T("monster.mob_hype_per"));
+    mob.maxHypeEnergy = GameMath::mobHype(playerSeries);
     mob.hypeEnergy = mob.maxHypeEnergy;
 
     // Assign simple aggressive strategy to mobs
     mob.setStrategy(std::make_unique<AggressiveStrategy>());
 
     // Mobs get 1-2 patents based on difficulty
-    int patentChance = static_cast<int>(T("monster.mob_patent_easy"));
-    int patentCount = 1;
-    switch (mob.difficulty) {
-        case MonsterDifficulty::MEDIUM:
-            patentChance = static_cast<int>(T("monster.mob_patent_medium"));
-            break;
-        case MonsterDifficulty::HARD:
-            patentChance = static_cast<int>(T("monster.mob_patent_hard"));
-            patentCount = 2;
-            break;
-        case MonsterDifficulty::LEGENDARY:
-            patentChance = static_cast<int>(T("monster.mob_patent_legendary"));
-            patentCount = 2;
-            break;
-        default:
-            break;
-    }
+    const int patentChance = GameMath::mobPatentChance(static_cast<int>(mob.difficulty));
+    const int patentCount = GameMath::mobPatentCount(static_cast<int>(mob.difficulty));
 
     if ((rand() % 100) < patentChance) {
         generateMobPatents(mob, patentCount, playerSeries);
@@ -365,13 +342,8 @@ void MonsterGenerator::generateBossPatents(Monster &boss, int count, int playerS
 
     // Create patents
     for (const auto &[name, type]: selected) {
-        int basePower = static_cast<int>(T("monster.boss_patent_pow") + playerSeries * T("monster.boss_patent_pow_per"));
-        int cost = static_cast<int>(T("monster.boss_patent_cost") + playerSeries * T("monster.boss_patent_cost_per"));
-
-        // Debuffs are powerful for bosses
-        if (type == PatentType::DEBUFF) {
-            basePower = static_cast<int>(basePower * T("monster.debuff_mult"));
-        }
+        const GameMath::PatentSpec ps = GameMath::bossPatent(playerSeries, type == PatentType::DEBUFF);
+        int basePower = ps.power, cost = ps.cost;
 
         PatentTarget target = (type == PatentType::ATTACK || type == PatentType::DEBUFF) ? PatentTarget::ENEMY : PatentTarget::SELF;
 
@@ -388,8 +360,8 @@ void MonsterGenerator::generateMobPatents(Monster &mob, int count, int playerSer
     std::shuffle(mobPatents.begin(), mobPatents.end(), g);
 
     for (int i = 0; i < std::min(count, static_cast<int>(mobPatents.size())); ++i) {
-        int basePower = static_cast<int>(T("monster.mob_patent_pow") + playerSeries * T("monster.mob_patent_pow_per"));
-        int cost = static_cast<int>(T("monster.mob_patent_cost") + playerSeries * T("monster.mob_patent_cost_per"));
+        const GameMath::PatentSpec ps = GameMath::mobPatent(playerSeries);
+        int basePower = ps.power, cost = ps.cost;
 
         PatentTarget target = (mobPatents[i].second == PatentType::ATTACK) ? PatentTarget::ENEMY : PatentTarget::SELF;
 
@@ -417,11 +389,11 @@ std::vector<std::unique_ptr<Monster> > MonsterGenerator::generateGroupEncounter(
         for (int i = 0; i < mobCount; ++i) {
             Monster mob = generateMob(playerSeries, itemGen);
             // Scale down for group
-            mob.maxHealth = static_cast<int>(mob.maxHealth * T("enc.small_scale"));
+            mob.maxHealth = static_cast<int>(mob.maxHealth * GameMath::groupScale(0));
             mob.health = mob.maxHealth;
-            mob.attack = static_cast<int>(mob.attack * T("enc.small_scale"));
-            mob.defense = static_cast<int>(mob.defense * T("enc.small_scale"));
-            mob.moneyReward = static_cast<int>(mob.moneyReward * T("enc.small_scale"));
+            mob.attack = static_cast<int>(mob.attack * GameMath::groupScale(0));
+            mob.defense = static_cast<int>(mob.defense * GameMath::groupScale(0));
+            mob.moneyReward = static_cast<int>(mob.moneyReward * GameMath::groupScale(0));
             encounter.push_back(std::make_unique<Monster>(std::move(mob)));
         }
     } else if (roll <= T("enc.single_pct") + T("enc.small_pct") + T("enc.large_pct")) {
@@ -431,11 +403,11 @@ std::vector<std::unique_ptr<Monster> > MonsterGenerator::generateGroupEncounter(
 
         for (int i = 0; i < mobCount; ++i) {
             Monster mob = generateMob(playerSeries, itemGen);
-            mob.maxHealth = static_cast<int>(mob.maxHealth * T("enc.large_scale"));
+            mob.maxHealth = static_cast<int>(mob.maxHealth * GameMath::groupScale(1));
             mob.health = mob.maxHealth;
-            mob.attack = static_cast<int>(mob.attack * T("enc.large_scale"));
-            mob.defense = static_cast<int>(mob.defense * T("enc.large_scale"));
-            mob.moneyReward = static_cast<int>(mob.moneyReward * T("enc.large_scale"));
+            mob.attack = static_cast<int>(mob.attack * GameMath::groupScale(1));
+            mob.defense = static_cast<int>(mob.defense * GameMath::groupScale(1));
+            mob.moneyReward = static_cast<int>(mob.moneyReward * GameMath::groupScale(1));
             encounter.push_back(std::make_unique<Monster>(std::move(mob)));
         }
     } else {
@@ -449,7 +421,7 @@ std::vector<std::unique_ptr<Monster> > MonsterGenerator::generateGroupEncounter(
 
         // Add scaled minions
         for (int i = 0; i < mobCount; ++i) {
-encounter.push_back(generateBossMinion(playerSeries, itemGen, static_cast<float>(T("enc.minion_scale"))));
+encounter.push_back(generateBossMinion(playerSeries, itemGen, static_cast<float>(GameMath::groupScale(2))));
         }
     }
 

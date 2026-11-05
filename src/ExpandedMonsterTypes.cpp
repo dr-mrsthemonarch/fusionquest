@@ -1,5 +1,5 @@
 // SPG Engine made by drmrsthemonarch
-#include "../include/Balance.h"
+#include "../include/GameMath.h"
 #include "../include/Tuning.h"
 #include "../include/ConfigStore.h"
 #include "../include/ExpandedMonsterTypes.h"
@@ -15,7 +15,7 @@ constexpr double SECONDS_PER_MONTH = SECONDS_PER_YEAR / 12.0;
 SpecializedMonsterGenerator::SpecializedStats SpecializedMonsterGenerator::calculateSpecializedStats(int playerSeries, double elapsedSeconds, ExtendedMonsterType type, MonsterDifficulty difficulty) {
     SpecializedStats stats;
 
-    const double diffMult = Balance::difficultyMult(static_cast<int>(difficulty));
+    const double diffMult = GameMath::difficultyMult(static_cast<int>(difficulty));
     int kind = -1;
     switch (type) {
         case ExtendedMonsterType::SAFETY_MANAGER: kind = 0; stats.specialMechanic = "SAFETY_AUDIT"; break;
@@ -23,7 +23,7 @@ SpecializedMonsterGenerator::SpecializedStats SpecializedMonsterGenerator::calcu
         case ExtendedMonsterType::PAPER_WRITING: kind = 2; stats.specialMechanic = "PEER_REVIEW"; break;
         default: stats.specialMechanic = "NONE"; break;
     }
-    const Balance::EnemyStats e = Balance::special(kind, playerSeries, diffMult);
+    const GameMath::EnemyStats e = GameMath::special(kind, playerSeries, diffMult);
     stats.maxHealth = static_cast<int>(e.hp);
     stats.attack = static_cast<int>(e.atk);
     stats.defense = static_cast<int>(e.def);
@@ -96,16 +96,16 @@ BossData ReviewCalendarSystem::generateMonthlyReviewData(int year, int month, in
     int estimatedPlayerSeries = playerSeries + (year - 1);
     double monthProgression = month / 12.0;
 
-    double diffMult = Balance::difficultyMult(static_cast<int>(difficulty));
+    double diffMult = GameMath::difficultyMult(static_cast<int>(difficulty));
 
-    const Balance::EnemyStats rb = Balance::review(year, month, diffMult);
-    data.level = estimatedPlayerSeries + year;
+    const GameMath::EnemyStats rb = GameMath::review(year, month, diffMult);
+    data.level = GameMath::reviewLevel(playerSeries, year);
     data.maxHealth = static_cast<int>(rb.hp);
     data.attack = static_cast<int>(rb.atk);
     data.defense = static_cast<int>(rb.def);
     data.speed = static_cast<int>(rb.spd);
     data.moneyReward = static_cast<int>(rb.money);
-    data.maxHypeEnergy = 50 + (estimatedPlayerSeries * 10);
+    data.maxHypeEnergy = GameMath::reviewHype(estimatedPlayerSeries);
     data.itemReward = "EQUIPMENT";
 
     return data;
@@ -124,13 +124,15 @@ Monster ShadowPlayerSystem::generateShadowPlayer(const Character &player, double
     shadow.level = player.getSeries();
 
     // EXACT REPLICA of player stats (slightly buffed)
-    shadow.maxHealth = player.getMaxRunway() * T("shadow.hp_mult");
-    shadow.maxHypeEnergy = player.getMaxHypeEnergy() * T("shadow.hype_mult"); // More energy
+    const GameMath::ShadowStats ss = GameMath::shadow(player.getMaxRunway(), player.getMaxHypeEnergy(), player.getHustle(),
+                                                      player.getNDAs(), player.getAgility());
+    shadow.maxHealth = ss.hp;
+    shadow.maxHypeEnergy = ss.hype;
     shadow.health = shadow.maxHealth;
     shadow.hypeEnergy = shadow.maxHypeEnergy;
-    shadow.attack = player.getHustle() * T("shadow.atk_mult");
-    shadow.defense = player.getNDAs() * T("shadow.def_mult");
-    shadow.speed = player.getLuck() * T("shadow.spd_mult");
+    shadow.attack = ss.atk;
+    shadow.defense = ss.def;
+    shadow.speed = ss.spd;
 
     // Shadow uses MIRROR strategy (copies player behavior intelligently)
     shadow.setStrategy(std::make_unique<MirrorStrategy>());
@@ -142,7 +144,7 @@ Monster ShadowPlayerSystem::generateShadowPlayer(const Character &player, double
 
         // Create shadow version with slightly more power
         std::string shadowName = "Shadow " + playerPatent.getName();
-        int shadowPower = static_cast<int>(playerPatent.getCurrentPower() * T("shadow.patent_mult")); // 15% stronger
+        int shadowPower = GameMath::shadowPatentPower(playerPatent.getCurrentPower());
         int shadowCost = playerPatent.getCost();
 
         auto shadowPatent = std::make_shared<Patent>(
@@ -159,7 +161,7 @@ Monster ShadowPlayerSystem::generateShadowPlayer(const Character &player, double
                   << playerPatent.getTypeName() << ", Power: " << shadowPower << ")\n";
     }
 
-    shadow.moneyReward = static_cast<int>(std::min(T("shadow.reward_flat") + player.getMoney() * T("shadow.reward_money_mult"), 2.0e9)); // Billion dollar reward
+    shadow.moneyReward = GameMath::shadowReward(player.getMoney());
     shadow.itemReward = "SHADOW_EQUIPMENT";
 
     return shadow;
@@ -209,10 +211,10 @@ Monster SpecializedMonsterGenerator::generateSafetyManager(int playerSeries, dou
     safety.speed = stats.speed;
     safety.moneyReward = stats.moneyReward;
     safety.itemReward = "Safety Certificate";
-    safety.itemValue = 50 + playerSeries * 10;
+    safety.itemValue = GameMath::specialItemValue(0, playerSeries);
 
     // Safety Managers have high hype energy
-    safety.maxHypeEnergy = 70 + (playerSeries * 12);
+    safety.maxHypeEnergy = GameMath::safetyHype(playerSeries);
     safety.hypeEnergy = safety.maxHypeEnergy;
 
     // Use DEBUFF strategy - they weaken the player!
@@ -235,17 +237,11 @@ void SpecializedMonsterGenerator::generateSafetyManagerPatents(Monster& safety, 
     };
 
     // Give 3-4 patents
-    int patentCount = 3 + (playerSeries / 5);
-    patentCount = std::min(patentCount, static_cast<int>(safetyPatents.size()));
+    const int patentCount = GameMath::safetyPatentCount(playerSeries, static_cast<int>(safetyPatents.size()));
 
     for (int i = 0; i < patentCount; ++i) {
-        int basePower = 25 + (playerSeries * 3);
-        int cost = 12 + (playerSeries * 2);
-
-        // Debuffs are very powerful for Safety Managers
-        if (safetyPatents[i].second == PatentType::DEBUFF) {
-            basePower = static_cast<int>(basePower * 1.4); // 40% stronger debuffs
-        }
+        const GameMath::PatentSpec ps = GameMath::safetyPatent(playerSeries, safetyPatents[i].second == PatentType::DEBUFF);
+        int basePower = ps.power, cost = ps.cost;
 
         PatentTarget target = (safetyPatents[i].second == PatentType::DEBUFF)
             ? PatentTarget::ENEMY
@@ -294,10 +290,10 @@ Monster SpecializedMonsterGenerator::generateConference(int playerSeries, double
     conference.speed = stats.speed;
     conference.moneyReward = stats.moneyReward;
     conference.itemReward = "Conference Badge";
-    conference.itemValue = 30 + playerSeries * 6;
+    conference.itemValue = GameMath::specialItemValue(1, playerSeries);
 
     // Conferences have medium-high hype energy
-    conference.maxHypeEnergy = 50 + (playerSeries * 8);
+    conference.maxHypeEnergy = GameMath::conferenceHype(playerSeries);
     conference.hypeEnergy = conference.maxHypeEnergy;
 
     // Conferences use balanced strategy with buffs and debuffs
@@ -320,9 +316,7 @@ void SpecializedMonsterGenerator::generateConferencePatents(Monster& conference,
     };
 
     // Give 2-3 patents based on difficulty
-    int patentCount = 2;
-    if (conference.difficulty == MonsterDifficulty::HARD) patentCount = 3;
-    if (conference.difficulty == MonsterDifficulty::LEGENDARY) patentCount = 4;
+    const int patentCount = GameMath::specialPatentCount(static_cast<int>(conference.difficulty));
 
     std::uniform_int_distribution<> selectDist(0, confPatents.size() - 1);
     std::set<int> selectedIndices;
@@ -333,8 +327,8 @@ void SpecializedMonsterGenerator::generateConferencePatents(Monster& conference,
 
     for (int idx : selectedIndices) {
         const auto& [name, type] = confPatents[idx];
-        int basePower = 18 + (playerSeries * 2);
-        int cost = 9 + (playerSeries * 1);
+        const GameMath::PatentSpec ps = GameMath::conferencePatent(playerSeries);
+        int basePower = ps.power, cost = ps.cost;
 
         PatentTarget target;
         if (type == PatentType::ATTACK || type == PatentType::DEBUFF) {
@@ -379,10 +373,10 @@ Monster SpecializedMonsterGenerator::generatePaperWriting(int playerSeries, doub
     paper.speed = stats.speed;
     paper.moneyReward = stats.moneyReward;
     paper.itemReward = "Published Paper";
-    paper.itemValue = -static_cast<int>(T("special.paper_item_base") + playerSeries * T("special.paper_item_per")); // costs money when sold
+    paper.itemValue = GameMath::specialItemValue(3, playerSeries);  // costs money when sold
 
     // Papers have medium hype energy
-    paper.maxHypeEnergy = 45 + (playerSeries * 7);
+    paper.maxHypeEnergy = GameMath::paperHype(playerSeries);
     paper.hypeEnergy = paper.maxHypeEnergy;
 
     // Papers use debuff strategy (stress and exhaustion)
@@ -406,9 +400,7 @@ void SpecializedMonsterGenerator::generatePaperPatents(Monster& paper, int playe
     };
 
     // Give 2-3 patents
-    int patentCount = 2;
-    if (paper.difficulty == MonsterDifficulty::HARD) patentCount = 3;
-    if (paper.difficulty == MonsterDifficulty::LEGENDARY) patentCount = 4;
+    const int patentCount = GameMath::specialPatentCount(static_cast<int>(paper.difficulty));
 
     std::uniform_int_distribution<> selectDist(0, paperPatents.size() - 1);
     std::set<int> selectedIndices;
@@ -419,13 +411,9 @@ void SpecializedMonsterGenerator::generatePaperPatents(Monster& paper, int playe
 
     for (int idx : selectedIndices) {
         const auto& [name, type] = paperPatents[idx];
-        int basePower = 20 + (playerSeries * 2);
-        int cost = 10 + (playerSeries * 1);
+        const GameMath::PatentSpec ps = GameMath::paperPatent(playerSeries, type == PatentType::DEBUFF);
+        int basePower = ps.power, cost = ps.cost;
 
-        // Debuffs are strong for papers (academic stress is real!)
-        if (type == PatentType::DEBUFF) {
-            basePower = static_cast<int>(basePower * 1.3);
-        }
 
         PatentTarget target = (type == PatentType::ATTACK || type == PatentType::DEBUFF)
             ? PatentTarget::ENEMY
@@ -517,17 +505,17 @@ Monster SpecializedMonsterGenerator::generateSafetyCrony(int playerSeries, int i
                                           ExtendedMonsterType::SAFETY_MANAGER,
                                           MonsterDifficulty::MEDIUM);
 
-    crony.maxHealth = static_cast<int>(stats.maxHealth * 0.4);
+    crony.maxHealth = static_cast<int>(stats.maxHealth * GameMath::cronyMult(0));
     crony.health = crony.maxHealth;
-    crony.attack = static_cast<int>(stats.attack * 0.4);
-    crony.defense = static_cast<int>(stats.defense * 0.6); // Higher defense
-    crony.speed = static_cast<int>(stats.speed * 0.4);
-    crony.moneyReward = static_cast<int>(stats.moneyReward * 0.3);
+    crony.attack = static_cast<int>(stats.attack * GameMath::cronyMult(0));
+    crony.defense = static_cast<int>(stats.defense * GameMath::cronyMult(1)); // Higher defense
+    crony.speed = static_cast<int>(stats.speed * GameMath::cronyMult(0));
+    crony.moneyReward = static_cast<int>(stats.moneyReward * GameMath::cronyMult(2));
     crony.itemReward = "Safety Memo";
-    crony.itemValue = 10 + playerSeries * 3;
+    crony.itemValue = GameMath::specialItemValue(2, playerSeries);
 
     // Limited hype energy
-    crony.maxHypeEnergy = 30 + (playerSeries * 5);
+    crony.maxHypeEnergy = GameMath::cronyHype(playerSeries);
     crony.hypeEnergy = crony.maxHypeEnergy;
 
     // Simple aggressive strategy
@@ -538,8 +526,8 @@ Monster SpecializedMonsterGenerator::generateSafetyCrony(int playerSeries, int i
         {"Safety Citation", PatentType::DEBUFF}
     };
 
-    int basePower = 15 + (playerSeries * 2);
-    int cost = 8 + playerSeries;
+    const GameMath::PatentSpec cps = GameMath::cronyPatent(playerSeries);
+    int basePower = cps.power, cost = cps.cost;
 
     auto patent = std::make_shared<Patent>(
         cronyPatents[0].first, 0, cronyPatents[0].second,

@@ -2,10 +2,11 @@
 #include "../include/ui.h"
 #include "../include/NavBar.h"
 #include "../include/Tuning.h"
-#include "../include/Balance.h"
+#include "../include/GameMath.h"
 #include "../include/Archetype.h"
 #include <algorithm>
 #include <array>
+#include <map>
 #include <optional>
 #include <cmath>
 #include <cstdio>
@@ -95,7 +96,7 @@ const std::vector<Preset>& presets() {
     };
     return p;
 }
-const char* kXModes[4] = {"Year (0-20)", "Series (1-60)", "Quest index (1-21)", "Sweep selected factor (x0.5..x1.5)"};
+const char* kXModes[3] = {"Year", "Series", "Quest index"};   // ranges editable per plot
 
 struct Data {
     std::vector<double> xs;
@@ -104,7 +105,7 @@ struct Data {
     std::string xlabel;
 };
 
-std::array<double, M_COUNT> makePoint(const Balance::SeriesMetrics& m, double reached, const Balance::SeriesMetrics* /*unused*/,
+std::array<double, M_COUNT> makePoint(const GameMath::SeriesMetrics& m, double reached, const GameMath::SeriesMetrics* /*unused*/,
                                       double qDays, double qSprints, double nextCost) {
     std::array<double, M_COUNT> a{};
     a[M_SERIES] = reached; a[M_RUNWAY] = m.runway; a[M_HYPE] = m.player.hype; a[M_HUSTLE] = m.hustle; a[M_NDAS] = m.ndas;
@@ -165,8 +166,84 @@ Element chart(const std::string& title, int wc, int hc, const std::vector<double
     });
 }
 
+// 3D surface samples: z[iy*nx + ix], x = series, y = year
+struct Surf {
+    int nx = 0, ny = 0, metric = 0;
+    std::vector<double> z;
+    double xlo = 0, xhi = 1, ylo = 0, yhi = 1;
+};
+
+// rotatable mesh on a braille canvas (orthographic projection, FTXUI canvas 3D example idea).
+// yaw = rotation around the vertical axis, tilt = camera elevation (degrees). z colored blue -> red.
+Element surfaceChart(const std::string& title, int wc, int hc, const Surf& sf, bool logz, bool selected, int yaw, int tilt) {
+    auto tf = [logz](double v) { return logz ? std::log10(std::max(v, 1e-2)) : v; };
+    double lo = 1e300, hi = -1e300;
+    for (double v : sf.z) { lo = std::min(lo, tf(v)); hi = std::max(hi, tf(v)); }
+    if (lo > hi) { lo = 0; hi = 1; }
+    if (hi - lo < 1e-9) hi = lo + 1;
+    wc = std::max(wc, 8);
+    hc = std::max(hc, 3);
+    const int W = wc * 2, H = std::max(8, hc * 4 - 3);
+    const int nx = sf.nx, ny = sf.ny;
+    auto fn = [=](Canvas& c) {
+        if (nx < 2 || ny < 2) return;
+        const double kPi = 3.14159265358979323846;
+        const double ya = yaw * kPi / 180.0, el = tilt * kPi / 180.0;
+        const double cy = std::cos(ya), sy = std::sin(ya), ce = std::cos(el), se = std::sin(el);
+        auto zn = [&](int ix, int iy) { return std::clamp((tf(sf.z[iy * nx + ix]) - lo) / (hi - lo), 0.0, 1.0); };
+        // world: X (series), Y (year) in [-0.5,0.5], Z height [0,0.6]
+        struct P2 { double x, y; };
+        std::vector<P2> pts(static_cast<size_t>(nx) * ny);
+        double minx = 1e300, maxx = -1e300, miny = 1e300, maxy = -1e300;
+        for (int iy = 0; iy < ny; ++iy)
+            for (int ix = 0; ix < nx; ++ix) {
+                const double X = ix / (nx - 1.0) - 0.5, Y = iy / (ny - 1.0) - 0.5, Z = zn(ix, iy) * 0.6;
+                const double rx = X * cy - Y * sy, ry = X * sy + Y * cy;
+                P2 p{rx, ry * se + Z * ce};
+                pts[static_cast<size_t>(iy) * nx + ix] = p;
+                minx = std::min(minx, p.x); maxx = std::max(maxx, p.x);
+                miny = std::min(miny, p.y); maxy = std::max(maxy, p.y);
+            }
+        // also keep the floor corners in frame so the base does not jump around
+        for (double X : {-0.5, 0.5})
+            for (double Y : {-0.5, 0.5}) {
+                const double rx = X * cy - Y * sy, ry = X * sy + Y * cy, py = ry * se;
+                minx = std::min(minx, rx); maxx = std::max(maxx, rx); miny = std::min(miny, py); maxy = std::max(maxy, py);
+            }
+        const double sc = std::min((W - 6.0) / std::max(1e-9, maxx - minx), (H - 4.0) / std::max(1e-9, maxy - miny));
+        auto PX = [&](const P2& p) { return std::clamp(static_cast<int>(3 + (p.x - minx) * sc), 0, W - 1); };
+        auto PY = [&](const P2& p) { return std::clamp(static_cast<int>(H - 3 - (p.y - miny) * sc), 0, H - 1); };
+        auto col = [&](int ix, int iy) { return Color::HSV(static_cast<uint8_t>(170.0 * (1.0 - zn(ix, iy))), 255, 255); };
+        auto at = [&](int ix, int iy) -> const P2& { return pts[static_cast<size_t>(iy) * nx + ix]; };
+        // floor outline
+        {
+            const P2 q[4] = {{-0.5 * cy + 0.5 * sy, (-0.5 * sy - 0.5 * cy) * se}, {0.5 * cy + 0.5 * sy, (0.5 * sy - 0.5 * cy) * se},
+                             {0.5 * cy - 0.5 * sy, (0.5 * sy + 0.5 * cy) * se}, {-0.5 * cy - 0.5 * sy, (-0.5 * sy + 0.5 * cy) * se}};
+            for (int i = 0; i < 4; ++i)
+                c.DrawPointLine(PX(q[i]), PY(q[i]), PX(q[(i + 1) % 4]), PY(q[(i + 1) % 4]), Color::GrayDark);
+        }
+        for (int iy = 0; iy < ny; ++iy)
+            for (int ix = 0; ix < nx; ++ix) {
+                if (ix + 1 < nx) c.DrawPointLine(PX(at(ix, iy)), PY(at(ix, iy)), PX(at(ix + 1, iy)), PY(at(ix + 1, iy)), col(ix, iy));
+                if (iy + 1 < ny) c.DrawPointLine(PX(at(ix, iy)), PY(at(ix, iy)), PX(at(ix, iy + 1)), PY(at(ix, iy + 1)), col(ix, iy));
+            }
+    };
+    auto raw = [logz](double t) { return logz ? std::pow(10.0, t) : t; };
+    Element head = text((selected ? "> " : "  ") + title + (logz ? " (log)" : "")) | bold;
+    if (selected) head = head | inverted;
+    return vbox({
+        head,
+        hbox({vbox({text(num(raw(hi))), filler(), text(num(raw(lo)))}) | size(WIDTH, EQUAL, 7), canvas(W, H, fn)}),
+        text("       x: series " + num(sf.xlo) + ".." + num(sf.xhi) + "   depth: year " + num(sf.ylo) + ".." + num(sf.yhi) + "   view yaw " + std::to_string(yaw) + " tilt " + std::to_string(tilt) + "  (h/l j/k)") | dim,
+        text("       z: " + std::string(kMetricName[sf.metric]) + " " + num(raw(lo)) + ".." + num(raw(hi))) | dim,
+    });
+}
+
 struct PlotCfg {
     int xmode = 0;
+    bool surface = false;                       // 3D: x = series, depth = year, z = first checked metric
+    int slo = 1, shi = 60, ylo = 0, yhi = 20, qlo = 1, qhi = 21;   // plot ranges
+    int yaw = 35, tilt = 30;                    // 3D view angles (degrees)
     std::array<bool, M_COUNT> y{};
     bool logy = true, baseline = false;
 };
@@ -198,6 +275,15 @@ struct State {
     int epreset = 0;
     std::string emsg;
     std::vector<std::string> xnames;
+    // surface + range editor
+    bool esurf = false;
+    std::string e_slo, e_shi, e_ylo, e_yhi, e_qlo, e_qhi;
+    // plot data cache: rebuilt only when a tuning value / selection / class changes
+    std::string cacheState;
+    std::map<std::string, Data> dcache;
+    std::map<std::string, Surf> scache;
+    GameMath::Projection proj;
+    bool projValid = false;
 };
 }  // namespace
 
@@ -250,7 +336,7 @@ Component CreateTunerPage(int* selected_page, GameEngine* engine, Closure exit_c
     });
     auto left = ResizableSplitLeft(group_panel, param_panel, &st->group_w);
 
-    // everything below reads the same Balance:: functions the game uses
+    // everything below reads the same GameMath:: functions the game uses
     auto live = [=]() {  // current gear numbers: real if this is the running game's series, else modeled
         struct R { double hustle, ndas, runway; bool real; double gh, gn; } r{};
         Character* ch = engine->getCharacter();
@@ -259,66 +345,90 @@ Component CreateTunerPage(int* selected_page, GameEngine* engine, Closure exit_c
             const auto& pr = ch->getProfile();
             r.hustle = pr.hustle; r.ndas = pr.ndas; r.runway = ch->getMaxRunway();
         } else {
-            const auto P = Balance::player(st->series);
-            Balance::modelGear(st->series, r.gh, r.gn);
+            const auto P = GameMath::player(st->series);
+            GameMath::modelGear(st->series, r.gh, r.gn);
             r.hustle = P.hustle + r.gh; r.ndas = P.ndas + r.gn; r.runway = P.runway;
         }
         return r;
     };
 
+    // cache invalidation: tuning version + selection + projection class
+    auto refresh = [st]() {
+        const std::string key = std::to_string(Tuning::I().version()) + "/" + std::to_string(st->series) + "/" + num(st->year) +
+                                "/" + std::to_string(st->quest) + "/" + GameMath::projectionClassName();
+        if (key != st->cacheState) {
+            st->cacheState = key;
+            st->dcache.clear();
+            st->scache.clear();
+            st->projValid = false;
+        }
+        if (!st->projValid) { st->proj = GameMath::project(); st->projValid = true; }
+    };
+
     auto plots_panel = Renderer([=] {
-        const double elapsed = st->year * 365.0 * 86400.0;
+        refresh();
         auto* qs = engine->getQuestSystem();
-        auto pointAt = [&](int S, double reached, int quest) {
-            double gh, gn;
-            Balance::modelGear(S, gh, gn);
-            const auto m = Balance::seriesMetrics(S, elapsed, gh, gn);
-            const auto qp = qs->preview(quest, elapsed);
-            return makePoint(m, reached, nullptr, qp.budget / 86400.0, static_cast<double>(qp.sprints), Balance::fundingRequired(S + 1, elapsed));
-        };
+        const GameMath::Projection& pj = st->proj;
         const int yi = std::clamp(static_cast<int>(st->year), 0, 20);
-        auto build = [&](int mode) {
+        auto pointAt = [&](int S, double reached, int quest, double elapsed) {
+            double gh, gn;
+            GameMath::modelGear(S, gh, gn);
+            const auto m = GameMath::seriesMetrics(S, elapsed, gh, gn);
+            const auto qp = qs->preview(quest, elapsed);
+            return makePoint(m, reached, nullptr, qp.budget / 86400.0, static_cast<double>(qp.sprints), GameMath::fundingRequired(S + 1, elapsed));
+        };
+        const double elapsedSel = st->year * 365.0 * 86400.0;
+        auto build = [&](const PlotCfg& cfg) {
             Data d;
-            if (mode == 0) {            // years: real projected progression
-                const auto pj = Balance::project();
-                d.xlabel = "year"; d.xlo = 0; d.xhi = 20; d.marker = st->year;
-                for (int y = 0; y <= 20; ++y) {
+            if (cfg.xmode == 0) {           // years: projected progression
+                const int a = std::clamp(cfg.ylo, 0, 20), b = std::clamp(cfg.yhi, a, 20);
+                d.xlabel = "year"; d.xlo = a; d.xhi = b; d.marker = st->year;
+                for (int y = a; y <= b; ++y) {
                     const auto& m = pj.atYear[y];
                     const auto qp = qs->preview(st->quest, y * 365.0 * 86400.0);
                     d.xs.push_back(y);
                     d.pts.push_back(makePoint(m, m.series, nullptr, qp.budget / 86400.0, static_cast<double>(qp.sprints),
-                                              Balance::fundingRequired(m.series + 1, y * 365.0 * 86400.0)));
+                                              GameMath::fundingRequired(m.series + 1, y * 365.0 * 86400.0)));
                 }
-            } else if (mode == 1) {     // series 1..100 at the selected year
-                d.xlabel = "series (at year " + num(st->year) + ")"; d.xlo = 1; d.xhi = 100; d.marker = st->series;
-                for (int s = 1; s <= 100; ++s) { d.xs.push_back(s); d.pts.push_back(pointAt(s, s, st->quest)); }
-            } else if (mode == 2) {     // quest index 1..21
-                const auto pj = Balance::project();
-                d.xlabel = "quest index (series " + std::to_string(st->series) + ", year " + num(st->year) + ")"; d.xlo = 1; d.xhi = 21; d.marker = st->quest;
-                for (int q = 1; q <= 21; ++q) { d.xs.push_back(q); d.pts.push_back(pointAt(st->series, pj.seriesAtYear[yi], q)); }
-            } else {                    // sweep the selected factor
-                auto& tn = Tuning::I();
-                std::string key = "combat.player_dmg_mult";
-                if (st->selected < static_cast<int>(st->map.size())) key = tn.params()[st->map[st->selected]].key;
-                const double base = tn.get(key.c_str());
-                double step = 1;
-                for (const auto& p : tn.params()) if (p.key == key) step = p.step;
-                const double lo = base != 0 ? base * 0.5 : -10 * step, hi = base != 0 ? base * 1.5 : 10 * step;
-                d.xlabel = key + " (series " + std::to_string(st->series) + ", year " + num(st->year) + ")";
-                d.xlo = std::min(lo, hi); d.xhi = std::max(lo, hi); d.marker = base;
-                for (int k = 0; k <= 20; ++k) {
-                    const double v = lo + (hi - lo) * k / 20.0;
-                    tn.set(key, v);
-                    const auto pj = Balance::project();
-                    d.xs.push_back(v);
-                    d.pts.push_back(pointAt(st->series, pj.seriesAtYear[yi], st->quest));
-                }
-                tn.set(key, base);
+            } else if (cfg.xmode == 1) {    // series range at the selected year
+                const int a = std::max(1, cfg.slo), b = std::clamp(cfg.shi, a, 400);
+                const int step = std::max(1, (b - a + 1) / 60);
+                d.xlabel = "series (at year " + num(st->year) + ")"; d.xlo = a; d.xhi = b; d.marker = st->series;
+                for (int s = a; s <= b; s += step) { d.xs.push_back(s); d.pts.push_back(pointAt(s, s, st->quest, elapsedSel)); }
+            } else {                        // quest index range
+                const int a = std::max(1, cfg.qlo), b = std::clamp(cfg.qhi, a, 21);
+                d.xlabel = "quest index (series " + std::to_string(st->series) + ", year " + num(st->year) + ")"; d.xlo = a; d.xhi = b; d.marker = st->quest;
+                for (int q = a; q <= b; ++q) { d.xs.push_back(q); d.pts.push_back(pointAt(st->series, pj.seriesAtYear[yi], q, elapsedSel)); }
             }
             return d;
         };
-        std::array<std::optional<Data>, 4> cache;   // each x mode computed at most once per frame
-        auto dataFor = [&](int mode) -> const Data& { if (!cache[mode]) cache[mode] = build(mode); return *cache[mode]; };
+        auto dataFor = [&](const PlotCfg& cfg) -> const Data& {
+            const std::string key = std::to_string(cfg.xmode) + ":" + std::to_string(cfg.slo) + "," + std::to_string(cfg.shi) + "," +
+                                    std::to_string(cfg.ylo) + "," + std::to_string(cfg.yhi) + "," + std::to_string(cfg.qlo) + "," + std::to_string(cfg.qhi);
+            auto it = st->dcache.find(key);
+            if (it == st->dcache.end()) it = st->dcache.emplace(key, build(cfg)).first;
+            return it->second;
+        };
+        auto surfFor = [&](const PlotCfg& cfg, int metric) -> const Surf& {
+            const std::string key = std::to_string(metric) + ":" + std::to_string(cfg.slo) + "," + std::to_string(cfg.shi) + "," +
+                                    std::to_string(cfg.ylo) + "," + std::to_string(cfg.yhi);
+            auto it = st->scache.find(key);
+            if (it != st->scache.end()) return it->second;
+            Surf sf;
+            sf.metric = metric;
+            const int ya = std::clamp(cfg.ylo, 0, 20), yb = std::clamp(cfg.yhi, ya, 20);
+            const int sa = std::max(1, cfg.slo), sb = std::clamp(cfg.shi, sa, 400);
+            sf.nx = std::min(30, sb - sa + 1); sf.ny = std::min(21, yb - ya + 1);
+            sf.xlo = sa; sf.xhi = sb; sf.ylo = ya; sf.yhi = yb;
+            for (int iy = 0; iy < sf.ny; ++iy) {
+                const double year = sf.ny > 1 ? ya + (yb - ya) * iy / (sf.ny - 1.0) : ya;
+                for (int ix = 0; ix < sf.nx; ++ix) {
+                    const int S = sf.nx > 1 ? sa + static_cast<int>(std::lround((sb - sa) * ix / (sf.nx - 1.0))) : sa;
+                    sf.z.push_back(pointAt(S, S, st->quest, year * 365.0 * 86400.0)[metric]);
+                }
+            }
+            return st->scache.emplace(key, std::move(sf)).first->second;
+        };
 
         const int n = static_cast<int>(st->plots.size());
         if (n == 0)
@@ -339,7 +449,15 @@ Component CreateTunerPage(int* selected_page, GameEngine* engine, Closure exit_c
                 const int i = r * cols + c;
                 if (i >= n) break;
                 const PlotCfg& cfg = st->plots[i];
-                const Data& d = dataFor(cfg.xmode);
+                if (cfg.surface) {
+                    int metric = -1;
+                    for (int m = 0; m < M_COUNT && metric < 0; ++m) if (cfg.y[m]) metric = m;
+                    if (metric < 0) metric = M_MOB_HP;
+                    cells.push_back(surfaceChart("[" + std::to_string(i + 1) + "] 3D series x year", wc, hc, surfFor(cfg, metric), cfg.logy, st->slot == i, cfg.yaw, cfg.tilt) |
+                                    size(WIDTH, EQUAL, colw));
+                    continue;
+                }
+                const Data& d = dataFor(cfg);
                 std::vector<Line> lines;
                 std::string title;
                 int k = 0;
@@ -349,7 +467,7 @@ Component CreateTunerPage(int* selected_page, GameEngine* engine, Closure exit_c
                     for (const auto& pt : d.pts) l.y.push_back(pt[m]);
                     lines.push_back(std::move(l));
                 }
-                title = "[" + std::to_string(i + 1) + "] " + (lines.empty() ? std::string("(no variables: press e)") : std::string(kXModes[cfg.xmode]).substr(0, 6));
+                title = "[" + std::to_string(i + 1) + "] " + (lines.empty() ? std::string("(no variables: press e)") : std::string(kXModes[cfg.xmode]));
                 cells.push_back(chart(title, wc, hc, d.xs, d.xlo, d.xhi, d.xlabel, lines, cfg.logy, cfg.baseline, d.marker, st->slot == i) |
                                 size(WIDTH, EQUAL, colw));
             }
@@ -361,18 +479,18 @@ Component CreateTunerPage(int* selected_page, GameEngine* engine, Closure exit_c
     auto results_panel = Renderer([=] {
         const int S = st->series;
         const double elapsed = st->year * 365.0 * 86400.0;
-        const auto P = Balance::player(S);
+        const auto P = GameMath::player(S);
         const auto g = live();
         const double pm = T("combat.player_dmg_mult"), em = T("combat.enemy_dmg_mult");
         const int yr = static_cast<int>(st->year) + 1;
         const int ntype = yr <= 5 ? 0 : yr <= 10 ? 1 : yr <= 15 ? 2 : 3;
-        const double med = Balance::difficultyMult(1);
-        struct Foe { const char* n; Balance::EnemyStats e; };
-        Balance::EnemyStats shadow{g.runway * T("shadow.hp_mult"), g.hustle * T("shadow.atk_mult"), g.ndas * T("shadow.def_mult"), 0, 0};
+        const double med = GameMath::difficultyMult(1);
+        struct Foe { const char* n; GameMath::EnemyStats e; };
+        GameMath::EnemyStats shadow{g.runway * T("shadow.hp_mult"), g.hustle * T("shadow.atk_mult"), g.ndas * T("shadow.def_mult"), 0, 0};
         const std::vector<Foe> foes = {
-            {"Mob", Balance::mob(S, med)}, {"Boss", Balance::boss(S, med)}, {"Nemesis", Balance::nemesis(S, elapsed, ntype, 0)},
-            {"Safety Mgr", Balance::special(0, S, med)}, {"Conference", Balance::special(1, S, med)},
-            {"Paper", Balance::special(2, S, med)}, {"Review boss", Balance::review(yr, 6, med)}, {"Shadow", shadow}};
+            {"Mob", GameMath::mob(S, med)}, {"Boss", GameMath::boss(S, med)}, {"Nemesis", GameMath::nemesis(S, elapsed, ntype, 0)},
+            {"Safety Mgr", GameMath::special(0, S, med)}, {"Conference", GameMath::special(1, S, med)},
+            {"Paper", GameMath::special(2, S, med)}, {"Review boss", GameMath::review(yr, 6, med)}, {"Shadow", shadow}};
         Elements stats, fights;
         for (const auto& f : foes) {
             stats.push_back(row(f.n, "HP " + num(f.e.hp) + " ATK " + num(f.e.atk) + " DEF " + num(f.e.def) + " $" + num(f.e.money)));
@@ -384,11 +502,11 @@ Component CreateTunerPage(int* selected_page, GameEngine* engine, Closure exit_c
         auto qp = engine->getQuestSystem()->preview(st->quest, elapsed);
         return vbox({
                    text("series " + std::to_string(S) + "  year " + num(st->year) + "  quest #" + std::to_string(st->quest) +
-                        "   (s/S y/Y q/Q)  class(c): " + Balance::projectionClassName()) | bold,
+                        "   (s/S y/Y q/Q)  class(c): " + GameMath::projectionClassName()) | bold,
                    text(g.real ? "fights use REAL equipped gear" : "fights use modeled gear +" + num(g.gh) + " hustle +" + num(g.gn) + " NDAs") | dim,
                    row("Runway/Hype", num(P.runway) + " / " + num(P.hype)),
                    row("Hustle/NDAs used", num(g.hustle) + " / " + num(g.ndas)),
-                   row("Next series cost", "$" + num(Balance::fundingRequired(S + 1, elapsed))),
+                   row("Next series cost", "$" + num(GameMath::fundingRequired(S + 1, elapsed))),
                    separator(), vbox(stats), separator(), vbox(fights), separator(),
                    row("Quest budget", num(qp.budget / 86400.0) + " d, hustles " + std::to_string(qp.hustlesRequired) + ", devs " + std::to_string(qp.devs)),
                    row("Avg sprint", num(qp.avgSprintSeconds) + " s -> " + std::to_string(qp.sprints) + " sprints"),
@@ -398,7 +516,8 @@ Component CreateTunerPage(int* selected_page, GameEngine* engine, Closure exit_c
     auto main_split = ResizableSplitLeft(left, right, &st->left_w);
 
     auto table_panel = Renderer([=] {
-        const auto pj = Balance::project();
+        refresh();
+        const auto& pj = st->proj;
         Elements rows;
         rows.push_back(hbox({cell("yr", 3), cell("ser", 4), cell("runway", 8), cell("hustle", 8), cell("ndas", 7),
                              cell("mob y/it", 12), cell("boss y/it", 12), cell("nem y/it", 14), cell("life", 8), cell("d/next", 8)}) | bold);
@@ -437,7 +556,10 @@ Component CreateTunerPage(int* selected_page, GameEngine* engine, Closure exit_c
     auto openEditor = [st, newCfg] {
         if (st->plots.empty()) { st->plots.push_back(newCfg()); st->slot = 0; }
         const PlotCfg& c = st->plots[st->slot];
-        st->ex = c.xmode; st->ey = c.y; st->elog = c.logy; st->ebase = c.baseline;
+        st->ex = c.xmode; st->ey = c.y; st->elog = c.logy; st->ebase = c.baseline; st->esurf = c.surface;
+        st->e_slo = std::to_string(c.slo); st->e_shi = std::to_string(c.shi);
+        st->e_ylo = std::to_string(c.ylo); st->e_yhi = std::to_string(c.yhi);
+        st->e_qlo = std::to_string(c.qlo); st->e_qhi = std::to_string(c.qhi);
         st->emsg.clear();
         st->show_modal = true;
     };
@@ -467,6 +589,10 @@ Component CreateTunerPage(int* selected_page, GameEngine* engine, Closure exit_c
     }
     auto logcb = Checkbox("log scale (y)", &st->elog);
     auto basecb = Checkbox("break-even line (y = 1)", &st->ebase);
+    auto surfcb = Checkbox("3D surface (series x year, 1st variable)", &st->esurf);
+    auto in_slo = Input(&st->e_slo, "1"), in_shi = Input(&st->e_shi, "60");
+    auto in_ylo = Input(&st->e_ylo, "0"), in_yhi = Input(&st->e_yhi, "20");
+    auto in_qlo = Input(&st->e_qlo, "1"), in_qhi = Input(&st->e_qhi, "21");
     auto preset_btn = Button("Load preset", [st] {
         const int np = static_cast<int>(presets().size());
         PlotCfg c;
@@ -478,14 +604,19 @@ Component CreateTunerPage(int* selected_page, GameEngine* engine, Closure exit_c
     auto apply_btn = Button("Apply", [st] {
         if (st->slot < static_cast<int>(st->plots.size())) {
             PlotCfg& c = st->plots[st->slot];
-            c.xmode = st->ex; c.y = st->ey; c.logy = st->elog; c.baseline = st->ebase;
+            c.xmode = st->ex; c.y = st->ey; c.logy = st->elog; c.baseline = st->ebase; c.surface = st->esurf;
+            auto num_or = [](const std::string& s, int d) { try { return std::stoi(s); } catch (...) { return d; } };
+            c.slo = std::max(1, num_or(st->e_slo, 1));       c.shi = std::clamp(num_or(st->e_shi, 60), c.slo, 400);
+            c.ylo = std::clamp(num_or(st->e_ylo, 0), 0, 20); c.yhi = std::clamp(num_or(st->e_yhi, 20), c.ylo, 20);
+            c.qlo = std::clamp(num_or(st->e_qlo, 1), 1, 21); c.qhi = std::clamp(num_or(st->e_qhi, 21), c.qlo, 21);
         }
         st->show_modal = false;
     });
     auto cancel_btn = Button("Cancel", [st] { st->show_modal = false; });
     auto modal_container = Container::Vertical({
         Container::Horizontal({xradio, ycols[0], ycols[1], ycols[2]}),
-        Container::Horizontal({logcb, basecb}),
+        Container::Horizontal({logcb, basecb, surfcb}),
+        Container::Horizontal({in_slo, in_shi, in_ylo, in_yhi, in_qlo, in_qhi}),
         Container::Horizontal({preset_btn, apply_btn, cancel_btn}),
     });
     auto modal = Renderer(modal_container, [=] {
@@ -495,7 +626,10 @@ Component CreateTunerPage(int* selected_page, GameEngine* engine, Closure exit_c
                       vbox({
                           hbox({vbox({text("X axis") | bold, separator(), xradio->Render()}) | border,
                                 vbox({text("Y variables") | bold, separator(), hbox(ys)}) | border | flex}),
-                          hbox({logcb->Render(), text("   "), basecb->Render()}),
+                          hbox({logcb->Render(), text("   "), basecb->Render(), text("   "), surfcb->Render()}),
+                          hbox({text("series ") | bold, in_slo->Render() | size(WIDTH, EQUAL, 6), text(" - "), in_shi->Render() | size(WIDTH, EQUAL, 6),
+                                text("   year ") | bold, in_ylo->Render() | size(WIDTH, EQUAL, 4), text(" - "), in_yhi->Render() | size(WIDTH, EQUAL, 4),
+                                text("   quest ") | bold, in_qlo->Render() | size(WIDTH, EQUAL, 4), text(" - "), in_qhi->Render() | size(WIDTH, EQUAL, 4)}),
                           text(st->emsg) | dim,
                           text("arrows/Tab move, Space/Enter toggles") | dim,
                           hbox({preset_btn->Render(), apply_btn->Render(), cancel_btn->Render()}) | center,
@@ -510,7 +644,7 @@ Component CreateTunerPage(int* selected_page, GameEngine* engine, Closure exit_c
         return window(text(std::string("Tuner (debug) - ") + (st->view == 0 ? "factors, plots, results" : "year-by-year table")) | bold | center,
                       vbox({
                           st->view == 0 ? main_split->Render() | flex : table_panel->Render() | flex,
-                          text("Left/Right groups<->factors  Up/Down  +/- step  [ ] x10  r reset | a add plot  d delete  e edit vars  1-9 pick plot  x x-axis  p table") | dim | center,
+                          text("Left/Right groups<->factors  Up/Down  +/- step  [ ] x10  r reset | a add  d del  e edit vars+ranges  1-9 pick  x x-axis  c class  p table  h/l j/k rotate 3D") | dim | center,
                           text(st->msg) | color(Color::Green) | center,
                           hbox({save_btn->Render(), reset_btn->Render(), add_btn->Render(), del_btn->Render(), edit_btn->Render()}) | center,
                           nav->Render(),
@@ -527,10 +661,17 @@ Component CreateTunerPage(int* selected_page, GameEngine* engine, Closure exit_c
             return true;
         };
         if (e == Event::Character('p')) { st->view = 1 - st->view; return true; }
+        if (!st->plots.empty() && st->plots[st->slot].surface) {   // rotate the selected 3D plot
+            PlotCfg& pc = st->plots[st->slot];
+            if (e == Event::Character('h')) { pc.yaw = (pc.yaw + 345) % 360; return true; }
+            if (e == Event::Character('l')) { pc.yaw = (pc.yaw + 15) % 360; return true; }
+            if (e == Event::Character('j')) { pc.tilt = std::max(0, pc.tilt - 10); return true; }
+            if (e == Event::Character('k')) { pc.tilt = std::min(90, pc.tilt + 10); return true; }
+        }
         if (e == Event::Character('c')) {
             static int cls = -1;
             cls = (cls + 2) % (static_cast<int>(Archetypes::I().count()) + 1) - 1;
-            Balance::setProjectionClass(cls);
+            GameMath::setProjectionClass(cls);
             return true;
         }
         if (e == Event::Character('+') || e == Event::Character('=')) return adjust(1);
@@ -551,7 +692,7 @@ Component CreateTunerPage(int* selected_page, GameEngine* engine, Closure exit_c
         }
         if (e == Event::Character('e')) { openEditor(); return true; }
         if (e == Event::Character('x')) {
-            if (!st->plots.empty()) st->plots[st->slot].xmode = (st->plots[st->slot].xmode + 1) % 4;
+            if (!st->plots.empty()) st->plots[st->slot].xmode = (st->plots[st->slot].xmode + 1) % 3;
             return true;
         }
         for (int i = 0; i < 9; ++i)

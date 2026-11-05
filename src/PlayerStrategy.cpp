@@ -1,6 +1,6 @@
 #include "../include/PlayerStrategy.h"
 #include "../include/Archetype.h"
-#include "../include/Balance.h"
+#include "../include/GameMath.h"
 #include "../include/BattleEncounter.h"
 #include "../include/Character.h"
 #include "../include/Patent.h"
@@ -36,7 +36,7 @@ PlayerChoice choose(Character& pc, BattleEncounter& enc, std::mt19937& rng) {
     const bool dangerous = danger > T("pstrat.danger_ratio");
     const bool shortFight = rounds <= T("pstrat.short_rounds");
     const double hpFrac = runway / maxRunway;
-    const double potency = Balance::patentPotency(pc.getModifiedSynergy());
+    const double potency = GameMath::patentPotency(pc.getModifiedSynergy());
 
     // keep hype for a heal when things look bad
     int reserve = 0;

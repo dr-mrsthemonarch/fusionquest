@@ -3,6 +3,7 @@
 //
 
 #include "../include/Tuning.h"
+#include "../include/GameMath.h"
 #include "../include/NamedMonster.h"
 #include "../include/PatentStrategy.h"
 #include <algorithm>
@@ -26,11 +27,11 @@ Monster NamedMonsterSystem::generateNamedMonster(const NamedMonsterDef& def, int
     monster.speed = scaleStatToSeries(def.baseSpeed, playerSeries);
 
     // Rewards (will be overridden by special drop system)
-    monster.moneyReward = static_cast<int>(T("named.money_base") + playerSeries * T("named.money_per"));
+    monster.moneyReward = GameMath::namedMoney(playerSeries);
     monster.itemReward = "NAMED_EQUIPMENT";
 
     // Hype energy for patents
-    monster.maxHypeEnergy = static_cast<int>(T("named.hype_base") + playerSeries * T("named.hype_per"));
+    monster.maxHypeEnergy = GameMath::namedHype(playerSeries);
     monster.hypeEnergy = monster.maxHypeEnergy;
 
     // Add patents
@@ -47,7 +48,7 @@ Monster NamedMonsterSystem::generateNamedMonster(const NamedMonsterDef& def, int
 
 std::shared_ptr<Patent> NamedMonsterSystem::createNamedPatent(const PatentDefinition& patentDef, int playerSeries) {
     // Scale power with player series
-    int scaledPower = static_cast<int>(patentDef.basePower + playerSeries * T("named.patent_pow_per"));
+    int scaledPower = GameMath::namedPatentPower(patentDef.basePower, playerSeries);
 
     auto patent = std::make_shared<Patent>(
         patentDef.name,
@@ -82,10 +83,7 @@ std::shared_ptr<Patent> NamedMonsterSystem::createNamedPatent(const PatentDefini
 }
 
 int NamedMonsterSystem::scaleStatToSeries(int baseStat, int playerSeries) const {
-    // Linear scaling: baseStat + (playerSeries * growthRate)
-    // Growth rate is 10% of base per series
-    double growthRate = baseStat * T("named.growth_per_series");
-    return static_cast<int>((baseStat + (playerSeries * growthRate)) * T("named.power_mult"));
+    return GameMath::namedStat(baseStat, playerSeries);
 }
 
 std::unique_ptr<PatentStrategy> NamedMonsterSystem::createStrategy(const std::string& strategyType) {
@@ -117,17 +115,17 @@ Monster NamedMonsterSystem::generateNamedMinion(
     minion.level = playerSeries;
 
     // 50% of named monster power
-    minion.maxHealth = scaleStatToSeries(static_cast<int>(T("named.minion_hp")), playerSeries);
+    minion.maxHealth = GameMath::namedMinionStat(0, playerSeries);
     minion.health = minion.maxHealth;
-    minion.attack = scaleStatToSeries(static_cast<int>(T("named.minion_atk")), playerSeries);
-    minion.defense = scaleStatToSeries(static_cast<int>(T("named.minion_def")), playerSeries);
-    minion.speed = scaleStatToSeries(static_cast<int>(T("named.minion_spd")), playerSeries);
+    minion.attack = GameMath::namedMinionStat(1, playerSeries);
+    minion.defense = GameMath::namedMinionStat(2, playerSeries);
+    minion.speed = GameMath::namedMinionStat(3, playerSeries);
 
-    minion.moneyReward = 100 + (playerSeries * 15);
+    minion.moneyReward = GameMath::namedMinionMoney(playerSeries);
     minion.itemReward = "EQUIPMENT";
-    minion.itemValue = 40 + playerSeries * 8;
+    minion.itemValue = GameMath::namedMinionItem(playerSeries);
 
-    minion.maxHypeEnergy = 40 + (playerSeries * 5);
+    minion.maxHypeEnergy = GameMath::minionHype(playerSeries);
     minion.hypeEnergy = minion.maxHypeEnergy;
 
     minion.setStrategy(std::make_unique<AggressiveStrategy>());

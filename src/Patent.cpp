@@ -1,5 +1,4 @@
 #include "../include/Tuning.h"
-static double dv(const char* k) { return std::max(0.01, T(k)); }
 #include "../include/ConfigStore.h"
 #include "../include/Patent.h"
 #include <algorithm>
@@ -15,8 +14,22 @@ static double dv(const char* k) { return std::max(0.01, T(k)); }
 #include "../include/Character.h"
 #include "../include/TemporaryEffect.h"
 #include "../include/PatentDefinition.h"
-#include "../include/Balance.h"
+#include "../include/GameMath.h"
 #include "../include/Archetype.h"
+
+static double dv(const char* k) { return GameMath::dv(k); }
+
+static GameMath::PType toPType(PatentType t) {
+    switch (t) {
+        case PatentType::ATTACK: return GameMath::PType::Attack;
+        case PatentType::AOE: return GameMath::PType::Aoe;
+        case PatentType::HEAL: return GameMath::PType::Heal;
+        case PatentType::DEFENSE: return GameMath::PType::Defense;
+        case PatentType::BUFF: return GameMath::PType::Buff;
+        case PatentType::DEBUFF: return GameMath::PType::Debuff;
+        default: return GameMath::PType::Other;
+    }
+}
 
 static double passiveOf(const CombatEntity* c, const char* key) {
     const Character* ch = dynamic_cast<const Character*>(c);
@@ -25,12 +38,12 @@ static double passiveOf(const CombatEntity* c, const char* key) {
 
 int Patent::effectiveCost(const CombatEntity* caster) const {
     if (!caster) return cost_;
-    const double m = Balance::hypeDiscount(caster->getModifiedSynergy(), passiveOf(caster, "hype_discount"));
+    const double m = GameMath::hypeDiscount(caster->getModifiedSynergy(), passiveOf(caster, "hype_discount"));
     return std::max(1, static_cast<int>(cost_ * m));
 }
 
 void Patent::updatePotency(const CombatEntity* caster) const {
-    potency_ = Balance::patentPotency(caster ? caster->getModifiedSynergy() : 0);
+    potency_ = GameMath::patentPotency(caster ? caster->getModifiedSynergy() : 0);
     if (type_ == PatentType::BUFF || type_ == PatentType::DEBUFF || type_ == PatentType::DEFENSE)
         potency_ += passiveOf(caster, "buff_potency");
 }
@@ -86,8 +99,7 @@ void Patent::applyAOEEffect(CombatEntity* caster, std::vector<CombatEntity*> tar
     for (auto* target : targets) {
         if (!target || !target->isAlive()) continue;
 
-        int damage = static_cast<int>(currentPower_ * potency_) + static_cast<int>(caster->getHustle() / dv("patent.aoe_hustle_div"));
-        int finalDamage = std::max(1, damage - static_cast<int>(target->getNDAs() / dv("patent.aoe_def_div")));
+        int finalDamage = GameMath::aoeDamage(currentPower_, potency_, caster->getHustle(), target->getNDAs());
 
         target->takeDamage(finalDamage);
         totalDamage += finalDamage;
@@ -120,17 +132,7 @@ Patent Patent::createFromNamedDef(const PatentDefinition& def) {
     return patent;
 }
 
-int Patent::calculateCost() const {
-    switch (type_) {
-        case PatentType::ATTACK: return static_cast<int>(T("patent.attack_cost_base") + basePower_ / dv("patent.attack_cost_div"));
-        case PatentType::AOE: return static_cast<int>((T("patent.aoe_cost_base") + basePower_ / dv("patent.aoe_cost_div")) * T("patent.aoe_cost_mult"));
-        case PatentType::HEAL: return static_cast<int>(T("patent.heal_cost_base") + basePower_ / dv("patent.heal_cost_div"));
-        case PatentType::DEFENSE: return static_cast<int>(T("patent.defense_cost_base") + basePower_ / dv("patent.defense_cost_div"));
-        case PatentType::BUFF:
-        case PatentType::DEBUFF: return static_cast<int>(T("patent.bd_cost_base") + basePower_ / dv("patent.bd_cost_div"));
-        default: return 10;
-    }
-}
+int Patent::calculateCost() const { return GameMath::patentCost(toPType(type_), basePower_); }
 
 PatentTarget Patent::getDefaultTargetForType(PatentType type) {
     switch (type) {
@@ -167,16 +169,7 @@ void Patent::levelUp(int characterSeries) {
     }
 }
 
-int Patent::calculatePowerIncrease(int primeValue) {
-    switch (type_) {
-        case PatentType::ATTACK: return static_cast<int>(T("patent.attack_pwr_base") + level_ * T("patent.attack_pwr_lvl") + primeValue / dv("patent.attack_pwr_pdiv"));
-        case PatentType::HEAL: return static_cast<int>(T("patent.heal_pwr_base") + level_ * T("patent.heal_pwr_lvl") + primeValue / dv("patent.heal_pwr_pdiv"));
-        case PatentType::DEFENSE: return static_cast<int>(T("patent.defense_pwr_base") + level_ * T("patent.defense_pwr_lvl") + primeValue / dv("patent.defense_pwr_pdiv"));
-        case PatentType::BUFF:
-        case PatentType::DEBUFF: return static_cast<int>(T("patent.bd_pwr_base") + level_ * T("patent.bd_pwr_lvl") + primeValue / dv("patent.bd_pwr_pdiv"));
-        default: return static_cast<int>(T("patent.heal_pwr_base") + level_ * T("patent.heal_pwr_lvl") + primeValue / dv("patent.heal_pwr_pdiv"));
-    }
-}
+int Patent::calculatePowerIncrease(int primeValue) { return GameMath::patentPowerIncrease(toPType(type_), level_, primeValue); }
 
 bool Patent::canLevelUp(int characterSeries) const {
     if (level_ >= maxLevel_) return false;
@@ -230,13 +223,12 @@ void Patent::applyEffect(CombatEntity *caster, CombatEntity *target) const {
 }
 
 void Patent::applyAttackEffect(CombatEntity *caster, CombatEntity *target) const {
-    int damage = static_cast<int>(currentPower_ * potency_) + static_cast<int>(caster->getHustle() / dv("patent.attack_hustle_div"));
-    int finalDamage = std::max(1, damage - static_cast<int>(target->getNDAs() / dv("patent.attack_def_div")));
+    int finalDamage = GameMath::attackDamage(currentPower_, potency_, caster->getHustle(), target->getNDAs());
 
     {
         const double lk = caster->getModifiedLuck();
-        if (Balance::chance(Balance::critChance(lk))) {
-            finalDamage = static_cast<int>(finalDamage * Balance::critMult(lk, caster->getModifiedSynergy(), passiveOf(caster, "crit_mult")));
+        if (GameMath::chance(GameMath::critChance(lk))) {
+            finalDamage = static_cast<int>(finalDamage * GameMath::critMult(lk, caster->getModifiedSynergy(), passiveOf(caster, "crit_mult")));
             std::cout << "CRIT! ";
         }
     }
@@ -245,7 +237,7 @@ void Patent::applyAttackEffect(CombatEntity *caster, CombatEntity *target) const
 }
 
 void Patent::applyHealEffect(CombatEntity *caster, CombatEntity *target) const {
-    int healAmount = static_cast<int>(currentPower_ * potency_) + static_cast<int>(caster->getSynergy() / dv("patent.heal_synergy_div"));
+    int healAmount = GameMath::healAmount(currentPower_, potency_, caster->getSynergy());
     int currentRunway = target->getRunway();
     int maxRunway = target->getMaxRunway();
 
@@ -255,9 +247,9 @@ void Patent::applyHealEffect(CombatEntity *caster, CombatEntity *target) const {
     std::cout << "Heals " << actualHeal << " runway for " << target->getName() << "!\n";
 
     // High-level heal patents also grant regeneration
-    if (level_ >= static_cast<int>(T("patent.regen_level"))) {
-        int regenAmount = static_cast<int>(currentPower_ / dv("patent.regen_div"));
-        int regenTurns = static_cast<int>(T("patent.regen_turns"));
+    if (GameMath::regenAt(level_)) {
+        int regenAmount = GameMath::regenAmount(currentPower_);
+        int regenTurns = GameMath::regenTurns();
         TemporaryEffect regenEffect(EffectType::REGENERATION, regenAmount, regenTurns, name_);
         target->addTemporaryEffect(regenEffect);
         std::cout << target->getName() << " gains regeneration (+" << regenAmount << " HP/turn) for " << regenTurns << " turns!\n";
@@ -265,8 +257,8 @@ void Patent::applyHealEffect(CombatEntity *caster, CombatEntity *target) const {
 }
 
 void Patent::applyDefenseEffect(CombatEntity *caster, CombatEntity *target) const {
-    int defenseBoost = static_cast<int>(currentPower_ * potency_ / dv("patent.defense_div"));
-    int turns = static_cast<int>(T("patent.defense_turns_base") + level_ / dv("patent.defense_turns_div"));
+    int defenseBoost = GameMath::defenseBoost(currentPower_, potency_);
+    int turns = GameMath::defenseTurns(level_);
 
     // Create a defense shield effect
     TemporaryEffect shieldEffect(EffectType::DEFENSE_SHIELD, defenseBoost, turns, name_);
@@ -278,7 +270,7 @@ void Patent::applyDefenseEffect(CombatEntity *caster, CombatEntity *target) cons
 void Patent::applyBuffEffect(CombatEntity *caster, CombatEntity *target) const {
     // Check if this is a custom named patent with specific modifiers
     if (hasCustomModifiers_) {
-        int turns = customDuration_ > 0 ? customDuration_ : static_cast<int>(T("patent.buff_turns_base") + level_ / dv("patent.buff_turns_div"));
+        int turns = customDuration_ > 0 ? customDuration_ : GameMath::effectTurns(level_);
 
         // Apply each non-zero modifier as separate effect
         if (customHustleModifier_ != 0) {
@@ -338,8 +330,8 @@ void Patent::applyBuffEffect(CombatEntity *caster, CombatEntity *target) const {
 
     // Original buff logic for non-custom patents
     int statChoice = std::hash<std::string>{}(name_) % 4;
-    int boostAmount = static_cast<int>(currentPower_ * potency_ / dv("patent.buff_div"));
-    int turns = static_cast<int>(T("patent.buff_turns_base") + level_ / dv("patent.buff_turns_div"));
+    int boostAmount = GameMath::buffAmount(currentPower_, potency_);
+    int turns = GameMath::effectTurns(level_);
 
     EffectType effectType;
     std::string statName;
@@ -372,7 +364,7 @@ void Patent::applyBuffEffect(CombatEntity *caster, CombatEntity *target) const {
 void Patent::applyDebuffEffect(CombatEntity *caster, CombatEntity *target) const {
     // Check if this is a custom named patent with specific modifiers
     if (hasCustomModifiers_) {
-        int turns = customDuration_ > 0 ? customDuration_ : static_cast<int>(T("patent.buff_turns_base") + level_ / dv("patent.buff_turns_div"));
+        int turns = customDuration_ > 0 ? customDuration_ : GameMath::effectTurns(level_);
 
         // Apply each non-zero modifier as separate effect (inverted for debuff)
         if (customHustleModifier_ != 0) {
@@ -426,8 +418,8 @@ void Patent::applyDebuffEffect(CombatEntity *caster, CombatEntity *target) const
 
     // Original debuff logic for non-custom patents
     int statChoice = std::hash<std::string>{}(name_) % 4;
-    int reduceAmount = static_cast<int>(currentPower_ * potency_ / dv("patent.debuff_div"));
-    int turns = static_cast<int>(T("patent.buff_turns_base") + level_ / dv("patent.buff_turns_div"));
+    int reduceAmount = GameMath::debuffAmount(currentPower_, potency_);
+    int turns = GameMath::effectTurns(level_);
 
     EffectType effectType;
     std::string statName;
@@ -588,19 +580,7 @@ std::string Patent::generatePatentName(PatentType type) {
     return baseName + " " + suffix;
 }
 
-int Patent::calculateBasePower(PatentType type) {
-    auto roll = [](const char* start, const char* range) {
-        return static_cast<int>(T(start)) + rand() % std::max(1, static_cast<int>(T(range)));
-    };
-    switch (type) {
-        case PatentType::ATTACK: return roll("patent.attack_start", "patent.attack_range");
-        case PatentType::HEAL: return roll("patent.heal_start", "patent.heal_range");
-        case PatentType::DEFENSE: return roll("patent.defense_start", "patent.defense_range");
-        case PatentType::BUFF:
-        case PatentType::DEBUFF: return roll("patent.bd_start", "patent.bd_range");
-        default: return 10;
-    }
-}
+int Patent::calculateBasePower(PatentType type) { return GameMath::patentBasePower(toPType(type), rand()); }
 
 void Patent::generateRandomPatent(Character *character) {
     if (patentNames.empty()) {
